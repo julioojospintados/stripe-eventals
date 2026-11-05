@@ -107,7 +107,7 @@
             <thead><tr><th scope="col">Ordine</th><th scope="col">Data</th><th scope="col">Contenuto</th><th scope="col" class="num">Importo</th><th scope="col">Stato</th><th scope="col">Azioni</th></tr></thead>
             <tbody id="righe-ordini"></tbody>
           </table>
-          <p class="t-small t-muted misura">Per chiedere un rimborso scrivi all’organizzazione: i rimborsi li avvia lo staff e la regola è ancora da definire.</p>
+          <p class="t-small t-muted misura">I biglietti non sono rimborsabili: se non puoi venire, cambia il nominativo gratis fino a 48 ore prima dell’inizio. Rimborsiamo solo se l’evento viene annullato o se il pagamento arriva quando i posti sono finiti, senza bisogno di chiederlo.</p>
         </section>
       </div>
     </div>
@@ -183,7 +183,7 @@
             ? '<details class="acc"><summary>Cambia il nominativo (' + (MAXCAMBI - t.cambi) + ' cambi rimasti)' + CV.ic('chev') + '</summary>' +
               '<form class="acc__corpo stack" data-cambio="' + t.id + '" novalidate>' +
               '<div class="campo"><label for="n-' + t.id + '">Nome e cognome di chi partecipa</label><input class="input" id="n-' + t.id + '" autocomplete="off"></div>' +
-              '<div class="campo"><label for="e-' + t.id + '">Email di chi partecipa</label><input class="input" id="e-' + t.id + '" type="email" autocomplete="off" aria-describedby="a-' + t.id + '"><p class="campo__aiuto" id="a-' + t.id + '">Il QR attuale smette di funzionare. Il nuovo biglietto arriva a questa email. Entro 48 ore prima dell’inizio (termine da definire).</p></div>' +
+              '<div class="campo"><label for="e-' + t.id + '">Email di chi partecipa</label><input class="input" id="e-' + t.id + '" type="email" autocomplete="off" aria-describedby="a-' + t.id + '"><p class="campo__aiuto" id="a-' + t.id + '">Il QR attuale smette di funzionare. Il nuovo biglietto arriva a questa email. Gratis fino a 48 ore prima dell’inizio dell’evento.</p></div>' +
               '<p class="campo__errore" id="er-' + t.id + '" role="alert" hidden></p><button class="btn btn--primary" type="submit">Cambia nominativo</button></form></details>'
             : '<p class="t-small t-muted">' + motivo + '</p>')) +
           '</div></article>';
@@ -218,7 +218,7 @@
       $('#conflitti-agenda').innerHTML = cf.map(function (c) {
         var annullabile = c[0].a.t === 'prenotata' ? c[0] : (c[1].a.t === 'prenotata' ? c[1] : null);
         return '<div class="avviso avviso--warn" style="margin-bottom:var(--s-3)"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Orari sovrapposti.</b><p>«' + c[0].s.titolo + '» (' + c[0].s.da + '–' + c[0].s.a + ') e «' + c[1].s.titolo + '» (' + c[1].s.da + '–' + c[1].s.a + ') si accavallano.</p>' +
-          (annullabile ? '<p><button type="button" class="btn btn--secondary btn--piccolo" data-annulla="' + annullabile.a.s + '">Annulla la prenotazione di «' + annullabile.s.titolo + '»</button></p>' : '<p>Sono entrambe a pagamento: scegli quale seguire. Per un rimborso scrivi all’organizzazione.</p>') + '</div></div>';
+          (annullabile ? '<p><button type="button" class="btn btn--secondary btn--piccolo" data-annulla="' + annullabile.a.s + '">Annulla la prenotazione di «' + annullabile.s.titolo + '»</button></p>' : '<p>Sono entrambe a pagamento: scegli quale seguire. Le sessioni a pagamento non sono rimborsabili.</p>') + '</div></div>';
       }).join('');
       if (testo) CV.msg($('#st-agenda'), 'ok', testo);
       if (!list.length) { $('#lista-agenda').innerHTML = '<p class="vuoto">Nessuna sessione prenotata o acquistata. Quando prenoti compare qui.</p>'; return; }

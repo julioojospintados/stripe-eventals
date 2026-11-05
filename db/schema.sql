@@ -12,9 +12,16 @@
 --   1. Importi sempre in centesimi interi (integer), mai float. Valuta ISO minuscola come in Stripe ('eur').
 --   2. Membro NON è un ruolo salvato: si deriva da memberships al momento dell'acquisto (funzione
 --      price_roles_for). I soli ruoli salvati sono admin e staff check-in.
---   2b. Prezzo membro solo sul biglietto del membro che compra (decisione di Giulio del 05/11/2026): in un ordine
---      al massimo una riga member, di quantità 1, intestata all'acquirente. Lo fanno rispettare il server, i
---      vincoli di order_items (CHECK, indice unico, trigger) e reserve_order; tickets ha un secondo indice unico.
+--   2b. Prezzo membro solo sul biglietto del membro che compra (decisione di Giulio del 05/11/2026): righe member
+--      di quantità 1, intestate all'acquirente (CHECK e trigger su order_items).
+--   2c. Limite prezzo membro (decisione di Giulio del 05/11/2026): al massimo un biglietto a prezzo membro per
+--      membro, per evento e per tipo (un pass intero, un giornaliero per ciascun giorno, uno per ciascuna sessione
+--      a pagamento), anche su più ordini. Contano gli ordini pending, processing, paid e partially_refunded
+--      (le riserve attive contano: niente due checkout in parallelo). Lo fa rispettare la tabella
+--      member_price_claims con un indice unico parziale; reserve_order ricontrolla.
+--   2d. Nessun rimborso self-service (decisione di Giulio del 05/11/2026, da far confermare alla catena legale):
+--      rimborsi solo dall'admin per evento annullato o per ordine pagato senza posti. Cambio nominativo gratuito
+--      fino a 48 ore prima dell'inizio dell'evento (trigger su tickets); il biglietto a prezzo membro non si cede.
 --   3. Le scritture che toccano soldi, posti e biglietti le fa solo il server con la chiave service_role
 --      (che salta la RLS). Utenti e anonimi leggono solo ciò che le policy permettono.
 --   4. La capienza è garantita dal database: contatori con CHECK, aggiornati in modo atomico.
@@ -59,7 +66,10 @@ create type public.membership_status as enum (
 );
 create type public.discount_type as enum ('percent', 'amount');
 create type public.refund_status as enum ('requested', 'pending', 'succeeded', 'failed', 'canceled');
-create type public.refund_source as enum ('admin_panel', 'stripe_dashboard', 'dispute');
+-- automatic: il job stripe.refund_full degli ordini needs_refund.
+create type public.refund_source as enum ('admin_panel', 'automatic', 'stripe_dashboard', 'dispute');
+-- Nessun rimborso self-service (decisione di Giulio del 05/11/2026): si rimborsa solo in questi due casi.
+create type public.refund_cause as enum ('event_cancelled', 'paid_without_capacity');
 create type public.stripe_event_status as enum ('received', 'processed', 'failed', 'ignored');
 create type public.checkin_result as enum ('accepted', 'duplicate', 'revoked', 'invalid', 'wrong_day');
 create type public.job_status as enum ('queued', 'running', 'done', 'failed', 'dead');
@@ -125,7 +135,8 @@ create table public.events (
   currency                   text not null default 'eur' check (currency ~ '^[a-z]{3}$'),
   sales_open_at              timestamptz,
   sales_close_at             timestamptz,
-  -- Fino a quante ore prima dell'inizio si può cambiare il nominativo di un biglietto.
+  -- Fino a quante ore prima dell'inizio (event_starts_at) si può cambiare gratis il nominativo di un biglietto:
+  -- 48 per decisione di Giulio del 05/11/2026. Lo fa rispettare il trigger tickets_attendee_rules.
   name_change_deadline_hours integer not null default 48 check (name_change_deadline_hours >= 0),
   created_at                 timestamptz not null default now(),
   updated_at                 timestamptz not null default now(),
@@ -340,18 +351,22 @@ create table public.ticket_prices (
 -- ---------------------------------------------------------------------------------------------------------
 
 -- Configurazione del piano: il Price ricorrente esiste in Stripe (serve al Customer Portal).
+-- Durata (decisione di Giulio del 05/11/2026): 12 mesi dall'acquisto, rinnovo automatico, annullamento dal
+-- Customer Portal Stripe. Il Price è quindi ricorrente annuale (interval = year, interval_count = 1).
 create table public.membership_plans (
   id               uuid primary key default gen_random_uuid(),
   name             text not null unique,
   stripe_price_id  text not null unique,
   amount_cents     integer not null check (amount_cents >= 0),
   currency         text not null default 'eur' check (currency ~ '^[a-z]{3}$'),
-  billing_interval text not null check (billing_interval in ('month', 'year')),
+  billing_interval text not null default 'year' check (billing_interval = 'year'),
   active           boolean not null default true,
   created_at       timestamptz not null default now()
 );
 
 -- Copia locale della subscription Stripe, aggiornata solo dai webhook (Stripe è la fonte; noi leggiamo questa).
+-- current_period_start = acquisto o ultimo rinnovo, current_period_end = 12 mesi dopo. Annullare dal Customer
+-- Portal mette cancel_at_period_end = true: niente rinnovo, il prezzo membro vale fino a current_period_end.
 create table public.memberships (
   id                       uuid primary key default gen_random_uuid(),
   profile_id               uuid not null references public.profiles (id) on delete restrict,
@@ -470,9 +485,9 @@ create table public.order_items (
   order_id           uuid not null references public.orders (id) on delete cascade,
   ticket_type_id     uuid not null references public.ticket_types (id) on delete restrict,
   quantity           integer not null check (quantity between 1 and 50),
-  -- Ruolo applicato a questa riga. Prezzo membro solo sul biglietto del membro che compra: al massimo una riga
-  -- member per ordine (indice order_items_one_member_per_order), di quantità 1, intestata all'acquirente
-  -- (trigger order_items_member_rules). Accompagnatori e altri biglietti: righe public.
+  -- Ruolo applicato a questa riga. Prezzo membro solo sul biglietto del membro che compra: righe member di
+  -- quantità 1, intestate all'acquirente (trigger order_items_member_rules), al massimo una per membro, evento e
+  -- tipo anche su più ordini (member_price_claims). Accompagnatori e altri biglietti: righe public.
   price_role              public.price_role not null,
   list_unit_amount_cents  integer not null check (list_unit_amount_cents >= 0),  -- listino del ruolo
   unit_discount_cents     integer not null default 0 check (unit_discount_cents >= 0),
@@ -492,11 +507,13 @@ create table public.order_items (
   constraint order_items_member_qty_one check (price_role <> 'member' or quantity = 1)
 );
 create index order_items_order_idx on public.order_items (order_id);
--- Un solo biglietto a prezzo membro per ordine.
-create unique index order_items_one_member_per_order on public.order_items (order_id) where price_role = 'member';
+-- Il vecchio limite «un biglietto a prezzo membro per ordine» (indice order_items_one_member_per_order) è stato
+-- sostituito dal limite per membro, evento e tipo di member_price_claims (decisione di Giulio del 05/11/2026).
 
 -- La riga member deve essere intestata all'acquirente (stessa email) e l'acquirente deve essere membro
 -- secondo il ruolo fotografato nell'ordine. Se le righe si scrivono prima dell'ordine, l'insert fallisce: è voluto.
+-- Ordine, tipo di biglietto e ruolo di una riga non cambiano dopo l'insert (la prenotazione del prezzo membro
+-- è legata alla riga).
 create function public.order_items_member_rules() returns trigger
 language plpgsql
 set search_path = ''
@@ -505,6 +522,10 @@ declare
   v_role  public.price_role;
   v_email text;
 begin
+  if tg_op = 'UPDATE' and (new.order_id, new.ticket_type_id, new.price_role)
+                          is distinct from (old.order_id, old.ticket_type_id, old.price_role) then
+    raise exception 'order_item_frozen' using errcode = 'P0001';
+  end if;
   if new.price_role <> 'member' then
     return new;
   end if;
@@ -521,6 +542,84 @@ end;
 $$;
 create trigger order_items_member_rules before insert or update on public.order_items
   for each row execute function public.order_items_member_rules();
+
+-- Limite prezzo membro (decisione di Giulio del 05/11/2026): al massimo un biglietto a prezzo membro per membro,
+-- per evento e per tipo, anche su più ordini. Ogni riga member "prenota" la sua chiave:
+--   full_pass    -> (membro, evento, full_pass)               un pass intero per evento;
+--   day_pass     -> (membro, evento, day_pass, giorno)        un giornaliero per ciascun giorno;
+--   paid_session -> (membro, evento, paid_session, sessione)  uno per ciascuna sessione a pagamento.
+-- Due tipi di biglietto dello stesso genere (es. due giornalieri dello stesso giorno) contano come uno.
+-- La prenotazione è attiva (released_at null) finché l'ordine è pending, processing, paid o partially_refunded;
+-- si libera quando l'ordine diventa expired, failed, cancelled, needs_refund o refunded, oppure quando il
+-- biglietto a prezzo membro diventa cancelled o refunded. L'indice unico parziale impedisce la seconda anche con
+-- due checkout in parallelo (il secondo insert aspetta il primo e poi fallisce), senza lock espliciti.
+create table public.member_price_claims (
+  id              uuid primary key default gen_random_uuid(),
+  profile_id      uuid not null references public.profiles (id) on delete restrict,
+  event_id        uuid not null references public.events (id) on delete restrict,
+  kind            public.ticket_kind not null,
+  event_day_id    uuid references public.event_days (id) on delete restrict,
+  session_id      uuid references public.sessions (id) on delete restrict,
+  order_id        uuid not null references public.orders (id) on delete cascade,
+  order_item_id   uuid not null unique references public.order_items (id) on delete cascade,
+  created_at      timestamptz not null default now(),
+  released_at     timestamptz,
+  release_reason  text,
+  check (
+    (kind = 'full_pass'    and event_day_id is null     and session_id is null) or
+    (kind = 'day_pass'     and event_day_id is not null and session_id is null) or
+    (kind = 'paid_session' and event_day_id is null     and session_id is not null)
+  )
+);
+create unique index member_price_claims_one_active
+  on public.member_price_claims (profile_id, event_id, kind, event_day_id, session_id) nulls not distinct
+  where released_at is null;
+create index member_price_claims_order_idx on public.member_price_claims (order_id);
+
+create function public.order_items_claim_member_price() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.price_role <> 'member' then
+    return null;
+  end if;
+  begin
+    insert into public.member_price_claims (profile_id, event_id, kind, event_day_id, session_id, order_id, order_item_id)
+    select o.profile_id, o.event_id, t.kind,
+           case when t.kind = 'day_pass' then t.event_day_id end,
+           case when t.kind = 'paid_session' then t.session_id end,
+           o.id, new.id
+    from public.orders o
+    join public.ticket_types t on t.id = new.ticket_type_id
+    where o.id = new.order_id;
+  exception when unique_violation then
+    raise exception 'member_price_limit' using errcode = 'P0001',
+      detail = 'prezzo membro già usato per questo tipo di biglietto in questo evento';
+  end;
+  return null;
+end;
+$$;
+create trigger order_items_claim_member_price after insert on public.order_items
+  for each row execute function public.order_items_claim_member_price();
+
+-- Ordine chiuso senza biglietti validi: le sue prenotazioni del prezzo membro si liberano.
+create function public.orders_release_member_claims() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status in ('expired', 'failed', 'cancelled', 'needs_refund', 'refunded')
+     and new.status is distinct from old.status then
+    update public.member_price_claims
+       set released_at = now(), release_reason = 'ordine ' || new.status
+     where order_id = new.id and released_at is null;
+  end if;
+  return null;
+end;
+$$;
+create trigger orders_release_member_claims after update of status on public.orders
+  for each row execute function public.orders_release_member_claims();
 
 -- Riserva temporanea dei posti, una riga per (ordine, pool).
 -- expires_at = scadenza della Checkout Session + 5 minuti; null quando il pagamento è asincrono in corso.
@@ -546,6 +645,8 @@ create index capacity_holds_expiry_idx on public.capacity_holds (expires_at) whe
 -- Un biglietto per partecipante, nominativo.
 -- Il QR contiene id, evento e qr_version firmati con una chiave Ed25519 del server (la privata solo in env);
 -- le app di check-in hanno solo la pubblica. Cambiare nominativo incrementa qr_version e invalida il QR vecchio.
+-- Cambio nominativo = nuova email di chi partecipa (change_ticket_attendee): gratis fino a
+-- events.name_change_deadline_hours (48) prima dell'inizio dell'evento; mai sui biglietti a prezzo membro.
 create table public.tickets (
   id                   uuid primary key default gen_random_uuid(),
   event_id             uuid not null references public.events (id) on delete restrict,
@@ -573,10 +674,68 @@ create table public.tickets (
 create index tickets_order_idx on public.tickets (order_id);
 create index tickets_event_status_idx on public.tickets (event_id, status);
 create index tickets_attendee_profile_idx on public.tickets (attendee_profile_id) where attendee_profile_id is not null;
--- Seconda difesa: un solo biglietto a prezzo membro per ordine.
-create unique index tickets_one_member_per_order on public.tickets (order_id) where price_role = 'member';
+-- Il vecchio indice tickets_one_member_per_order (un biglietto membro per ordine) è stato tolto: ora un ordine
+-- può avere un pass e un workshop a prezzo membro. Il limite vive in member_price_claims.
 create trigger tickets_touch before update on public.tickets
   for each row execute function public.touch_updated_at();
+
+-- Inizio dell'evento per la scadenza del cambio nominativo: la prima sessione pubblicata; se non ce ne sono,
+-- la mezzanotte del primo giorno nel fuso dell'evento.
+create function public.event_starts_at(p_event_id uuid) returns timestamptz
+language sql stable
+set search_path = ''
+as $$
+  select coalesce(
+    (select min(s.starts_at) from public.sessions s where s.event_id = p_event_id and s.published),
+    (select e.starts_on::timestamp at time zone e.timezone from public.events e where e.id = p_event_id)
+  );
+$$;
+
+-- Regole sull'intestatario, per ogni scrittura (anche del server con service_role):
+--   - biglietto a prezzo membro: l'email non cambia mai (non si cede; il solo nome si corregge per i refusi);
+--   - altri biglietti: l'email cambia solo fino a name_change_deadline_hours prima dell'inizio dell'evento.
+-- Il solo nome (refuso) si può correggere sempre. La regola scelta è la più semplice: il biglietto a prezzo
+-- membro non si intesta a un altro, invece di "perde il prezzo membro" (che richiederebbe un pagamento).
+create function public.tickets_attendee_rules() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_hours integer;
+begin
+  if lower(new.attendee_email::text) is not distinct from lower(old.attendee_email::text) then
+    return new;
+  end if;
+  if old.price_role = 'member' then
+    raise exception 'member_ticket_not_transferable' using errcode = 'P0001';
+  end if;
+  select e.name_change_deadline_hours into v_hours from public.events e where e.id = new.event_id;
+  if now() > public.event_starts_at(new.event_id) - make_interval(hours => v_hours) then
+    raise exception 'name_change_deadline_passed' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+create trigger tickets_attendee_rules before update of attendee_name, attendee_email on public.tickets
+  for each row execute function public.tickets_attendee_rules();
+
+-- Il biglietto a prezzo membro annullato o rimborsato libera la sua prenotazione del prezzo membro.
+create function public.tickets_release_member_claim() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.price_role = 'member' and new.status in ('cancelled', 'refunded')
+     and new.status is distinct from old.status then
+    update public.member_price_claims
+       set released_at = now(), release_reason = 'biglietto ' || new.status
+     where order_item_id = new.order_item_id and released_at is null;
+  end if;
+  return null;
+end;
+$$;
+create trigger tickets_release_member_claim after update of status on public.tickets
+  for each row execute function public.tickets_release_member_claim();
 
 -- Prenotazione gratuita di una sessione included_booking con un biglietto valido.
 create table public.session_bookings (
@@ -633,6 +792,9 @@ create index checkins_event_idx on public.checkins (event_id, scanned_at);
 -- Rimborsi
 -- ---------------------------------------------------------------------------------------------------------
 
+-- Nessun rimborso self-service (decisione di Giulio del 05/11/2026, da far confermare alla catena legale):
+-- nessuna API o policy permette all'utente di chiederlo. Il rimborso è un'azione dell'admin (admin_panel) solo
+-- per evento annullato o per ordine pagato senza posti; il job automatico (automatic) solo per il secondo caso.
 -- Un rimborso chiesto dal pannello ha ticket_id e idempotency key; uno fatto dalla Dashboard Stripe
 -- arriva solo dal webhook (source = 'stripe_dashboard') e finisce nella coda "da riconciliare".
 create table public.refunds (
@@ -641,6 +803,8 @@ create table public.refunds (
   ticket_id         uuid references public.tickets (id) on delete set null,
   amount_cents      integer not null check (amount_cents > 0),
   currency          text not null default 'eur' check (currency ~ '^[a-z]{3}$'),
+  -- Obbligatoria per i rimborsi nati da noi; vuota per Dashboard e contestazioni (needs_review).
+  cause             public.refund_cause,
   reason            text,
   status            public.refund_status not null default 'requested',
   source            public.refund_source not null,
@@ -649,7 +813,9 @@ create table public.refunds (
   needs_review      boolean not null default false,
   requested_by      uuid references public.profiles (id) on delete set null,
   created_at        timestamptz not null default now(),
-  updated_at        timestamptz not null default now()
+  updated_at        timestamptz not null default now(),
+  check (source in ('stripe_dashboard', 'dispute') or cause is not null),
+  check (source <> 'automatic' or cause = 'paid_without_capacity')
 );
 create index refunds_order_idx on public.refunds (order_id);
 create index refunds_review_idx on public.refunds (created_at) where needs_review;
@@ -769,8 +935,8 @@ $$;
 
 -- Ruoli di prezzo a cui la persona ha diritto nell'istante p_at. 'public' c'è sempre.
 -- Membro: subscription active o trialing con periodo in corso. past_due NON vale (domanda aperta).
--- Il prezzo membro vale solo per il biglietto del membro che compra (una riga, quantità 1): gli altri biglietti
--- dell'ordine sono a prezzo public anche se l'acquirente è membro.
+-- Il prezzo membro vale solo per i biglietti del membro che compra (righe di quantità 1, al massimo una per
+-- evento e tipo, vedi member_price_claims): gli altri biglietti dell'ordine sono a prezzo public.
 create function public.price_roles_for(p_profile_id uuid, p_at timestamptz default now())
 returns public.price_role[]
 language sql stable security definer
@@ -787,8 +953,8 @@ as $$
   ], null);
 $$;
 
--- Prezzo migliore per un tipo di biglietto tra i ruoli ammessi, all'istante dato. Per il biglietto del membro
--- si passa {public,member}; per tutti gli altri biglietti dell'ordine solo {public}.
+-- Prezzo migliore per un tipo di biglietto tra i ruoli ammessi, all'istante dato. Per i biglietti del membro
+-- senza prenotazione attiva per quel tipo si passa {public,member}; per tutti gli altri solo {public}.
 create function public.best_price(p_ticket_type_id uuid, p_roles public.price_role[], p_at timestamptz default now())
 returns table (ticket_price_id uuid, price_role public.price_role, amount_cents integer)
 language sql stable
@@ -835,7 +1001,8 @@ $$;
 -- Mette in riserva posti e utilizzo del codice sconto di un ordine 'pending', in un'unica transazione.
 -- p_session_expires_at è l'expires_at che il server passerà a Stripe: almeno 30 minuti (minimo di Stripe);
 -- la riserva dura 5 minuti in più. Errori: hold_too_short, order_not_pending, already_reserved,
--- member_price_not_allowed, too_many_for_pool, sold_out, discount_exhausted, discount_user_limit.
+-- member_price_not_allowed, member_price_limit, too_many_for_pool, sold_out, discount_exhausted,
+-- discount_user_limit.
 -- In caso di errore non si crea la sessione.
 create function public.reserve_order(p_order_id uuid, p_session_expires_at timestamptz)
 returns void
@@ -862,6 +1029,14 @@ begin
   if exists (select 1 from public.order_items oi where oi.order_id = p_order_id and oi.price_role = 'member')
      and not ('member'::public.price_role = any (public.price_roles_for(v_order.profile_id, p_session_expires_at))) then
     raise exception 'member_price_not_allowed' using errcode = 'P0001';
+  end if;
+  -- Ricontrollo del limite per membro, evento e tipo: ogni riga member deve avere la sua prenotazione attiva
+  -- in member_price_claims (l'indice unico parziale garantisce che sia l'unica per quella chiave).
+  if exists (select 1 from public.order_items oi
+             where oi.order_id = p_order_id and oi.price_role = 'member'
+               and not exists (select 1 from public.member_price_claims c
+                               where c.order_item_id = oi.id and c.released_at is null)) then
+    raise exception 'member_price_limit' using errcode = 'P0001';
   end if;
 
   for r in select * from public.order_pool_needs(p_order_id) loop
@@ -1025,6 +1200,7 @@ declare
   r         record;
   h         record;
   i         record;
+  c         record;
   k         integer;
 begin
   select * into v_order from public.orders where id = p_order_id for update;
@@ -1097,6 +1273,23 @@ begin
     values ('system', 'order.paid_without_capacity', 'order', p_order_id::text,
             jsonb_build_object('previous_status', v_order.status));
     return 'needs_refund';
+  end if;
+
+  -- Pagamento tardivo: le prenotazioni del prezzo membro si erano liberate con l'ordine e si riprendono. Se nel
+  -- frattempo il membro ha già un biglietto a prezzo membro dello stesso tipo, i soldi sono già incassati: il
+  -- biglietto si emette lo stesso e l'admin riceve un avviso (come per i codici sconto oltre il limite).
+  if v_late then
+    for c in select id from public.member_price_claims
+             where order_id = p_order_id and released_at is not null order by id loop
+      begin
+        update public.member_price_claims set released_at = null, release_reason = null where id = c.id;
+      exception when unique_violation then
+        insert into public.jobs (kind, payload, dedupe_key)
+        values ('admin.alert', jsonb_build_object('order_id', p_order_id, 'reason', 'member_price_limit_late'),
+                'alert-member-limit:' || p_order_id)
+        on conflict (dedupe_key) do nothing;
+      end;
+    end loop;
   end if;
 
   -- Codice sconto: se l'utilizzo era stato restituito alla scadenza, si riconta (pagamento già incassato).
@@ -1204,6 +1397,43 @@ begin
 end;
 $$;
 
+-- Cambio nominativo gratuito (decisione di Giulio del 05/11/2026). La chiama il server dopo aver verificato che
+-- chi chiede è l'acquirente. Scadenza e divieto per i biglietti a prezzo membro li controlla il trigger
+-- tickets_attendee_rules (errori name_change_deadline_passed, member_ticket_not_transferable).
+-- Il numero massimo di cambi (2) è ancora una proposta: non è applicato qui.
+create function public.change_ticket_attendee(p_ticket_id uuid, p_name text, p_email text, p_actor_id uuid)
+returns integer
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_ticket public.tickets%rowtype;
+begin
+  select * into v_ticket from public.tickets where id = p_ticket_id for update;
+  if not found or v_ticket.status <> 'valid' then
+    raise exception 'ticket_not_valid' using errcode = 'P0001';
+  end if;
+  if lower(p_email) = lower(v_ticket.attendee_email::text) then
+    raise exception 'same_attendee' using errcode = 'P0001';
+  end if;
+  update public.tickets
+     set attendee_name = p_name,
+         attendee_email = p_email,
+         attendee_profile_id = (select p.id from public.profiles p where lower(p.email::text) = lower(p_email)),
+         qr_version = qr_version + 1,
+         name_changes_count = name_changes_count + 1
+   where id = p_ticket_id;
+  insert into public.audit_log (actor_id, actor_type, action, entity_type, entity_id, data)
+  values (p_actor_id, 'user', 'ticket.name_changed', 'ticket', p_ticket_id::text,
+          jsonb_build_object('qr_version', v_ticket.qr_version + 1));
+  insert into public.jobs (kind, payload, dedupe_key)
+  values ('email.ticket_reissued', jsonb_build_object('ticket_id', p_ticket_id),
+          'ticket-reissued:' || p_ticket_id || ':' || (v_ticket.qr_version + 1))
+  on conflict (dedupe_key) do nothing;
+  return v_ticket.qr_version + 1;
+end;
+$$;
+
 -- Le funzioni che spostano posti, soldi o biglietti le esegue solo il server (service_role).
 -- In Postgres EXECUTE è di PUBLIC per default: va tolto esplicitamente.
 revoke execute on function public.new_short_code() from public;
@@ -1217,6 +1447,12 @@ revoke execute on function public.stale_pending_orders(integer) from public;
 revoke execute on function public.book_session(uuid, uuid) from public;
 revoke execute on function public.price_roles_for(uuid, timestamptz) from public;
 revoke execute on function public.order_items_member_rules() from public;
+revoke execute on function public.order_items_claim_member_price() from public;
+revoke execute on function public.orders_release_member_claims() from public;
+revoke execute on function public.tickets_attendee_rules() from public;
+revoke execute on function public.tickets_release_member_claim() from public;
+revoke execute on function public.change_ticket_attendee(uuid, text, text, uuid) from public;
+grant execute on function public.change_ticket_attendee(uuid, text, text, uuid) to service_role;
 grant execute on function public.reserve_order(uuid, timestamptz) to service_role;
 grant execute on function public.close_unpaid_order(uuid, public.order_status, text) to service_role;
 grant execute on function public.mark_order_processing(uuid, text) to service_role;
@@ -1252,6 +1488,7 @@ alter table public.discount_codes             enable row level security;
 alter table public.discount_code_ticket_types enable row level security;
 alter table public.orders                     enable row level security;
 alter table public.order_items                enable row level security;
+alter table public.member_price_claims        enable row level security;
 alter table public.capacity_holds             enable row level security;
 alter table public.tickets                    enable row level security;
 alter table public.session_bookings           enable row level security;
@@ -1396,6 +1633,8 @@ create policy checkins_staff_read on public.checkins for select to authenticated
 -- Tabelle tecniche: nessuna policy per anon/authenticated (solo service_role), tranne la lettura admin.
 create policy capacity_holds_admin_read on public.capacity_holds for select to authenticated
   using (public.is_admin());
+create policy member_price_claims_admin_read on public.member_price_claims for select to authenticated
+  using (public.is_admin());
 create policy stripe_events_admin_read on public.stripe_events for select to authenticated
   using (public.is_admin());
 create policy jobs_admin_read on public.jobs for select to authenticated
@@ -1407,7 +1646,7 @@ create policy audit_log_admin_read on public.audit_log for select to authenticat
 -- Difesa in profondità: anon non ha privilegi sulle tabelle con dati personali o tecnici,
 -- anche se un giorno qualcuno aggiungesse per errore una policy troppo larga.
 revoke all on public.profiles, public.user_roles, public.memberships,
-              public.orders, public.order_items, public.capacity_holds, public.tickets,
+              public.orders, public.order_items, public.member_price_claims, public.capacity_holds, public.tickets,
               public.session_bookings, public.waitlist_entries, public.checkins, public.refunds,
               public.stripe_events, public.jobs, public.audit_log, public.rate_limits,
               public.discount_codes, public.discount_code_ticket_types, public.capacity_pools,

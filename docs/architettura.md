@@ -140,7 +140,7 @@ Il ruolo studente è stato tolto per decisione di Giulio del 05/11/2026; lo sche
 |---|---|---|
 | Visitatore | Nessun login | Leggere eventi pubblicati, agenda, speaker, prezzi (anche quelli membro) |
 | Utente registrato | Login con codice email | Comprare a prezzo pubblico, vedere i propri ordini e biglietti, cambiare nominativo entro la scadenza, prenotare sessioni incluse, comprare la membership |
-| Membro | Membership `active` o `trialing` con periodo in corso | Come sopra, più il prezzo membro su **un solo** biglietto per ordine, intestato a sé (decisione di Giulio del 05/11/2026) |
+| Membro | Membership `active` o `trialing` con periodo in corso (12 mesi dall'acquisto, rinnovo automatico) | Come sopra, più il prezzo membro sui biglietti intestati a sé: al massimo uno per evento e per tipo (un pass intero, un giornaliero per ciascun giorno, uno per ciascuna sessione a pagamento), anche su più ordini (decisioni di Giulio del 05/11/2026) |
 | Staff check-in | `user_roles.role = 'checkin_staff'`, eventualmente limitato a un evento | Usare la PWA di check-in di quell'evento; vedere nome e tipo dei biglietti di quell'evento |
 | Admin | `user_roles.role = 'admin'`, con TOTP attivo | Tutto il pannello; ogni scrittura richiede sessione `aal2` e finisce nel registro audit |
 
@@ -152,16 +152,26 @@ Il ruolo studente è stato tolto per decisione di Giulio del 05/11/2026; lo sche
    - calcola i ruoli ammessi con `price_roles_for(profile_id, at)` dove **`at` è la scadenza della Checkout
      Session** (adesso + 30 minuti): il ruolo deve valere per tutta la finestra di pagamento;
    - applica la regola **decisa da Giulio il 05/11/2026** «prezzo membro solo sul biglietto del membro che
-     compra»: se l'acquirente è membro, **al massimo un** biglietto dell'ordine va a prezzo membro
-     (`best_price` con `{public, member}`), con quantità 1 e intestato a lui (nome ed email del profilo, non
-     modificabili nel carrello); tutti gli altri biglietti, accompagnatori compresi, vanno a prezzo pubblico
-     (`best_price` con `{public}`). Se l'ordine ha più biglietti per il membro stesso (es. pass e workshop), il
-     prezzo membro va su quello con lo sconto maggiore (**proposta**);
-   - la regola ha tre difese nel database (provate su Postgres 16 `[sure]`): `CHECK` quantità 1 sulle righe
-     `member`, indice unico `order_items_one_member_per_order`, trigger `order_items_member_rules` (ordine con
-     ruolo `member` e primo nominativo uguale all'email dell'acquirente); in più `reserve_order` ricontrolla la
-     membership fino alla scadenza della sessione (`member_price_not_allowed`) e `tickets` ha l'indice unico
-     `tickets_one_member_per_order`;
+     compra»: se l'acquirente è membro, i **suoi** biglietti vanno a prezzo membro (`best_price` con
+     `{public, member}`), con quantità 1 e intestati a lui (nome ed email del profilo, non modificabili nel
+     carrello); tutti gli altri biglietti, accompagnatori compresi, vanno a prezzo pubblico (`best_price` con
+     `{public}`);
+   - applica il **limite deciso da Giulio il 05/11/2026**: al massimo un biglietto a prezzo membro per membro,
+     per evento e per tipo, anche su più ordini (un pass intero, un giornaliero per ciascun giorno, uno per
+     ciascuna sessione a pagamento). Contano gli ordini `pending`, `processing`, `paid` e `partially_refunded`
+     (le riserve attive contano: niente due checkout in parallelo); non contano quelli `expired`, `failed`,
+     `cancelled`, `needs_refund`, `refunded` né i biglietti a prezzo membro `cancelled` o `refunded`. Se il
+     membro ha già usato il prezzo membro per quel tipo, il nuovo biglietto è a prezzo pubblico, con una riga
+     che lo spiega;
+   - le difese nel database (provate su Postgres 16 il 05/11/2026 `[sure]`): `CHECK` quantità 1 sulle righe
+     `member`, trigger `order_items_member_rules` (ordine con ruolo `member` e primo nominativo uguale all'email
+     dell'acquirente), tabella `member_price_claims` con indice unico parziale
+     `member_price_claims_one_active` su (membro, evento, tipo, giorno, sessione) per le prenotazioni attive,
+     riempita da un trigger su `order_items` (errore `member_price_limit`) e liberata da trigger su `orders` e
+     `tickets`; in più `reserve_order` ricontrolla la membership fino alla scadenza della sessione
+     (`member_price_not_allowed`) e la prenotazione di ogni riga `member` (`member_price_limit`). Pagamento
+     tardivo di un ordine scaduto quando il membro ha già ricomprato lo stesso tipo: il biglietto si emette
+     (soldi già incassati) e l'admin riceve l'avviso `member_price_limit_late`;
    - valida l'eventuale codice sconto e calcola lo sconto riga per riga (§4.4);
    - se l'utente ha già un ordine `pending` (è tornato al carrello), chiama `expire` sulla Checkout Session
      precedente e chiude quell'ordine; se Stripe risponde che la sessione è già pagata, la conferma invece di
@@ -195,7 +205,7 @@ possibile in Stripe `[likely]` ma complica riserve, rimborsi e fatture: **propos
 | Oggetto | Uso |
 |---|---|
 | Customer | Uno per profilo, creato dal server al primo acquisto, id in `profiles.stripe_customer_id` |
-| Product e Price | Solo per la membership: un Product e un Price ricorrente (annuale, **proposta**) in `membership_plans.stripe_price_id`. Servono al Customer Portal. Per i biglietti nessun Product salvato: la riga nasce da `price_data.product_data` |
+| Product e Price | Solo per la membership: un Product e un Price ricorrente annuale (12 mesi dall'acquisto, rinnovo automatico: decisione di Giulio del 05/11/2026) in `membership_plans.stripe_price_id`. Servono al Customer Portal. Per i biglietti nessun Product salvato: la riga nasce da `price_data.product_data` |
 | Checkout Session | `mode=payment` per i biglietti, `mode=subscription` per la membership |
 | Coupon e Promotion Code | **Non usati per i biglietti** (§4.4). Eventualmente solo per uno sconto sulla membership |
 | Billing Portal Session | Gestione della membership da parte del membro |
@@ -251,7 +261,7 @@ Da verificare: se `product_data` in linea lascia prodotti nell'elenco Stripe e q
 ### 4.4 Codici sconto e cumulo con il prezzo di ruolo
 
 Checkout accetta **un solo coupon per sessione** e un coupon limitato a un prodotto non distingue due righe dello
-stesso prodotto `[likely]`. Con il prezzo membro su un solo biglietto, lo stesso tipo di biglietto compare in una
+stesso prodotto `[likely]`. Con il prezzo membro solo sui biglietti del membro, lo stesso tipo di biglietto compare in una
 riga membro (quella dell'acquirente) e in una riga pubblica (gli altri): la regola riga per riga quindi non si
 esprime con i Coupon. Per questo:
 
@@ -272,8 +282,8 @@ prezzo di ruolo; tutte le altre partono dal prezzo pubblico:
 
 | Riga | Prezzo di partenza | Codice con `combinable_with_role_price = false` (default) | Codice con `true` (codici speciali, es. speaker o partner) |
 |---|---|---|---|
-| Biglietto del membro che compra (una sola, quantità 1, intestata a lui) | Prezzo membro | Il più basso tra prezzo membro e prezzo pubblico − codice, mai entrambi. Se vince il codice la riga diventa `public` scontata | Prezzo membro − codice |
-| Altri biglietti dell'ordine di un membro (accompagnatori, o un suo secondo biglietto) | Prezzo pubblico | Prezzo pubblico − codice | Prezzo pubblico − codice |
+| Biglietto del membro che compra (quantità 1, intestato a lui, al massimo uno per evento e tipo) | Prezzo membro | Il più basso tra prezzo membro e prezzo pubblico − codice, mai entrambi. Se vince il codice la riga diventa `public` scontata | Prezzo membro − codice |
+| Altri biglietti dell'ordine di un membro (accompagnatori, o un suo secondo biglietto dello stesso tipo, anche da un ordine precedente) | Prezzo pubblico | Prezzo pubblico − codice | Prezzo pubblico − codice |
 | Biglietti di un non membro | Prezzo pubblico | Prezzo pubblico − codice | Prezzo pubblico − codice |
 
 Se il codice non abbassa nessuna riga (es. ordine con il solo biglietto del membro e prezzo membro più basso), non
@@ -285,8 +295,12 @@ viene consumato e l'utente lo vede scritto.
   `subscription_data.metadata = { profile_id }`.
 - Prima di creare la sessione il server controlla che non ci sia già una membership attiva; se c'è, rimanda al
   Customer Portal.
+- **Durata (decisione di Giulio del 05/11/2026):** 12 mesi dall'acquisto (`current_period_end`), rinnovo
+  automatico alla scadenza, annullamento dal Customer Portal Stripe. Annullare ferma il rinnovo
+  (`cancel_at_period_end = true`): il prezzo membro vale fino a fine periodo, senza rimborso della quota
+  (da far confermare alla catena legale, come i rimborsi dei biglietti).
 - **Customer Portal** (sessione creata dal server con `return_url` all'area personale): aggiornare il metodo di
-  pagamento, vedere le fatture, annullare a fine periodo. Cambio piano disattivato finché c'è un solo piano.
+  pagamento, vedere le fatture, annullare il rinnovo (a fine periodo). Cambio piano disattivato finché c'è un solo piano.
 - `memberships` è una copia locale aggiornata solo dai webhook. Il sito **legge solo questa** (regola 2): Stripe
   resta la fonte, la riconciliazione giornaliera confronta.
 - Nelle versioni recenti dell'API Stripe le date del periodo sono state spostate dalla subscription alle sue voci
@@ -353,7 +367,11 @@ Job giornaliero (e manuale dal pannello):
 
 ### 4.8 Rimborsi e cambio nominativo
 
-**Rimborsi (proposta):** si fanno solo dal pannello admin.
+**Rimborsi (decisione di Giulio del 05/11/2026, da far confermare alla catena legale):** nessun rimborso
+self-service: l'area personale non ha richieste di rimborso e nessuna API le accetta. Il rimborso resta solo come
+azione dell'admin in due casi: **evento annullato** e **ordine pagato senza posti** (`needs_refund`, di solito
+già rimborsato dal job automatico). `refunds.cause` è obbligatoria (`event_cancelled` o `paid_without_capacity`)
+per i rimborsi nati da noi (`source` `admin_panel` o `automatic`). Dal pannello admin:
 
 1. L'admin sceglie i biglietti; il server calcola l'importo (prezzo pagato meno la quota di sconto) e crea il
    Refund sul PaymentIntent con `metadata = { order_id, ticket_ids, refund_id }` e Idempotency-Key
@@ -368,14 +386,19 @@ job `stripe.refund_full`: il worker crea il Refund dell'intero PaymentIntent con
 Nella prima versione (§11) il pannello rimborsi non c'è: l'admin rimborsa dalla Dashboard Stripe e il webhook
 registra il rimborso (rimborso totale → biglietti `refunded`; parziale → coda «da riconciliare»).
 
-Le commissioni Stripe di un pagamento rimborsato non vengono restituite `[likely]`: è un costo. La politica di
-rimborso verso i consumatori è una domanda legale aperta, rimandata per decisione di Giulio del 05/11/2026 alla
-catena legale-fiscale dopo questa fase, prima dello sviluppo.
+Le commissioni Stripe di un pagamento rimborsato non vengono restituite `[likely]`: è un costo. La regola
+«nessun rimborso, cambio nominativo gratuito» va fatta confermare alla catena legale-fiscale (condizioni di
+vendita, diritti dei consumatori), come deciso da Giulio il 05/11/2026, prima dello sviluppo.
 
-**Cambio nominativo:** dall'area personale, entro `events.name_change_deadline_hours` dall'inizio. Incrementa
-`qr_version` (il QR vecchio non vale più), manda il biglietto al nuovo partecipante, scrive nel registro audit,
-massimo 2 cambi per biglietto (**proposta**). Il biglietto a prezzo membro non è cedibile: è intestato al membro
-che lo ha comprato (decisione di Giulio del 05/11/2026); si correggono solo errori di battitura tramite admin. Stripe non è coinvolto.
+**Cambio nominativo (decisione di Giulio del 05/11/2026):** gratuito, fino a 48 ore prima dell'inizio
+dell'evento (`events.name_change_deadline_hours = 48`; inizio = prima sessione pubblicata, `event_starts_at`).
+Cambio nominativo = nuova email di chi partecipa, con `change_ticket_attendee`: incrementa `qr_version` (il QR
+vecchio non vale più), manda il biglietto al nuovo partecipante, scrive nel registro audit; massimo 2 cambi per
+biglietto (**proposta**, non ancora applicata nel database). Vincolo lato server: il trigger
+`tickets_attendee_rules` rifiuta ogni cambio di email dopo la scadenza (`name_change_deadline_passed`), anche se
+la scrittura arriva dal server o dall'admin. **Regola scelta per il biglietto a prezzo membro:** non si intesta
+mai a un altro (`member_ticket_not_transferable`), invece di fargli perdere il prezzo membro, che richiederebbe un
+pagamento della differenza. Il solo nome si può correggere sempre (refusi). Stripe non è coinvolto.
 
 ### 4.9 Test e produzione
 
@@ -455,6 +478,14 @@ Il vincolo `CHECK (held + confirmed <= capacity)` resta l'ultima difesa.
 | 3 posti chiesti su un pool con limite 2 per ordine | 🟢 rifiutata (`too_many_for_pool`) |
 | Due consegne parallele dello stesso webhook | 🟢 la prima `paid`, la seconda aspetta il lock ed esce con `already_done`; 2 biglietti, non 4 |
 | Codice sconto con un solo utilizzo: contato alla riserva, restituito alla scadenza | 🟢 |
+| Limite prezzo membro (05/11/2026): secondo pass intero a prezzo membro in un secondo ordine | 🟢 rifiutato (`member_price_limit`) |
+| Stesso giornaliero a prezzo membro con il primo ordine ancora `processing` (riserva attiva) | 🟢 rifiutato (`member_price_limit`) |
+| Giornaliero a prezzo membro per due giorni diversi | 🟢 ammessi entrambi |
+| Primo ordine annullato, poi nuovo pass intero a prezzo membro | 🟢 ammesso (prenotazione liberata dal trigger) |
+| Pagamento tardivo di un ordine scaduto dopo un nuovo pass membro | 🟢 `paid_late`, una sola prenotazione attiva, avviso `member_price_limit_late` |
+| Cambio nominativo a 47 ore dall'inizio / a 49 ore | 🟢 rifiutato (`name_change_deadline_passed`) / ammesso |
+| Cambio nominativo di un biglietto a prezzo membro / correzione del solo nome | 🟢 rifiutato (`member_ticket_not_transferable`) / ammessa |
+| Rimborso admin senza causa / con «evento annullato» | 🟢 rifiutato dal `CHECK` / ammesso |
 
 ### 5.3 Lista d'attesa (opzionale)
 
@@ -617,7 +648,7 @@ rimandare senza riscrivere nulla dopo.
 | Capienza garantita dal database (`reserve_order`, vincolo `CHECK`, rilascio solo con conferma di Stripe) | Un posto venduto due volte non si ripara a mano |
 | Conferma idempotente (`mark_order_paid` con lock, riprenotazione, `needs_refund` e rimborso automatico) | Biglietti doppi o pagamenti senza posto sono gli errori più cari |
 | Membership con Stripe Billing e Customer Portal | Decisione di Giulio; il prezzo membro dipende da questa |
-| Prezzo membro calcolato lato server su un solo biglietto per ordine, codici sconto nel prezzo | Decisione di Giulio |
+| Prezzo membro calcolato lato server, al massimo uno per membro, evento e tipo; codici sconto nel prezzo | Decisione di Giulio |
 | Biglietti nominativi con QR firmato | Servono comunque per l'ingresso |
 
 | Si taglia | Al suo posto, per ora | Quando rimetterlo |
@@ -647,7 +678,8 @@ Lo schema dati resta quello completo: le tabelle delle parti tagliate restano vu
 - 🟡 Picco all'apertura vendite: limite di 100 email al giorno sul piano Free di Resend; bot sul checkout. `[uncertain]`
 - 🟡 Costi fissi superiori alle commissioni sotto le 1.000 persone all'anno.
 - 🟡 Tutto su misura (decisione di Giulio): sviluppo più lungo di una piattaforma pronta come pretix, che copre già gran parte della biglietteria. [likely]
-- 🟡 Il limite di un biglietto a prezzo membro vale per ordine: con più ordini un membro può comprare a prezzo membro più biglietti per sé (non cedibili). [likely]
+- 🟡 Limite prezzo membro per membro, evento e tipo: un pagamento tardivo di un ordine scaduto può dare al membro un secondo biglietto dello stesso tipo a prezzo membro (soldi già incassati); l'admin riceve un avviso e decide. Provato con dati finti. `[sure]`
+- 🟡 «Nessun rimborso» e quota della membership non rimborsata all'annullamento: da far confermare alla catena legale prima di scrivere le condizioni di vendita. `[uncertain]`
 - 🟢 Overselling e biglietti doppi: impediti da vincolo, lock sull'ordine e riprenotazione; provati in locale con dati finti, compreso il caso del bug. `[sure]`
 
 ---
@@ -659,15 +691,16 @@ fase, prima dello sviluppo.
 
 1. **Fisco:** regime IVA di biglietti e membership, Stripe Tax sì o no, fattura elettronica, eventuale obbligo di
    biglietteria. Va alla catena `catena-legale-fiscale`.
-2. **Rimborsi e condizioni di vendita:** politica verso i partecipanti (fino a quando, quanto, chi paga le
-   commissioni). Anche legale.
-3. **Prezzo membro su più biglietti propri:** un membro che compra per sé pass e workshop nello stesso ordine ne ha
-   uno solo a prezzo membro, ma con due ordini li avrebbe entrambi. Va bene così, o il limite diventa uno per tipo
-   di biglietto ed evento (controllo del server su tutti gli ordini)?
-4. **Membership:** durata e rinnovo (annuale?), prezzo, tolleranza di 24 ore sul rinnovo, `past_due` vale come membro?
+2. ~~**Rimborsi e condizioni di vendita:** politica verso i partecipanti.~~ **Decisa il 05/11/2026:** nessun
+   rimborso self-service, cambio nominativo gratuito fino a 48 ore prima; rimborso solo dall'admin per evento
+   annullato o pagato senza posti (§4.8). Resta da far confermare alla catena legale con le condizioni di vendita.
+3. ~~**Prezzo membro su più biglietti propri** con due ordini.~~ **Decisa il 05/11/2026:** al massimo un biglietto
+   a prezzo membro per membro, per evento e per tipo, anche su più ordini (§3.1).
+4. **Membership:** ~~durata e rinnovo~~ (**decisi il 05/11/2026:** 12 mesi dall'acquisto, rinnovo automatico,
+   annullamento dal Customer Portal); restano prezzo, tolleranza di 24 ore sul rinnovo, `past_due` vale come membro?
 5. **Codici sconto:** cumulo con il prezzo membro vietato di default (proposta: sulla riga del membro si applica il
    migliore dei due, le altre righe pubbliche ricevono il codice, §4.4)?
-6. **Cambio nominativo:** fino a quante ore prima e quante volte?
+6. **Cambio nominativo:** ~~fino a quante ore prima~~ (48, deciso il 05/11/2026); resta: quante volte (proposta 2)?
 7. **Metodi di pagamento:** escludere l'addebito SEPA e gli altri metodi a notifica differita per i biglietti?
 8. **Lista d'attesa:** serve dal primo evento?
 9. **Più organizzatori in futuro:** aggiungere già ora la tabella `organizations`?

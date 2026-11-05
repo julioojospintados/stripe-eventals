@@ -106,8 +106,8 @@
         idx.map(function (i) { return '<label class="scelta"><input type="checkbox" value="' + i + '" checked><span>' + o.righe[i].t + ' · <b>' + e(quota(o, o.righe[i])) + '</b></span></label>'; }).join('') + '</fieldset>' +
         '<p class="t-small t-muted">L’importo è il prezzo pagato meno la quota di sconto.</p>' +
         '<label class="scelta"><input type="checkbox" id="rimetti" checked><span>Rimetti in vendita i posti liberati</span></label>' +
-        '<div class="campo"><label for="motivo">Motivo</label><select class="select" id="motivo"><option value="">Scegli…</option><option>Richiesta del cliente</option><option>Evento annullato</option><option>Errore nell’ordine</option><option>Altro</option></select></div>' +
-        '<div class="campo"><label for="nota-r">Nota interna (obbligatoria se il motivo è «Altro»)</label><textarea class="textarea" id="nota-r"></textarea></div>' +
+        '<div class="campo"><label for="motivo">Motivo</label><select class="select" id="motivo"><option value="">Scegli…</option><option>Evento annullato</option><option>Pagato senza posti</option></select></div>' +
+        '<div class="campo"><label for="nota-r">Nota interna</label><textarea class="textarea" id="nota-r"></textarea></div>' +
         '<div id="er-rimb" role="alert" aria-live="assertive"></div>' +
         '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Continua</button><button type="button" class="btn btn--quiet" id="chiudi-rimb">Annulla</button></div></form></section>';
       $('#rimborso').innerHTML = h; $('#h-rimb').focus();
@@ -118,7 +118,6 @@
         var mot = $('#motivo').value;
         if (!sel.length) er.push('Scegli almeno un biglietto da rimborsare.');
         if (!mot) er.push('Scegli il motivo del rimborso.');
-        if (mot === 'Altro' && !$('#nota-r').value.trim()) er.push('Con il motivo «Altro» la nota interna è obbligatoria.');
         if (er.length) { $('#er-rimb').innerHTML = '<div class="riepilogo-errori"><ul>' + er.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul></div>'; return; }
         $('#er-rimb').innerHTML = '';
         var tot = sel.reduce(function (a, i) { return a + quota(o, o.righe[i]); }, 0), rimetti = $('#rimetti').checked;

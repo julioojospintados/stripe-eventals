@@ -47,7 +47,7 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Le mie prenotazioni | Sessioni incluse prenotate, annulla, lista d'attesa |
 | Il mio programma | Sessioni scelte in ordine di orario, sovrapposizioni segnalate |
 | Membership | Stato, scadenza, rinnovo automatico, disdetta, fatture |
-| Ordini e ricevute | Elenco ordini, ricevute, richiesta di rimborso |
+| Ordini e ricevute | Elenco ordini, ricevute; nessuna richiesta di rimborso (decisione del 05/11/2026): al suo posto il cambio nominativo gratuito fino a 48 ore prima |
 | Profilo | Dati, email, lingua, esigenze di accessibilità, cancellazione account |
 
 ### 2.3 Admin (organizzatore)
@@ -176,10 +176,10 @@ Convenzione: **Sistema** è ciò che risponde; **Se…** è un ramo di errore o 
 | **Pagamento fallito** | Titolo «Il pagamento non è andato a buon fine», avviso rosso `role="alert"`, «Non ti abbiamo addebitato nulla», bottoni «Riprova» e «Torna al riepilogo» | L'ordine resta aperto |
 | **Pagamento in elaborazione** | «Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.» | La conferma arriva dal webhook di Stripe; la pagina non dichiara il successo da sola |
 | **Pagamento annullato** | «Non ti abbiamo addebitato nulla», ordine ancora recuperabile | Posti delle sessioni a pagamento tenuti per un tempo da definire |
-| **Rimborso** | In «Ordini»: stato «Rimborsato» con data e importo; il biglietto passa a «Non valido»; email di conferma | Si avvia da admin su Stripe; il check-in rifiuta il codice; i posti tornano disponibili. Regole su termini e importi: consulenza legale |
+| **Rimborso** | In «Ordini»: stato «Rimborsato» con data e importo; il biglietto passa a «Non valido»; email di conferma | Solo dall'admin, solo per evento annullato o pagato senza posti (decisione del 05/11/2026, da far confermare alla catena legale); il check-in rifiuta il codice; i posti tornano disponibili |
 | **Codice sconto** | Messaggi del paragrafo 4.5 | Controllo lato server |
 | **Due sessioni sovrapposte** | Avviso giallo che nomina entrambe | Non blocca |
-| **Doppio acquisto** (stesso pass due volte) | Avviso «hai già un pass» sopra l'ordine | Non blocca |
+| **Doppio acquisto** (stesso pass due volte) | Avviso «hai già un pass» sopra l'ordine | Non blocca; il secondo biglietto dello stesso tipo per sé è a prezzo pubblico (un prezzo membro per evento e tipo, anche su ordini diversi) |
 | **Account non connesso a metà ordine** | L'ordine si conserva e si riprende dopo l'accesso | — |
 | **Tempo scaduto** (posti tenuti) | Messaggio con bottone «Riprova» | Da decidere insieme alla durata |
 | **Dato mancante** (orari porte, accessibilità sede, contatti) | «Da definire» o «da confermare» scritto | Niente invenzioni |
@@ -264,7 +264,7 @@ File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. 
 | Scheda | Cosa fa | Casi coperti |
 |---|---|---|
 | I miei biglietti | Un biglietto per persona con QR nero su bianco, codice breve a 8 caratteri, stato, PDF e wallet (simulati) | Valido, rimborsato (QR sostituito dal testo «QR revocato»). Il QR non contiene il nome. L'importo pagato dice se era prezzo membro o pubblico |
-| Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, massimo 2 cambi | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; limite cambi raggiunto; errori sui campi |
+| Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, gratis fino a 48 ore prima dell'inizio, massimo 2 cambi (proposta) | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; meno di 48 ore all'inizio; limite cambi raggiunto; errori sui campi |
 | La mia agenda | Sessioni prenotate e a pagamento per giorno | Orari sovrapposti: avviso che nomina le due sessioni e offre «Annulla la prenotazione» solo dove è gratis; sessioni a pagamento in conflitto: nessun annullamento, rimando all'organizzazione |
 | Membership | Stato, scadenza, rinnovo, apertura del portale clienti Stripe (simulato in pagina) | Nessuna, attiva, disdetta a fine periodo, pagamento fallito (non vale come membro, regola proposta), scaduta con «Rinnova» |
 | Ordini e ricevute | Elenco con stato e ricevuta | Pagato, in elaborazione («non pagare di nuovo»), non riuscito e scaduto (con «Riprova»), rimborsato |
@@ -284,7 +284,7 @@ Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle 
 | Biglietti e prezzi | Matrice tipo × due ruoli (pass dalla fascia in corso, sessioni modificabili), fasce di vendita con early bird (stessa fonte dati del sito pubblico: la fascia aperta è quella che si vede in home e in biglietti), capienze | Fasce sovrapposte per lo stesso pass, fine prima dell'inizio, nessuna fascia aperta alla data simulata (pass non acquistabile), prezzo membro sopra il pubblico (avviso: nessun vantaggio), capienza sotto venduti più riserva |
 | Codici sconto | Elenco con stato, creazione con ruoli, biglietti, finestra, limiti, cumulabilità | Codice troppo corto o duplicato, percentuale oltre 100, usi per persona sopra i totali; testo sul cumulo come in `architettura.md` §4.4 |
 | Ordini | Ricerca per numero, nome o email, filtro per stato, dettaglio con eventi Stripe | Da rivedere (importo che non torna) con «Segna come riconciliato»; in elaborazione con «Ricontrolla su Stripe»; link alla Dashboard solo per guardare |
-| Rimborso | Scelta dei biglietti (importo al netto dello sconto), posti da rimettere in vendita, motivo, conferma con avvertenze, invio a Stripe, conferma simulata | Motivo obbligatorio, nota se «Altro»; avvisi: biglietti revocati subito, commissioni non restituite, rimborsi in Dashboard non si collegano ai biglietti; esito: rimborsato o parziale |
+| Rimborso | Scelta dei biglietti (importo al netto dello sconto), posti da rimettere in vendita, motivo, conferma con avvertenze, invio a Stripe, conferma simulata | Motivo obbligatorio, solo «Evento annullato» o «Pagato senza posti» (decisione del 05/11/2026); avvisi: biglietti revocati subito, commissioni non restituite, rimborsi in Dashboard non si collegano ai biglietti; esito: rimborsato o parziale |
 | Membri | Elenco con stato, ricerca, dettaglio; apertura del cliente su Stripe | Pagamento non riuscito con «Rimanda l'email»; il prezzo membro vale solo sul biglietto di chi compra; sola lettura |
 
 ### 10.4 Check-in (`checkin.html`, telefono, una mano)
