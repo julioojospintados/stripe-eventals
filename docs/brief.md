@@ -22,6 +22,9 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 | Cosa si compra | Pass all'evento intero, pass giornaliero **e** sessioni a pagamento (workshop, masterclass) a parte |
 | Studenti | Nessun ruolo studente (deciso il 05/11/2026): solo prezzo pubblico e prezzo membro |
 | Prezzo membro | Solo sul biglietto del membro che compra; gli accompagnatori pagano il prezzo pubblico |
+| Limite prezzo membro | Al massimo un biglietto a prezzo membro per membro, per evento e per tipo (un pass, un giornaliero per giorno, uno per ogni sessione a pagamento), anche su più ordini |
+| Rimborsi | Nessun rimborso; cambio nominativo gratuito fino a 48 ore prima (da far confermare alla catena legale) |
+| Durata membership | 12 mesi dall'acquisto, rinnovo automatico annullabile dal portale clienti Stripe |
 | Su misura o pretix | Tutto su misura, niente pretix |
 | Legale e fisco | IVA, fattura elettronica, condizioni di vendita e rimborsi alla catena legale-fiscale dopo questa fase, prima dello sviluppo |
 
