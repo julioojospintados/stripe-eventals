@@ -125,7 +125,7 @@
         var r0 = 2 + (CV.min(s.da) - 540) / 30, span = (CV.min(s.a) - CV.min(s.da)) / 30;
         h += '<a class="cella" data-t="' + s.t + '" href="sessione.html?id=' + s.id + '" style="grid-column:' + (2 + idx) + ';grid-row:' + r0 + ' / span ' + span + '">' +
           '<b>' + s.titolo + '</b><small>' + s.da + '–' + s.a + ' · ' + D.tipi[s.tipo] + '</small>' +
-          CV.badgeAccesso(s) + (s.pagamento ? '<small><b>' + (CV.stato.ruolo === 'visitatore' ? 'da ' + CV.euro(s.pagamento.stu) : 'Tuo prezzo ' + CV.euro(CV.prezzoMio(s.pagamento))) + '</b></small>' : '') + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
+          CV.badgeAccesso(s) + (s.pagamento ? '<small><b>' + (CV.stato.ruolo === 'visitatore' ? 'Membri ' + CV.euro(s.pagamento.mem) + ' · pubblico ' + CV.euro(s.pagamento.pub) : 'Tuo prezzo ' + CV.euro(CV.prezzoMio(s.pagamento))) + '</b></small>' : '') + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
       });
       return h;
     }

@@ -30,10 +30,18 @@
       { id: 't4', nome: 'Tecnologia e società' }
     ],
     tipi: { keynote: 'Keynote', panel: 'Panel', talk: 'Talk', workshop: 'Workshop', masterclass: 'Masterclass' },
+    oggi: '2027-03-10',   // data simulata del prototipo: decide quale fascia di vendita e' aperta
+    // Fasce di vendita dei pass (early bird e standard): unica fonte, usata dal sito e dall'admin.
+    fasce: [
+      { id: 'f1', nome: 'Early bird', tipo: 'intero', dal: '2027-02-01', al: '2027-04-30', pub: 150, mem: 100 },
+      { id: 'f2', nome: 'Standard', tipo: 'intero', dal: '2027-05-01', al: '2027-10-14', pub: 180, mem: 120 },
+      { id: 'f3', nome: 'Early bird', tipo: 'giornaliero', dal: '2027-02-01', al: '2027-04-30', pub: 65, mem: 45 },
+      { id: 'f4', nome: 'Standard', tipo: 'giornaliero', dal: '2027-05-01', al: '2027-10-14', pub: 80, mem: 55 }
+    ],
     prezzi: {
-      intero: { pub: 180, mem: 120, stu: 60 },
-      giornaliero: { pub: 80, mem: 55, stu: 30 },
-      workshop: { pub: 0, mem: 0, stu: 0 },      // "da": calcolato dai dati subito sotto
+      intero: { pub: 0, mem: 0 },        // prezzi della fascia aperta oggi: calcolati dai dati subito sotto
+      giornaliero: { pub: 0, mem: 0 },
+      workshop: { pub: 0, mem: 0 },      // "da": calcolato dai dati subito sotto
       membership: 40
     },
     speakers: [
@@ -69,7 +77,7 @@
                 { ora: '11:15', titolo: 'Il fondo sonoro del quartiere', chi: 'Davide Ferrante' },
                 { ora: '11:40', titolo: 'Edizioni e archivi d’impresa', chi: 'Chiara Dell’Orto' },
                 { ora: '12:05', titolo: 'Discussione con il pubblico', chi: 'Tutti i relatori' } ] },
-      { id: 's03', g: 'g1', da: '11:00', a: '13:00', sala: 'officina', t: 't3', tipo: 'workshop', titolo: 'Progettare un servizio culturale in due ore', sp: ['sp3'], pagamento: { pub: 45, mem: 35, stu: 20 },
+      { id: 's03', g: 'g1', da: '11:00', a: '13:00', sala: 'officina', t: 't3', tipo: 'workshop', titolo: 'Progettare un servizio culturale in due ore', sp: ['sp3'], pagamento: { pub: 45, mem: 35 },
         desc: 'Laboratorio pratico: si parte da un problema reale di accesso e si arriva a un prototipo di servizio. Portare un portatile o carta e pennarelli.',
         posti: { tot: 24, res: 6 },
         subs: [ { ora: '11:00', titolo: 'Mappare il pubblico', chi: 'Ilaria Bonomi' },
@@ -78,7 +86,7 @@
       { id: 's04', g: 'g1', da: '14:30', a: '15:30', sala: 'grande', t: 't4', tipo: 'talk', titolo: 'Che cosa sa davvero un modello linguistico dell’italiano', sp: ['sp6'],
         desc: 'Esempi concreti di errori, pregiudizi e punti di forza dei modelli linguistici sull’italiano, con le varietà regionali.',
         posti: { libero: true }, subs: [] },
-      { id: 's05', g: 'g1', da: '15:00', a: '17:00', sala: 'studio', t: 't2', tipo: 'masterclass', titolo: 'Restauro del suono: dal nastro al file', sp: ['sp2'], pagamento: { pub: 60, mem: 50, stu: 30 },
+      { id: 's05', g: 'g1', da: '15:00', a: '17:00', sala: 'studio', t: 't2', tipo: 'masterclass', titolo: 'Restauro del suono: dal nastro al file', sp: ['sp2'], pagamento: { pub: 60, mem: 50 },
         desc: 'Masterclass sul riversamento di nastri magnetici deteriorati: pulizia, lettura, digitalizzazione e catalogazione.',
         posti: { tot: 16, res: 0 }, subs: [] },
       { id: 's06', g: 'g1', da: '16:00', a: '17:30', sala: 'lanterna', t: 't1', tipo: 'panel', titolo: 'Quartieri e musei: chi abita la città culturale', sp: ['sp4', 'sp9'],
@@ -93,10 +101,10 @@
         subs: [ { ora: '11:00', titolo: 'Una collana che regge da dieci anni', chi: 'Chiara Dell’Orto' },
                 { ora: '11:30', titolo: 'Vivere di bandi senza dipenderne', chi: 'Paolo Gentilini' },
                 { ora: '12:00', titolo: 'Libri e architettura: un catalogo di nicchia', chi: 'Marta Valsecchi' } ] },
-      { id: 's09', g: 'g2', da: '11:00', a: '13:00', sala: 'officina', t: 't4', tipo: 'workshop', titolo: 'Dati aperti per il giornalismo locale', sp: ['sp7'], pagamento: { pub: 45, mem: 35, stu: 20 },
+      { id: 's09', g: 'g2', da: '11:00', a: '13:00', sala: 'officina', t: 't4', tipo: 'workshop', titolo: 'Dati aperti per il giornalismo locale', sp: ['sp7'], pagamento: { pub: 45, mem: 35 },
         desc: 'Dalla ricerca del dato alla pubblicazione di una piccola inchiesta territoriale. Servono un portatile e un browser aggiornato.',
         posti: { tot: 24, res: 11 }, subs: [] },
-      { id: 's10', g: 'g2', da: '14:30', a: '16:30', sala: 'officina', t: 't3', tipo: 'masterclass', titolo: 'Scrivere un bando culturale che si possa finanziare', sp: ['sp10'], pagamento: { pub: 70, mem: 55, stu: 35 },
+      { id: 's10', g: 'g2', da: '14:30', a: '16:30', sala: 'officina', t: 't3', tipo: 'masterclass', titolo: 'Scrivere un bando culturale che si possa finanziare', sp: ['sp10'], pagamento: { pub: 70, mem: 55 },
         desc: 'Struttura di un progetto, budget credibile, indicatori di risultato: si lavora su bandi reali anonimizzati.',
         posti: { tot: 18, res: 9 }, subs: [] },
       { id: 's11', g: 'g2', da: '14:30', a: '16:00', sala: 'grande', t: 't4', tipo: 'panel', titolo: 'Intelligenze artificiali e diritto d’autore: stato dell’arte', sp: ['sp6', 'sp7'],
@@ -111,7 +119,7 @@
       { id: 's14', g: 'g3', da: '11:30', a: '13:00', sala: 'lanterna', t: 't2', tipo: 'panel', titolo: 'Lingue minoritarie e archivi digitali', sp: ['sp2', 'sp6', 'sp8'],
         desc: 'Come documentare e rendere accessibili lingue parlate da poche persone, tra audio, testo e tecnologie del linguaggio.',
         posti: { tot: 120, res: 57 }, subs: [] },
-      { id: 's15', g: 'g3', da: '11:30', a: '13:30', sala: 'officina', t: 't1', tipo: 'workshop', titolo: 'Mappe partecipate: leggere il quartiere con chi ci vive', sp: ['sp3', 'sp4'], pagamento: { pub: 40, mem: 30, stu: 18 },
+      { id: 's15', g: 'g3', da: '11:30', a: '13:30', sala: 'officina', t: 't1', tipo: 'workshop', titolo: 'Mappe partecipate: leggere il quartiere con chi ci vive', sp: ['sp3', 'sp4'], pagamento: { pub: 40, mem: 30 },
         desc: 'Si esce, si cammina, si disegna: un workshop sul campo per costruire una mappa condivisa.',
         posti: { tot: 20, res: 3 },
         subs: [ { ora: '11:30', titolo: 'Preparazione e consegne', chi: 'Ilaria Bonomi' },
@@ -124,9 +132,22 @@
   };
 
   // "da" dei workshop: il minimo reale tra le sessioni a pagamento, mai un numero scritto a mano
-  ['pub', 'mem', 'stu'].forEach(function (k) {
+  ['pub', 'mem'].forEach(function (k) {
     DATA.prezzi.workshop[k] = Math.min.apply(null, DATA.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { return s.pagamento[k]; }));
   });
+
+  // Fascia aperta oggi per un pass (null se nessuna) e prezzi dei pass presi da quella fascia
+  function fasciaAperta(tipo, oggi) {
+    return DATA.fasce.filter(function (f) { return f.tipo === tipo && f.dal <= (oggi || DATA.oggi) && (oggi || DATA.oggi) <= f.al; })[0] || null;
+  }
+  function fasciaDopo(f) {   // la fascia che segue quella aperta, per dire "poi X"
+    return DATA.fasce.filter(function (x) { return x.tipo === f.tipo && x.dal > f.al; }).sort(function (a, b) { return a.dal < b.dal ? -1 : 1; })[0] || null;
+  }
+  ['intero', 'giornaliero'].forEach(function (t) {
+    var f = fasciaAperta(t);
+    if (f) { DATA.prezzi[t].pub = f.pub; DATA.prezzi[t].mem = f.mem; DATA.prezzi[t].fascia = f; }
+  });
+  function dataIt(iso) { var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
 
   // percorso della cartella che contiene prototipo.js ('' nelle pagine pubbliche, '../' in admin/)
   var BASE = (function () {
@@ -139,13 +160,11 @@
     visitatore: 'Visitatore (non connesso)',
     pubblico: 'Utente (non membro)',
     membro: 'Membro',
-    studente: 'Studente verificato',
-    'studente-attesa': 'Studente (verifica in attesa)',
     'membro-scaduto': 'Ex membro (membership scaduta)'
   };
-  var BREVE = { visitatore: 'Visitatore', pubblico: 'Utente', membro: 'Membro', studente: 'Studente', 'studente-attesa': 'Utente', 'membro-scaduto': 'Utente' };
-  var CHIAVE = { visitatore: null, pubblico: 'pub', membro: 'mem', studente: 'stu', 'studente-attesa': 'pub', 'membro-scaduto': 'pub' };
-  var NOMEPREZZO = { pub: 'Pubblico', mem: 'Membro', stu: 'Studente' };
+  var BREVE = { visitatore: 'Visitatore', pubblico: 'Utente', membro: 'Membro', 'membro-scaduto': 'Utente' };
+  var CHIAVE = { visitatore: null, pubblico: 'pub', membro: 'mem', 'membro-scaduto': 'pub' };
+  var NOMEPREZZO = { pub: 'Pubblico', mem: 'Membro' };
   var stato = { ruolo: 'visitatore', pass: false };
   try {
     var salvato = JSON.parse(w.localStorage.getItem('cv-proto'));
@@ -186,34 +205,39 @@
     if (!k) {
       if (o.inline) {
         return '<span class="prezzi prezzi--inline"><span>Pubblico <b class="prezzo-valore">' + euro(p.pub) + '</b></span><span class="sep" aria-hidden="true">·</span>' +
-          '<span>Membro <b class="prezzo-valore">' + euro(p.mem) + '</b></span><span class="sep" aria-hidden="true">·</span>' +
-          '<span>Studente <b class="prezzo-valore">' + euro(p.stu) + '</b></span></span>';
+          '<span>Membro <b class="prezzo-valore">' + euro(p.mem) + '</b></span></span>';
       }
       return '<div class="prezzi"><dl>' +
         '<div class="prezzo-riga"><dt>Pubblico</dt><dd><span class="prezzo-valore">' + euro(p.pub) + '</span></dd></div>' +
-        '<div class="prezzo-riga"><dt>Membro<span class="prezzo-nota">con la membership</span></dt><dd><span class="prezzo-valore">' + euro(p.mem) + '</span></dd></div>' +
-        '<div class="prezzo-riga"><dt>Studente<span class="prezzo-nota">con verifica studente</span></dt><dd><span class="prezzo-valore">' + euro(p.stu) + '</span></dd></div>' +
+        '<div class="prezzo-riga"><dt>Membro<span class="prezzo-nota">con la membership, sul tuo biglietto</span></dt><dd><span class="prezzo-valore">' + euro(p.mem) + '</span></dd></div>' +
         '</dl></div>';
     }
     var tuo = p[k];
     var barrato = (k !== 'pub') ? '<span class="prezzo-barrato"><span class="sr-only">Prezzo pubblico </span><s>' + euro(p.pub) + '</s></span>' : '';
     if (o.inline) {
       var extra = '';
-      if (k === 'pub') extra = ' <span class="prezzo-barrato">· da membro ' + euro(p.mem) + ', da studente ' + euro(p.stu) + '</span>';
+      if (k === 'pub') extra = ' <span class="prezzo-barrato">· da membro ' + euro(p.mem) + '</span>';
       else extra = ' ' + barrato.replace('<s>', '<s aria-hidden="true">');
       return '<span class="prezzi prezzi--inline"><span class="badge badge--ruolo">' + (k === 'pub' ? 'Prezzo pubblico' : 'Tuo prezzo · ' + BREVE[r]) + '</span> <b class="prezzo-valore prezzo-valore--tuo">' + euro(tuo) + '</b>' + extra + '</span>';
     }
-    var etic = { pubblico: 'Il tuo prezzo · Pubblico', membro: 'Il tuo prezzo · Membro', studente: 'Il tuo prezzo · Studente',
-      'studente-attesa': 'Il tuo prezzo · Pubblico', 'membro-scaduto': 'Il tuo prezzo · Pubblico' }[r];
+    var etic = { pubblico: 'Il tuo prezzo · Pubblico', membro: 'Il tuo prezzo · Membro', 'membro-scaduto': 'Il tuo prezzo · Pubblico' }[r];
     altri = [];
-    ['pub', 'mem', 'stu'].forEach(function (x) { if (x !== k) altri.push(NOMEPREZZO[x] + ' ' + euro(p[x])); });
+    ['pub', 'mem'].forEach(function (x) { if (x !== k) altri.push(NOMEPREZZO[x] + ' ' + euro(p[x])); });
     html = '<div class="prezzi prezzi--tuo"><p class="prezzo-tuo"><span class="badge badge--ruolo">' + etic + '</span>' +
       '<span class="prezzo-valore prezzo-valore--grande">' + euro(tuo) + '</span>' + barrato + '</p>' +
-      '<p class="prezzo-altri">Altri prezzi: ' + altri.join(' · ') + '</p>';
-    if (r === 'pubblico') html += '<p class="prezzo-altri"><a href="biglietti.html#prezzi-ridotti">Come ottenere i prezzi ridotti</a></p>';
-    if (r === 'studente-attesa') html += '<p class="prezzo-altri">Il prezzo studente (' + euro(p.stu) + ') si attiva quando la verifica viene approvata.</p>';
+      '<p class="prezzo-altri">Altro prezzo: ' + altri.join(' · ') + '</p>';
+    if (r === 'pubblico') html += '<p class="prezzo-altri"><a href="biglietti.html#prezzi-ridotti">Come ottenere il prezzo membro</a></p>';
+    if (r === 'membro') html += '<p class="prezzo-altri">Il prezzo membro vale sul tuo biglietto. Chi viene con te paga il prezzo pubblico.</p>';
     if (r === 'membro-scaduto') html += '<p class="prezzo-altri">Membership scaduta: <a href="membership.html">rinnova</a> per tornare a ' + euro(p.mem) + '.</p>';
     return html + '</div>';
+  }
+
+  // Nota sulla fascia di vendita aperta (early bird) per un pass; vuota se la fascia aperta e' l'ultima.
+  function fasciaHTML(tipo) {
+    var f = DATA.prezzi[tipo].fascia, n = f && fasciaDopo(f);
+    if (!f) return '<p class="t-small t-muted">Oggi nessuna fascia di vendita è aperta: il pass non si può comprare.</p>';
+    return '<p class="t-small t-muted"><b>Fascia «' + f.nome + '» fino al ' + dataIt(f.al) + '</b>' +
+      (n ? '; poi pubblico ' + euro(n.pub) + ' · membro ' + euro(n.mem) + '.' : '.') + '</p>';
   }
 
   /* ------------------------------------------------------------------ pezzi di interfaccia riusati */
@@ -346,8 +370,13 @@
     qa('[data-ruolo-label]').forEach(function (el) { el.textContent = BREVE[stato.ruolo]; el.setAttribute('data-ruolo', stato.ruolo); });
     qa('[data-prezzo]').forEach(function (el) {
       var v = el.getAttribute('data-prezzo').split(',');
-      el.innerHTML = prezzoHTML({ pub: +v[0], mem: +v[1], stu: +v[2] }, { inline: el.getAttribute('data-var') === 'inline' });
+      el.innerHTML = prezzoHTML({ pub: +v[0], mem: +v[1] }, { inline: el.getAttribute('data-var') === 'inline' });
     });
+    // prezzi dei pass presi dalla fascia aperta oggi (mai scritti a mano nelle pagine)
+    qa('[data-prezzo-tipo]').forEach(function (el) {
+      el.innerHTML = prezzoHTML(DATA.prezzi[el.getAttribute('data-prezzo-tipo')], { inline: el.getAttribute('data-var') === 'inline' });
+    });
+    qa('[data-fascia]').forEach(function (el) { el.innerHTML = fasciaHTML(el.getAttribute('data-fascia')); });
     qa('[data-euro]').forEach(function (el) {
       var v = el.getAttribute('data-euro').split('.'), x = DATA.prezzi[v[0]];
       if (typeof x === 'object') x = x[v[1]];
@@ -365,7 +394,7 @@
     qs: qs, qa: qa, param: param, euro: euro, ic: ic, ready: ready, setStato: setStato, applica: applica,
     giorno: giorno, sala: sala, traccia: traccia, persona: persona, sessione: sessione,
     nomiSpeaker: nomiSpeaker, iniziali: iniziali, min: min, sovrapposte: sovrapposte, prezzoMio: prezzoMio,
-    prezzoHTML: prezzoHTML, badgeAccesso: badgeAccesso, chipTraccia: chipTraccia, postiHTML: postiHTML,
+    prezzoHTML: prezzoHTML, fasciaHTML: fasciaHTML, fasciaAperta: fasciaAperta, dataIt: dataIt, badgeAccesso: badgeAccesso, chipTraccia: chipTraccia, postiHTML: postiHTML,
     sessioneRiga: sessioneRiga, speakerCard: speakerCard, qrSvg: qrSvg, msg: msg, BASE: BASE, BREVE: BREVE
   };
 

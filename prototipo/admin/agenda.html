@@ -35,13 +35,13 @@
         <div class="acc__corpo"><ul class="elenco-pulito" id="l-giorni"></ul></div>
       </details>
       <details class="acc">
-        <summary>Sale<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <summary><span>Sale <span class="t-small t-muted">· dentro: elenco e riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
         <div class="acc__corpo"><ul class="riordina" id="l-sale"></ul>
           <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-sala">Aggiungi una sala</button></div>
           <div id="st-sale" role="status" aria-live="polite"></div></div>
       </details>
       <details class="acc">
-        <summary>Tracce<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <summary><span>Tracce <span class="t-small t-muted">· dentro: elenco e riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
         <div class="acc__corpo"><ul class="riordina" id="l-tracce"></ul>
           <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-traccia">Aggiungi una traccia</button></div>
           <div id="st-tracce" role="status" aria-live="polite"></div></div>
@@ -67,7 +67,7 @@
     var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
     var copia = function (x) { return JSON.parse(JSON.stringify(x)); };
     var S = copia(D.sessioni), SALE = copia(D.sale), TR = copia(D.tracce), GG = copia(D.giorni);
-    var giorno = 'g1', aperta = null, nuovo = 0;
+    var giorno = 'g1', aperta = null, nuovo = 0, nSub = 0;
     var DATE = { g1: '2027-10-14', g2: '2027-10-15', g3: '2027-10-16' };
 
     var ORE = []; for (var m = 540; m <= 1080; m += 30) ORE.push((Math.floor(m / 60) < 10 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00'));
@@ -135,7 +135,7 @@
         '<div class="campo" data-cap' + (acc === 'libero' ? ' hidden' : '') + '><label for="f-' + id + '-cap">Capienza</label><input class="input input--num" id="f-' + id + '-cap" type="number" min="0" step="1" value="' + (s.posti.tot || '') + '" aria-describedby="h-' + id + '-cap">' +
         '<p class="campo__aiuto" id="h-' + id + '-cap">' + (v ? 'Già venduti o prenotati: ' + v + '. Non si può scendere sotto questo numero.' : 'Nessun posto ancora venduto.') + '</p></div>' +
         '<fieldset class="campo" data-prezzi' + (acc === 'pagamento' ? '' : ' hidden') + '><legend class="etichetta">Prezzi per ruolo (€)</legend><div class="grid-3">' +
-        ['pub|Pubblico', 'mem|Membro', 'stu|Studente'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="1" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
+        ['pub|Pubblico', 'mem|Membro'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="1" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
         '<fieldset class="campo"><legend class="etichetta">Speaker</legend><div class="grid-2">' + D.speakers.map(function (p) {
           return '<label class="scelta"><input type="checkbox" value="' + p.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + ' data-sp><span>' + p.nome + '</span></label>'; }).join('') + '</div></fieldset>' +
         '<fieldset class="campo"><legend class="etichetta">Interventi (sottosezioni)</legend>' +
@@ -147,15 +147,17 @@
         '<div id="el-' + id + '" role="status" aria-live="polite"></div></form>';
     }
     function rigaSub(ora, titolo, chi) {
+      // ogni campo ha un nome accessibile per riga ("Ora, intervento «...»"), uguale per chi legge lo schermo e per chi usa la voce
+      var nome = titolo ? 'intervento «' + titolo.replace(/"/g, '&quot;') + '»' : 'nuovo intervento', sid = 'sub' + (++nSub);
       return AD.rigaRiordina(titolo || 'Nuovo intervento',
-        '<div class="grid-3"><div class="campo"><label>Ora</label><select class="select" data-s="ora">' + opt(ORE.concat(['09:15', '11:15', '11:45', '12:05', '12:30', '11:40']).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort(), ora || '09:00') + '</select></div>' +
-        '<div class="campo"><label>Titolo</label><input class="input" data-s="titolo" value="' + (titolo || '').replace(/"/g, '&quot;') + '"></div>' +
-        '<div class="campo"><label>Chi interviene</label><input class="input" data-s="chi" value="' + (chi || '') + '"></div></div>');
+        '<div class="grid-3"><div class="campo"><label for="' + sid + '-ora">Ora</label><select class="select" id="' + sid + '-ora" data-s="ora" aria-label="Ora, ' + nome + '">' + opt(ORE.concat(['09:15', '11:15', '11:45', '12:05', '12:30', '11:40']).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort(), ora || '09:00') + '</select></div>' +
+        '<div class="campo"><label for="' + sid + '-titolo">Titolo</label><input class="input" id="' + sid + '-titolo" data-s="titolo" aria-label="Titolo, ' + nome + '" value="' + (titolo || '').replace(/"/g, '&quot;') + '"></div>' +
+        '<div class="campo"><label for="' + sid + '-chi">Chi interviene</label><input class="input" id="' + sid + '-chi" data-s="chi" aria-label="Chi interviene, ' + nome + '" value="' + (chi || '') + '"></div></div>');
     }
     function disegnaSessioni() {
       var l = S.filter(function (s) { return s.g === giorno; }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da); });
       $('#l-sessioni').innerHTML = l.length ? l.map(function (s) {
-        return '<details class="acc" id="d-' + s.id + '"' + (aperta === s.id ? ' open' : '') + '><summary>' + riepilogo(s) + '<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>' + formSessione(s) + '</details>';
+        return '<details class="acc" id="d-' + s.id + '"' + (aperta === s.id ? ' open' : '') + '><summary><span>' + riepilogo(s) + ' <span class="t-small t-muted">· dentro: modifica, interventi e loro riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>' + formSessione(s) + '</details>';
       }).join('') : '<p class="vuoto">Nessuna sessione in questo giorno.</p>';
       $$('[data-subs]').forEach(function (ul) { AD.riordina(ul); });
     }
@@ -204,13 +206,13 @@
       if (!n.titolo) err('titolo', 'Scrivi il titolo della sessione.');
       if (CV.min(n.a) <= CV.min(n.da)) err('a', 'La fine deve essere dopo l’inizio.');
       else S.forEach(function (o) { if (o.id !== id && o.g === n.g && o.sala === n.sala && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) err('sala', 'La sala è occupata da «' + o.titolo + '» (' + o.da + '–' + o.a + '). Cambia sala o orario.'); });
-      var cap = parseInt(g('cap'), 10), pr = { pub: +g('pub'), mem: +g('mem'), stu: +g('stu') };
+      var cap = parseInt(g('cap'), 10), pr = { pub: +g('pub'), mem: +g('mem') };
       if (acc !== 'libero') {
         if (isNaN(cap) || cap < 1) err('cap', 'Scrivi la capienza: un numero da 1 in su.');
         else if (cap < venduti(s)) err('cap', 'La capienza non può scendere sotto ' + venduti(s) + ': ci sono già posti venduti o prenotati.');
       }
       if (acc === 'pagamento') {
-        ['pub', 'mem', 'stu'].forEach(function (k) { if (isNaN(pr[k]) || pr[k] < 0 || $('#f-' + id + '-' + k).value === '') err(k, 'Scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro', stu: 'studente' }[k] + ' (anche 0).'); });
+        ['pub', 'mem'].forEach(function (k) { if (isNaN(pr[k]) || pr[k] < 0 || $('#f-' + id + '-' + k).value === '') err(k, 'Scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' (anche 0).'); });
       }
       var subs = $$('[data-subs] > li', f).map(function (li) { return { ora: $('[data-s="ora"]', li).value, titolo: $('[data-s="titolo"]', li).value.trim(), chi: $('[data-s="chi"]', li).value.trim() }; });
       subs.forEach(function (x, i) {

@@ -1,6 +1,6 @@
 /*
   Autore: Giulio Occhipinti
-  Pannello admin del prototipo: menu comune, dati inventati (ordini, verifiche, membri, codici),
+  Pannello admin del prototipo: menu comune, dati inventati (ordini, membri, codici),
   elenco riordinabile con trascinamento simulato e alternativa da tastiera.
   Ogni scrittura vera, nel sito, richiede sessione con MFA (aal2) e finisce nel registro audit.
 */
@@ -12,7 +12,7 @@
 
   AD.PAGINE = [
     ['index.html', 'Cruscotto'], ['agenda.html', 'Programma'], ['speaker.html', 'Speaker'], ['biglietti.html', 'Biglietti e prezzi'],
-    ['sconti.html', 'Codici sconto'], ['ordini.html', 'Ordini'], ['verifiche.html', 'Verifiche studenti'], ['membri.html', 'Membri']
+    ['sconti.html', 'Codici sconto'], ['ordini.html', 'Ordini'], ['membri.html', 'Membri']
   ];
 
   /* ---------------- dati d'esempio ---------------- */
@@ -23,40 +23,34 @@
   };
   AD.ordini = [
     { id: 'CV-1048', data: '15/03/2027 18:02', nome: 'Giada Segnaposto', email: 'giada.segnaposto@example.test', stato: 'review', ruolo: 'membro', pi: 'pi_…c91d',
-      righe: [{ t: 'Pass intero · Giada Segnaposto', v: 120, tk: 'valido' }], sconto: 0, totale: 120, nota: 'Importo incassato su Stripe: 118 €. Non coincide con l’ordine: da riconciliare.',
+      righe: [{ t: 'Pass intero · Giada Segnaposto', v: 100, tk: 'valido' }], sconto: 0, totale: 100, nota: 'Importo incassato su Stripe: 98 €. Non coincide con l’ordine: da riconciliare.',
       eventi: [['15/03 18:02', 'checkout.session.completed', 'importo diverso, ordine segnato da rivedere']] },
     { id: 'CV-1047', data: '14/03/2027 09:40', nome: 'Fabio Inventato', email: 'fabio.inventato@example.test', stato: 'refunded', ruolo: 'pubblico', pi: 'pi_…2b8e',
-      righe: [{ t: 'Pass giornaliero · Venerdì 15 · Fabio Inventato', v: 80, tk: 'rimborsato' }], sconto: 0, totale: 80,
+      righe: [{ t: 'Pass giornaliero · Venerdì 15 · Fabio Inventato', v: 65, tk: 'rimborsato' }], sconto: 0, totale: 65,
       eventi: [['14/03 09:41', 'checkout.session.completed', 'elaborato'], ['16/03 11:20', 'charge.refunded', 'rimborso totale registrato']] },
     { id: 'CV-1046', data: '14/03/2027 08:15', nome: 'Elena Fittizia', email: 'elena.fittizia@example.test', stato: 'expired', ruolo: 'pubblico', pi: '—',
       righe: [{ t: 'Workshop · Mappe partecipate · Elena Fittizia', v: 40, tk: '—' }], sconto: 0, totale: 40,
       eventi: [['14/03 08:45', 'checkout.session.expired', 'posti rilasciati']] },
     { id: 'CV-1045', data: '13/03/2027 21:30', nome: 'Dario Finto', email: 'dario.finto@example.test', stato: 'failed', ruolo: 'pubblico', pi: 'pi_…55aa',
-      righe: [{ t: 'Pass intero · Dario Finto', v: 180, tk: '—' }], sconto: 0, totale: 180,
+      righe: [{ t: 'Pass intero · Dario Finto', v: 150, tk: '—' }], sconto: 0, totale: 150,
       eventi: [['13/03 21:31', 'checkout.session.async_payment_failed', 'ordine non riuscito, posti rilasciati, email mandata']] },
     { id: 'CV-1044', data: '13/03/2027 10:05', nome: 'Carla Prova', email: 'carla.prova@example.test', stato: 'paid', ruolo: 'pubblico', pi: 'pi_…9e10',
-      righe: [{ t: 'Pass intero · Carla Prova', v: 180, tk: 'valido' }], sconto: 18, codice: 'BENVENUTO10', totale: 162,
+      righe: [{ t: 'Pass intero · Carla Prova', v: 150, tk: 'valido' }], sconto: 15, codice: 'BENVENUTO10', totale: 135,
       eventi: [['13/03 10:06', 'checkout.session.completed', 'elaborato, codice contato']] },
     { id: 'CV-1043', data: '12/03/2027 10:20', nome: 'Bruno Esempio', email: 'bruno.esempio@example.test', stato: 'processing', ruolo: 'pubblico', pi: 'pi_…3c42',
-      righe: [{ t: 'Pass giornaliero · Venerdì 15 · Bruno Esempio', v: 80, tk: '—' }, { t: 'Pass giornaliero · Venerdì 15 · Anna Ospite', v: 80, tk: '—' }], sconto: 0, totale: 160,
+      righe: [{ t: 'Pass giornaliero · Venerdì 15 · Bruno Esempio', v: 65, tk: '—' }, { t: 'Pass giornaliero · Venerdì 15 · Anna Ospite', v: 65, tk: '—' }], sconto: 0, totale: 130,
       eventi: [['12/03 10:21', 'checkout.session.completed', 'pagamento non ancora confermato (metodo a notifica differita)']] },
     { id: 'CV-1042', data: '12/03/2027 10:14', nome: 'Alessia Demo', email: 'alessia.demo@example.test', stato: 'paid', ruolo: 'membro', pi: 'pi_…7f3a',
-      righe: [{ t: 'Pass intero · Alessia Demo', v: 120, tk: 'valido' }, { t: 'Workshop · Progettare un servizio culturale · Alessia Demo', v: 35, tk: 'valido' }], sconto: 0, totale: 155,
+      righe: [{ t: 'Pass intero · Alessia Demo', v: 100, tk: 'valido' }, { t: 'Workshop · Progettare un servizio culturale · Alessia Demo', v: 35, tk: 'valido' }], sconto: 0, totale: 135,
       eventi: [['12/03 10:15', 'checkout.session.completed', 'elaborato'], ['12/03 10:15', 'Email di conferma', 'in coda, poi inviata']] }
   ];
-  AD.verifiche = [
-    { id: 'v1', nome: 'Sara Esposito', email: 'sara.esposito@example.test', metodo: 'documento', giorni: 2, doc: 'certificato-iscrizione.pdf (PDF, 310 KB)' },
-    { id: 'v2', nome: 'Matteo Greco', email: 'matteo.greco@example.test', metodo: 'documento', giorni: 9, doc: 'libretto.jpg (JPEG, 1,8 MB)' },
-    { id: 'v3', nome: 'Irene Fabbri', email: 'irene.fabbri@example.test', metodo: 'documento', giorni: 34, doc: 'iscrizione.png (PNG, 940 KB)' },
-    { id: 'v4', nome: 'Luca Marini', email: 'luca.marini@example.test', metodo: 'documento', giorni: 1, doc: 'certificato.pdf (PDF, 205 KB)' }
-  ];
   AD.membri = [
-    { id: 'm1', nome: 'Alessia Demo', email: 'alessia.demo@example.test', stato: 'active', fine: '30/09/2027', rinnovo: 'automatico', studente: false },
-    { id: 'm2', nome: 'Tiziano Campione', email: 'tiziano.campione@example.test', stato: 'active', fine: '14/06/2027', rinnovo: 'automatico', studente: false },
-    { id: 'm3', nome: 'Ornella Saggio', email: 'ornella.saggio@example.test', stato: 'canceling', fine: '02/05/2027', rinnovo: 'disdetto, non si rinnova', studente: false },
-    { id: 'm4', nome: 'Pietro Lento', email: 'pietro.lento@example.test', stato: 'past_due', fine: '10/03/2027', rinnovo: 'pagamento del rinnovo non riuscito', studente: true },
-    { id: 'm5', nome: 'Rosa Antica', email: 'rosa.antica@example.test', stato: 'expired', fine: '30/09/2026', rinnovo: 'scaduta', studente: false },
-    { id: 'm6', nome: 'Vito Nuovo', email: 'vito.nuovo@example.test', stato: 'trialing', fine: '28/03/2027', rinnovo: 'in prova, poi automatico', studente: false }
+    { id: 'm1', nome: 'Alessia Demo', email: 'alessia.demo@example.test', stato: 'active', fine: '30/09/2027', rinnovo: 'automatico' },
+    { id: 'm2', nome: 'Tiziano Campione', email: 'tiziano.campione@example.test', stato: 'active', fine: '14/06/2027', rinnovo: 'automatico' },
+    { id: 'm3', nome: 'Ornella Saggio', email: 'ornella.saggio@example.test', stato: 'canceling', fine: '02/05/2027', rinnovo: 'disdetto, non si rinnova' },
+    { id: 'm4', nome: 'Pietro Lento', email: 'pietro.lento@example.test', stato: 'past_due', fine: '10/03/2027', rinnovo: 'pagamento del rinnovo non riuscito' },
+    { id: 'm5', nome: 'Rosa Antica', email: 'rosa.antica@example.test', stato: 'expired', fine: '30/09/2026', rinnovo: 'scaduta' },
+    { id: 'm6', nome: 'Vito Nuovo', email: 'vito.nuovo@example.test', stato: 'trialing', fine: '28/03/2027', rinnovo: 'in prova, poi automatico' }
   ];
   AD.STATO_MEM = { active: ['ok', 'check', 'Attiva'], trialing: ['info', 'clock', 'In prova'], canceling: ['warn', 'clock', 'Disdetta a fine periodo'], past_due: ['err', 'alert', 'Pagamento non riuscito'], expired: ['err', 'x', 'Scaduta'] };
   AD.sconti = [
@@ -82,10 +76,8 @@
   AD.menu = function () {
     var corrente = (w.location.pathname.split('/').pop() || 'index.html');
     var n = $('#admin-nav'); if (!n) return;
-    var attesa = AD.verifiche.length;
     n.innerHTML = '<ul>' + AD.PAGINE.map(function (p) {
-      var extra = p[0] === 'verifiche.html' ? '<span class="badge badge--warn"><span class="sr-only">In attesa: </span>' + attesa + '</span>' : '';
-      return '<li><a href="' + p[0] + '"' + (p[0] === corrente ? ' aria-current="page"' : '') + '>' + p[1] + extra + '</a></li>';
+      return '<li><a href="' + p[0] + '"' + (p[0] === corrente ? ' aria-current="page"' : '') + '>' + p[1] + '</a></li>';
     }).join('') + '<li><a href="../checkin.html">Check-in (staff)' + AD.icona('external') + '</a></li><li><a href="../index.html">Sito pubblico' + AD.icona('external') + '</a></li></ul>';
     var det = $('#admin-menu'), mq = w.matchMedia('(min-width: 64rem)');
     function a() { if (mq.matches) det.open = true; }

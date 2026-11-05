@@ -67,7 +67,7 @@
       var vale = m.stato === 'active' || m.stato === 'trialing' || m.stato === 'canceling';
       p.innerHTML = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">' + m.nome + '</h2>' + badge(m.stato) + '</div>' +
         '<dl class="meta-lista misura"><div><dt>Email</dt><dd>' + m.email + '</dd></div><div><dt>Fine periodo</dt><dd>' + m.fine + '</dd></div><div><dt>Rinnovo</dt><dd>' + m.rinnovo + '</dd></div>' +
-        '<div><dt>Prezzo oggi</dt><dd>' + (vale ? 'Membro' : 'Pubblico (non vale come membro)') + (m.studente ? '. È anche studente verificato: paga il più basso dei due.' : '') + '</dd></div>' +
+        '<div><dt>Prezzo oggi</dt><dd>' + (vale ? 'Membro' : 'Pubblico (non vale come membro)') + (vale ? ' (solo sul biglietto di chi compra)' : '') + '</dd></div>' +
         '<div><dt>Ultimo avviso Stripe</dt><dd>' + (m.stato === 'past_due' ? 'invoice.payment_failed, 10/03/2027' : 'invoice.paid, ' + (m.stato === 'expired' ? '30/09/2025' : '12/03/2027')) + '</dd></div></dl>' +
         '<div class="azioni-riga" style="margin-top:var(--s-4)"><button type="button" class="btn btn--secondary" data-az="stripe">' + AD.icona('external') + 'Apri il cliente su Stripe</button>' +
         (m.stato === 'past_due' ? '<button type="button" class="btn btn--primary" data-az="mail">Rimanda l’email per aggiornare il pagamento</button>' : '') + '</div><div id="st" role="status" aria-live="polite" style="margin-top:var(--s-3)"></div>';

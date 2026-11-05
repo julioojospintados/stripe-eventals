@@ -74,7 +74,7 @@
       <aside class="layout-2__lato stack" aria-label="Informazioni sull’accesso">
         <div class="scheda">
           <h2 class="t-3">Continuare senza account?</h2>
-          <p class="t-small"><b>Per comprare serve un account.</b> Serve a due cose: applicare il prezzo giusto (membro o studente) e ritrovare i biglietti sul telefono il giorno dell’evento.</p>
+          <p class="t-small"><b>Per comprare serve un account.</b> Serve a due cose: applicare il prezzo giusto (pubblico o membro) e ritrovare i biglietti sul telefono il giorno dell’evento.</p>
           <p class="t-small">Programma, speaker e prezzi si guardano senza accedere.</p>
           <p><a class="btn btn--secondary" href="agenda.html">Guarda il programma</a></p>
         </div>
@@ -138,7 +138,7 @@
         $('#codice').focus(); return;
       }
       var mail = $('#email').value.toLowerCase();
-      CV.setStato({ ruolo: mail.indexOf('membro') > -1 ? 'membro' : (mail.indexOf('studente') > -1 ? 'studente' : 'pubblico') });
+      CV.setStato({ ruolo: mail.indexOf('membro') > -1 ? 'membro' : 'pubblico' });
       location.href = next;
     });
     $('#rinvia').addEventListener('click', function () {

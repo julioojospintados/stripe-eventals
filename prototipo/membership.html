@@ -46,13 +46,9 @@
               <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
               <div>Per abbonarti ti chiediamo di accedere o registrarti: la membership è legata al tuo account.</div>
             </div>
-            <div class="avviso avviso--info" data-ruoli="studente,studente-attesa">
-              <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-              <div>Il prezzo studente è già più basso di quello membro: la membership ti serve solo se vuoi le altre condizioni dei membri, ancora da definire.</div>
-            </div>
 
-            <button type="button" class="btn btn--primary btn--block" id="abbonati" data-ruoli="visitatore,pubblico,membro-scaduto,studente,studente-attesa">
-              <span data-ruoli="membro-scaduto">Rinnova la membership</span><span data-ruoli="visitatore,pubblico,studente,studente-attesa">Diventa membro</span>
+            <button type="button" class="btn btn--primary btn--block" id="abbonati" data-ruoli="visitatore,pubblico,membro-scaduto">
+              <span data-ruoli="membro-scaduto">Rinnova la membership</span><span data-ruoli="visitatore,pubblico">Diventa membro</span>
             </button>
             <button type="button" class="btn btn--block" aria-disabled="true" data-ruoli="membro">Gestisci l’abbonamento (area personale, in preparazione)</button>
             <p class="t-small t-muted">Pagamento ricorrente su Stripe. Rinnovo automatico, con disdetta dal proprio account: condizioni complete da definire.</p>
@@ -65,6 +61,7 @@
             <ul class="elenco-spunte misura">
               <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span>Prezzo <b>membro</b> sul pass intero e sul pass giornaliero.</span></li>
               <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span>Prezzo <b>membro</b> su workshop e masterclass.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>Il prezzo membro vale <b>solo sul tuo biglietto</b>: chi viene con te paga il prezzo pubblico.</span></li>
               <li><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>Altri vantaggi per i membri: <b>da definire</b> con l’organizzatore. Qui compaiono solo quelli decisi.</span></li>
             </ul>
           </section>
@@ -94,8 +91,8 @@
               <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
               <div>
                 <b>Conviene?</b>
-                <p>Con un pass intero risparmi <span data-risparmio="intero"></span> contro una quota di <span data-euro="membership"></span>: la quota si ripaga da sola.</p>
-                <p>Con un solo pass giornaliero risparmi <span data-risparmio="giornaliero"></span>: non basta a coprire la quota. Servono almeno due giorni, o un giorno più qualche workshop.</p>
+                <p>Con un pass intero tuo risparmi <span data-risparmio="intero"></span> contro una quota di <span data-euro="membership"></span>: la quota si ripaga da sola.</p>
+                <p>Con un solo pass giornaliero risparmi <span data-risparmio="giornaliero"></span>: non basta a coprire la quota. Servono più giorni, o un giorno più qualche workshop. Il risparmio vale solo sul tuo biglietto, non su quelli di chi viene con te.</p>
               </div>
             </div>
           </section>

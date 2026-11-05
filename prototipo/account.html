@@ -35,7 +35,7 @@
       </div>
 
       <!-- Connesso -->
-      <div id="area" hidden data-ruoli="pubblico,membro,studente,studente-attesa,membro-scaduto" class="stack" style="--stack:var(--s-5)">
+      <div id="area" hidden data-ruoli="pubblico,membro,membro-scaduto" class="stack" style="--stack:var(--s-5)">
         <div class="admin-head" style="margin-bottom:0">
           <div>
             <h1 class="t-1">Il mio account</h1>
@@ -48,7 +48,6 @@
           <button class="tab" role="tab" id="tab-biglietti" aria-controls="p-biglietti" aria-selected="true" data-p="biglietti">I miei biglietti</button>
           <button class="tab" role="tab" id="tab-agenda" aria-controls="p-agenda" aria-selected="false" tabindex="-1" data-p="agenda">La mia agenda</button>
           <button class="tab" role="tab" id="tab-membership" aria-controls="p-membership" aria-selected="false" tabindex="-1" data-p="membership">Membership</button>
-          <button class="tab" role="tab" id="tab-verifica" aria-controls="p-verifica" aria-selected="false" tabindex="-1" data-p="verifica">Verifica studente</button>
           <button class="tab" role="tab" id="tab-ordini" aria-controls="p-ordini" aria-selected="false" tabindex="-1" data-p="ordini">Ordini e ricevute</button>
         </div>
 
@@ -97,42 +96,6 @@
               </div>
             </div>
           </div>
-        </section>
-
-        <!-- Verifica studente -->
-        <section role="tabpanel" id="p-verifica" aria-labelledby="tab-verifica" tabindex="0" class="tabpanel stack" hidden>
-          <h2 class="t-2">Verifica studente</h2>
-          <div class="campo" style="max-width:24rem">
-            <label for="sim-ver">Prototipo: simula lo stato della verifica</label>
-            <select class="select" id="sim-ver">
-              <option value="nessuna">Non richiesta</option>
-              <option value="email">In attesa: link via email</option>
-              <option value="revisione">In attesa: documento in revisione</option>
-              <option value="approvata">Approvata, con scadenza</option>
-              <option value="rifiutata">Rifiutata, con motivo</option>
-              <option value="scaduta">Scaduta</option>
-            </select>
-          </div>
-          <div id="stato-ver" class="stack"></div>
-          <form id="f-ver" class="stack" novalidate style="max-width:34rem" hidden>
-            <fieldset class="campo">
-              <legend class="etichetta">Come vuoi verificarti</legend>
-              <label class="scelta"><input type="radio" name="metodo" value="email" checked><span>Email universitaria</span></label>
-              <label class="scelta"><input type="radio" name="metodo" value="documento"><span>Carico un documento</span></label>
-            </fieldset>
-            <div class="campo" id="c-email">
-              <label for="v-email">Email universitaria</label>
-              <input class="input" id="v-email" type="email" inputmode="email" autocomplete="email" aria-describedby="a-email" placeholder="nome.cognome@universita.example">
-              <p class="campo__aiuto" id="a-email">Ti mandiamo un link, valido 24 ore. Atenei riconosciuti nel prototipo: universita.example, ateneo.example, studenti.example.</p>
-            </div>
-            <div class="campo" id="c-doc" hidden>
-              <label for="v-doc">Certificato di iscrizione o libretto</label>
-              <input class="input" id="v-doc" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-describedby="a-doc">
-              <p class="campo__aiuto" id="a-doc">PDF, JPEG o PNG, al massimo 5 MB. Lo vede solo chi controlla le richieste, tramite un link che dura un minuto. Lo cancelliamo entro 24 ore dall’esito.</p>
-            </div>
-            <p class="campo__errore" id="err-ver" role="alert" hidden></p>
-            <button type="submit" class="btn btn--primary">Invia la richiesta</button>
-          </form>
         </section>
 
         <!-- Ordini -->
@@ -188,14 +151,14 @@
     /* ---------------- biglietti ---------------- */
     var T = [
       { id: 't1', tipo: 'Pass intero', nome: 'Alessia Demo', tu: true, giorni: 'Tutti e tre i giorni', code: 'K7M2QX4P', prezzo: D.prezzi.intero, stato: 'valido', cambi: 0, ver: 1 },
-      { id: 't2', tipo: 'Pass intero', nome: 'Marco Prova', email: 'marco.prova@example.test', giorni: 'Tutti e tre i giorni', code: 'R3T9WB6N', prezzo: { pub: 180, mem: 180, stu: 180 }, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't2', tipo: 'Pass intero', nome: 'Marco Prova', email: 'marco.prova@example.test', giorni: 'Tutti e tre i giorni', code: 'R3T9WB6N', prezzo: { pub: D.prezzi.intero.pub, mem: D.prezzi.intero.pub }, stato: 'valido', cambi: 0, ver: 1 },
       { id: 't3', tipo: 'Workshop · Progettare un servizio culturale in due ore', nome: 'Alessia Demo', tu: true, giorni: 'Giovedì 14 ottobre, 11:00–13:00, Sala Officina', code: 'D5H8LC2Y', prezzo: CV.sessione('s03').pagamento, stato: 'valido', cambi: 0, ver: 1 },
-      { id: 't4', tipo: 'Pass giornaliero · Venerdì 15 ottobre', nome: 'Nora Esempio', email: 'nora.esempio@example.test', giorni: 'Venerdì 15 ottobre', code: 'W2Y6PV9A', prezzo: { pub: 80, mem: 80, stu: 80 }, stato: 'rimborsato', cambi: 0, ver: 1, rimborso: '80 € il 25/02/2027' }
+      { id: 't4', tipo: 'Pass giornaliero · Venerdì 15 ottobre', nome: 'Nora Esempio', email: 'nora.esempio@example.test', giorni: 'Venerdì 15 ottobre', code: 'W2Y6PV9A', prezzo: { pub: D.prezzi.giornaliero.pub, mem: D.prezzi.giornaliero.pub }, stato: 'rimborsato', cambi: 0, ver: 1, rimborso: D.prezzi.giornaliero.pub + ' € il 25/02/2027' }
     ];
     var MAXCAMBI = 2;
     function pagato(t) {
       var k = CV.CHIAVE[CV.stato.ruolo], p = t.tu ? t.prezzo[k || 'pub'] : t.prezzo.pub;
-      var nome = !t.tu || !k || k === 'pub' ? 'prezzo pubblico' : (k === 'mem' ? 'prezzo membro' : 'prezzo studente');
+      var nome = !t.tu || !k || k === 'pub' ? 'prezzo pubblico' : 'prezzo membro';
       return { v: p, nome: nome, ridotto: t.tu && p < t.prezzo.pub };
     }
     function biglietti(focusId, messaggio) {
@@ -302,68 +265,19 @@
     });
     $('#chiudi-portale').addEventListener('click', function () { $('#portale').hidden = true; $('#stato-mem').hidden = false; var b = $('#apri-portale'); if (b) b.focus(); });
 
-    /* ---------------- verifica studente ---------------- */
-    var verDaRuolo = { studente: 'approvata', 'studente-attesa': 'revisione' };
-    var DOMINI = ['universita.example', 'ateneo.example', 'studenti.example'];
-    function verifica() {
-      var s = $('#sim-ver').value, h = '';
-      var av = function (t, i, x, role) { return '<div class="avviso avviso--' + t + '"' + (role ? ' role="' + role + '"' : '') + '><svg class="ic" aria-hidden="true"><use href="#i-' + i + '"></use></svg><div>' + x + '</div></div>'; };
-      if (s === 'nessuna') h = av('info', 'info', 'Non hai chiesto la verifica. Con la verifica studente paghi il prezzo studente.');
-      if (s === 'email') h = av('info', 'clock', '<b>In attesa: controlla la tua email.</b> Ti abbiamo mandato un link, valido 24 ore. Se non arriva, guarda tra la posta indesiderata o chiedine un altro.<p><button type="button" class="btn btn--secondary btn--piccolo" id="rinvia-link">Rinvia il link</button></p>', 'status') + '<div id="st-link" role="status" aria-live="polite"></div>';
-      if (s === 'revisione') h = av('info', 'clock', '<b>In attesa: documento in revisione.</b> Lo controlla una persona; i tempi sono da definire. Intanto paghi il prezzo pubblico. Dopo l’esito cancelliamo il file entro 24 ore.', 'status');
-      if (s === 'approvata') h = av('ok', 'check', '<b>Sei verificato come studente.</b> Il prezzo studente vale fino al 31/10/2027 (fine dell’anno accademico, regola proposta). Poi serve una nuova verifica.', 'status');
-      if (s === 'rifiutata') h = av('err', 'alert', '<b>La richiesta è stata rifiutata.</b> Motivo: il documento non mostra l’iscrizione all’anno accademico in corso. Puoi caricarne uno nuovo qui sotto.', 'alert');
-      if (s === 'scaduta') h = av('warn', 'alert', '<b>La verifica è scaduta il 31/10/2026.</b> Chiedine una nuova per riavere il prezzo studente.', 'status');
-      $('#stato-ver').innerHTML = h;
-      $('#f-ver').hidden = ['nessuna', 'rifiutata', 'scaduta'].indexOf(s) < 0;
-    }
-    var daSim = false;
-    $('#sim-ver').addEventListener('change', function () {
-      var s = this.value; daSim = true;
-      if (s === 'approvata') CV.setStato({ ruolo: 'studente' });
-      else if (s === 'email' || s === 'revisione') CV.setStato({ ruolo: 'studente-attesa' });
-      else if (CV.stato.ruolo === 'studente' || CV.stato.ruolo === 'studente-attesa') CV.setStato({ ruolo: 'pubblico' });
-      daSim = false; verifica();
-    });
-    $('#stato-ver').addEventListener('click', function (e) {
-      if (e.target.closest('#rinvia-link')) CV.msg($('#st-link'), 'ok', 'Nuovo link mandato. Il precedente non vale più.');
-    });
-    $$('input[name="metodo"]').forEach(function (r) {
-      r.addEventListener('change', function () { $('#c-email').hidden = r.value !== 'email' || !r.checked; $('#c-doc').hidden = r.value !== 'documento' || !r.checked; });
-    });
-    $('#f-ver').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var m = $('input[name="metodo"]:checked').value, er = $('#err-ver'), msg = '';
-      if (m === 'email') {
-        var v = $('#v-email').value.trim().toLowerCase();
-        if (!/^\S+@\S+\.\S+$/.test(v)) msg = 'Scrivi un’email valida, per esempio nome.cognome@universita.example.';
-        else if (DOMINI.indexOf(v.split('@')[1]) < 0) msg = 'Questo dominio non è nell’elenco degli atenei riconosciuti. Se studi lì, carica un documento.';
-      } else {
-        var f = $('#v-doc').files[0];
-        if (!f) msg = 'Scegli il file del documento.';
-        else if (!/\.(pdf|jpe?g|png)$/i.test(f.name)) msg = 'Il file deve essere PDF, JPEG o PNG.';
-        else if (f.size > 5 * 1024 * 1024) msg = 'Il file pesa più di 5 MB. Riducilo o scattane una foto più leggera.';
-      }
-      if (msg) { er.hidden = false; er.innerHTML = CV.ic('alert') + '<span>' + msg + '</span>'; return; }
-      er.hidden = true;
-      $('#sim-ver').value = m === 'email' ? 'email' : 'revisione';
-      daSim = true; CV.setStato({ ruolo: 'studente-attesa' }); daSim = false; verifica();
-      var t = $('#stato-ver'); t.setAttribute('tabindex', '-1'); t.focus();
-    });
-
     /* ---------------- ordini ---------------- */
     var ORD = [
-      { id: 'CV-1042', d: '12/03/2027', c: 'Pass intero e un workshop', v: 155, s: 'paid' },
-      { id: 'CV-1043', d: '12/03/2027', c: 'Due pass giornalieri', v: 160, s: 'processing' },
-      { id: 'CV-1031', d: '01/03/2027', c: 'Pass intero', v: 180, s: 'failed' },
+      { id: 'CV-1042', d: '12/03/2027', c: 'Pass intero e un workshop', v: 135, s: 'paid' },
+      { id: 'CV-1043', d: '12/03/2027', c: 'Due pass giornalieri', v: 130, s: 'processing' },
+      { id: 'CV-1031', d: '01/03/2027', c: 'Pass intero', v: 150, s: 'failed' },
       { id: 'CV-1020', d: '28/02/2027', c: 'Un workshop', v: 40, s: 'expired' },
-      { id: 'CV-1011', d: '20/02/2027', c: 'Pass giornaliero', v: 80, s: 'refunded' }
+      { id: 'CV-1011', d: '20/02/2027', c: 'Pass giornaliero', v: 65, s: 'refunded' }
     ];
     var STATO = {
       paid: ['ok', 'check', 'Pagato'], processing: ['info', 'clock', 'In elaborazione'], failed: ['err', 'alert', 'Non riuscito'],
       expired: ['warn', 'clock', 'Scaduto'], refunded: ['err', 'x', 'Rimborsato']
     };
-    var NOTA = { processing: 'Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.', failed: 'Nessun addebito. Puoi riprovare.', expired: 'La sessione di pagamento è scaduta: nessun addebito.', refunded: 'Rimborsati 80 € il 25/02/2027.' };
+    var NOTA = { processing: 'Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.', failed: 'Nessun addebito. Puoi riprovare.', expired: 'La sessione di pagamento è scaduta: nessun addebito.', refunded: 'Rimborsati 65 € il 25/02/2027.' };
     function ordini() {
       $('#righe-ordini').innerHTML = ORD.map(function (o) {
         var s = STATO[o.s];
@@ -381,12 +295,10 @@
     /* ---------------- avvio e cambi di ruolo ---------------- */
     function inizia() {
       $('#sim-mem').value = memDaRuolo[CV.stato.ruolo] || 'nessuna';
-      $('#sim-ver').value = verDaRuolo[CV.stato.ruolo] || 'nessuna';
-      biglietti(); agenda(); membership(); verifica(); ordini();
+      biglietti(); agenda(); membership(); ordini();
     }
     inizia();
     document.addEventListener('cv:stato', function () {
-      if (daSim) { daSim = false; biglietti(); return; }
       inizia();   // cambio di ruolo dal selettore o dall'accesso: riallinea tutte le schede
     });
   });

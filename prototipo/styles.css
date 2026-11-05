@@ -791,3 +791,19 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .qta button[disabled] { opacity: 1; background: var(--c-surface-2); color: var(--c-ink-2); border: 1px dashed var(--c-line-strong); }
 body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 @media (min-width: 64rem) { body { padding-bottom: 0; } }
+
+/* ---------- Correzioni dal secondo giro di ux-reviewer ---------- */
+/* un bottone dentro un avviso tiene i colori del bottone: ".avviso a" (0,1,1) batteva ".btn--primary" (0,1,0) */
+.avviso a.btn { font-weight: 700; text-decoration: none; color: var(--c-ink); }
+.avviso a.btn:hover { color: var(--c-bg); }
+.avviso a.btn--primary, .avviso a.btn--primary:hover { color: var(--c-accent-on); }
+.hero__prezzi .t-muted, .hero__prezzi .t-small { color: var(--hero-ink-2); }
+/* link "Admin" e simili: bersaglio di almeno 44 px anche in larghezza */
+.header-link { min-width: 2.75rem; justify-content: center; }
+/* select di tabella: mai piu stretti di 8rem */
+.tabella--stack td .select { min-width: 8rem; }
+/* email lunghe: vanno a capo invece di allargare la pagina */
+.cella-testo { overflow-wrap: anywhere; min-width: 0; }
+/* check-in: la barra fissa non copre piu i pulsanti in fondo (altezza barra + 16 px + area sicura) */
+.senza-nav .barra-azione { padding-bottom: calc(var(--s-3) + env(safe-area-inset-bottom)); }
+.checkin-main { padding-bottom: calc(var(--s-3) * 2 + 4rem + 1rem + env(safe-area-inset-bottom)); }

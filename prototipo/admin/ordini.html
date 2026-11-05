@@ -54,7 +54,7 @@
       var q = $('#q').value.trim().toLowerCase(), s = $('#stato').value;
       var l = O.filter(function (o) { return (!s || o.stato === s) && (!q || (o.id + ' ' + o.nome + ' ' + o.email).toLowerCase().indexOf(q) > -1); });
       $('#righe').innerHTML = l.map(function (o) {
-        return '<tr><th scope="row">' + o.id + '</th><td data-label="Data">' + o.data + '</td><td data-label="Chi">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></td><td class="num" data-label="Importo">' + e(o.totale) + '</td><td data-label="Stato">' + AD.badgeOrd(o.stato) + '</td>' +
+        return '<tr><th scope="row">' + o.id + '</th><td data-label="Data">' + o.data + '</td><td data-label="Chi" class="cella-testo">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></td><td class="num" data-label="Importo">' + e(o.totale) + '</td><td data-label="Stato">' + AD.badgeOrd(o.stato) + '</td>' +
           '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-apri="' + o.id + '">Dettaglio<span class="sr-only"> ordine ' + o.id + '</span></button></td></tr>';
       }).join('');
       $('#vuoto').hidden = l.length > 0; $('#conto').textContent = l.length + (l.length === 1 ? ' ordine' : ' ordini');
@@ -75,7 +75,7 @@
         '<tfoot>' + (o.sconto ? '<tr><th scope="row" colspan="2">Codice ' + o.codice + '</th><td class="num" data-label="Sconto">−' + e(o.sconto) + '</td></tr>' : '') + '<tr><th scope="row" colspan="2">Totale</th><td class="num" data-label="Totale">' + e(o.totale) + '</td></tr></tfoot></table>' +
         '<div><h3 class="t-3">Che cosa è successo</h3><ul class="elenco-pulito">' + o.eventi.map(function (v) { return '<li><span class="t-num t-muted">' + v[0] + '</span> · <b>' + v[1] + '</b><br><span class="t-small">' + v[2] + '</span></li>'; }).join('') + '</ul></div>' +
         '</div><div class="layout-2__lato stack">' +
-        '<dl class="meta-lista"><div><dt>Chi</dt><dd>' + o.nome + '</dd></div><div><dt>Email</dt><dd>' + o.email + '</dd></div><div><dt>Prezzo di</dt><dd>' + { membro: 'Membro', pubblico: 'Pubblico', studente: 'Studente' }[o.ruolo] + '</dd></div><div><dt>Pagamento</dt><dd class="t-num">' + o.pi + '</dd></div></dl>' +
+        '<dl class="meta-lista"><div><dt>Chi</dt><dd>' + o.nome + '</dd></div><div><dt>Email</dt><dd class="cella-testo">' + o.email + '</dd></div><div><dt>Prezzo di</dt><dd>' + { membro: 'Membro', pubblico: 'Pubblico' }[o.ruolo] + '</dd></div><div><dt>Pagamento</dt><dd class="t-num">' + o.pi + '</dd></div></dl>' +
         '<div class="stack" style="--stack:var(--s-2)">' +
         '<button type="button" class="btn btn--secondary btn--block" data-az="stripe">' + AD.icona('external') + 'Apri il pagamento su Stripe</button>' +
         (o.stato === 'paid' || o.stato === 'partial' ? '<button type="button" class="btn btn--block" data-az="rimborsa">Rimborsa…</button>' : '') +
