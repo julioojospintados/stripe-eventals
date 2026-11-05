@@ -17,7 +17,7 @@ dichiarati tali nell'interfaccia. Quello che manca è scritto «da definire», n
 | Un solo accento (oltremare) che nella home riempie un'intera fascia | Riconoscibile, regge il contrasto AA |
 | Titoli a peso e scala, cifre tabellari, font di sistema per ora | Nessun font scaricato finché non si sceglie e si ospita una famiglia (una riga: `--font-display`) |
 | Tema chiaro e scuro con `prefers-color-scheme` | Uso in sala con luce bassa e all'aperto |
-| Primo schermo della home: nome, tre date in grande, prezzo del pass intero, bottone «Compra i biglietti» in basso | Risposta e azione senza scorrere, nella zona del pollice |
+| Primo schermo della home: nome, tre date in grande, bottone «Compra i biglietti» subito dopo le date (sopra y≈600 a 360×740, non coperto dalla tab bar), poi i giorni e il prezzo del pass intero | Risposta e azione senza scorrere; la barra in basso non copre il bottone |
 | Evitato: etichette sopra i titoli, numerazione di sezione, card con icona, bordi colorati laterali, ombre dure, emoji come icone | Regole antigenerico della skill `impeccable` |
 
 ## 2. Mappa del sito
@@ -33,7 +33,7 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Sessione | `sessione.html?id=` | P | Dettaglio, interventi, speaker, prezzo/inclusa, prenota o aggiungi |
 | Speaker (elenco) | `speaker.html` | P | Persone in ordine alfabetico |
 | Speaker (scheda) | `speaker-dettaglio.html?id=` | P | Bio, sessioni in cui parla |
-| Biglietti | `biglietti.html` | P | Tabella prezzi per ruolo, ordine, codice sconto, come ottenere i prezzi ridotti |
+| Biglietti | `biglietti.html` | P | Tabella prezzi per ruolo, ordine, codice sconto, come ottenere il prezzo membro, fascia early bird aperta |
 | Membership | `membership.html` | P | Vantaggi, quota, confronto con/senza |
 | Esito pagamento | `checkout-esito.html?stato=` | P | Riuscito, in elaborazione, annullato, fallito; simula Stripe |
 | Accesso / registrazione | `accesso.html` | P | Codice di 6 cifre via email (niente password), account creato al primo accesso, nessun test cognitivo. «Continua senza account» non c'è: vedi capitolo 10 |
@@ -47,7 +47,6 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Le mie prenotazioni | Sessioni incluse prenotate, annulla, lista d'attesa |
 | Il mio programma | Sessioni scelte in ordine di orario, sovrapposizioni segnalate |
 | Membership | Stato, scadenza, rinnovo automatico, disdetta, fatture |
-| Verifica studente | Stato (nessuna, in attesa, approvata, rifiutata con motivo, scaduta), nuova richiesta |
 | Ordini e ricevute | Elenco ordini, ricevute, richiesta di rimborso |
 | Profilo | Dati, email, lingua, esigenze di accessibilità, cancellazione account |
 
@@ -59,11 +58,10 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Programma | Sessioni e interventi, speaker, capienze, incluse o a pagamento, prezzi per ruolo |
 | Prodotti e prezzi | Pass intero e giornaliero, membership, prezzi per ruolo, collegamento ai prodotti Stripe |
 | Codici sconto | Percentuale o importo, validità, limite d'uso, prodotti a cui si applica |
-| Verifiche studenti | Coda da approvare o rifiutare, documento visibile solo qui, motivo del rifiuto |
 | Ordini | Elenco, stato, rimborsi (si avviano su Stripe), esportazione |
 | Prenotazioni e liste d'attesa | Per sessione, spostamenti manuali |
 | Check-in | Lettura del QR da telefono, ricerca per nome, ingresso già usato, elenco entrati |
-| Utenti e ruoli | Membri, studenti, staff con permessi |
+| Utenti e ruoli | Membri, staff con permessi |
 
 ### 2.4 Navigazione comune
 
@@ -79,21 +77,21 @@ Regola unica: **chi non è connesso vede tutti i prezzi con chi ne ha diritto; c
 
 | Chi guarda | Cosa vede | Esempio (pass intero) |
 |---|---|---|
-| Visitatore (non connesso) | Tre righe: Pubblico, Membro «con la membership», Studente «con verifica studente» | 180 € · 120 € · 60 € |
-| Utente non membro | «Il tuo prezzo · Pubblico» grande; sotto «Altri prezzi» e link «Come ottenere i prezzi ridotti» | 180 € grande; Membro 120 €, Studente 60 € |
-| Membro | «Il tuo prezzo · Membro» grande, prezzo pubblico barrato | 120 € grande, 180 € barrato |
-| Studente verificato | «Il tuo prezzo · Studente» grande, pubblico barrato | 60 € grande, 180 € barrato |
-| Studente in attesa | Prezzo pubblico grande, riga «il prezzo studente (60 €) si attiva quando la verifica viene approvata» | 180 € grande |
-| Ex membro | Prezzo pubblico grande, riga «membership scaduta: rinnova per tornare a 120 €» | 180 € grande |
+| Visitatore (non connesso) | Due righe: Pubblico, Membro «con la membership, sul tuo biglietto» | 150 € · 100 € (fascia early bird) |
+| Utente non membro | «Il tuo prezzo · Pubblico» grande; sotto «Altro prezzo» e link «Come ottenere il prezzo membro» | 150 € grande; Membro 100 € |
+| Membro | «Il tuo prezzo · Membro» grande, prezzo pubblico barrato, riga «vale sul tuo biglietto, chi viene con te paga il pubblico» | 100 € grande, 150 € barrato |
+| Ex membro | Prezzo pubblico grande, riga «membership scaduta: rinnova per tornare a 100 €» | 150 € grande |
+
+Dove c'è una fascia di vendita (pass intero e giornaliero) una riga sotto il prezzo dice quale è aperta e quando finisce, con il prezzo che seguirà: «Fascia «Early bird» fino al 30/04/2027 · poi pubblico 180 €, membro 120 €». I prezzi dei pass vengono dalla fascia aperta alla data (nel prototipo simulata: 10/03/2027), quindi sito pubblico e admin mostrano sempre la stessa cifra. Se nessuna fascia è aperta lo si scrive.
 
 Regole di contorno:
 
 - Il barrato ha un testo nascosto «Prezzo pubblico» per i lettori di schermo: non si affida alla sola riga barrata.
-- Nelle righe di elenco (programma, speaker) la versione compatta: visitatore «Pubblico 45 € · Membro 35 € · Studente 20 €», connesso «Tuo prezzo · Membro 35 € (pubblico 45 €)».
+- Nelle righe di elenco (programma, speaker) la versione compatta: visitatore «Pubblico 45 € · Membro 35 €» (nella griglia del programma «Membri 35 € · pubblico 45 €»: il ruolo è sempre scritto, mai un «da X €» senza dire per chi), connesso «Tuo prezzo · Membro 35 € (pubblico 45 €)».
 - Nella pagina biglietti la tabella dei prezzi evidenzia la colonna del ruolo con fondo e con un'etichetta «Tu» (non solo colore).
 - Le sessioni incluse non hanno prezzo: hanno il badge pieno «Inclusa nel pass» (le a pagamento: badge con solo contorno «A pagamento»).
 - La membership si propone solo dove conviene: nel riepilogo compare «risparmio netto» se il risparmio supera la quota, altrimenti «per questo solo ordine non conviene». Mai pressione.
-- Ordine con più persone: il prezzo ridotto spetta all'**account** di chi ne ha diritto. Il Partecipante 1 (chi compra) paga il suo prezzo, gli altri il pubblico. Una nota lo dice prima del pagamento. Vedi domanda aperta 1.
+- **Prezzo membro solo sul biglietto del membro che compra** (decisione di Giulio, 05/11/2026). In un ordine con più persone il primo biglietto è intestato a chi compra (dati dell'account, non modificabili nella pagina) ed è a prezzo membro; gli altri sono al prezzo pubblico. Una riga lo dice prima del pagamento («Prezzo membro solo sul tuo biglietto…»), il riepilogo separa «Partecipante 1 (tu) · prezzo membro» da «Partecipanti 2–N · prezzo pubblico». Un amico membro compra con il proprio account.
 
 ## 4. Flussi principali
 
@@ -101,7 +99,7 @@ Convenzione: **Sistema** è ciò che risponde; **Se…** è un ramo di errore o 
 
 ### 4.1 Acquisto del pass da non membro
 
-1. Dalla home «Compra i biglietti» (o voce Biglietti) porta a `biglietti.html`. Il visitatore vede la tabella con i tre prezzi.
+1. Dalla home «Compra i biglietti» (o voce Biglietti) porta a `biglietti.html`. Il visitatore vede la tabella con i due prezzi (pubblico e membro) e la fascia di vendita aperta.
 2. Sceglie «Pass intero» (o giornaliero, e allora il giorno).
 3. Imposta le persone (1-6); per ognuna nome ed email.
 4. Facoltativo: sessioni a pagamento, codice sconto.
@@ -110,24 +108,20 @@ Convenzione: **Sistema** è ciò che risponde; **Se…** è un ramo di errore o 
 7. Paga su Stripe. Ritorno su `checkout-esito.html`: riuscito, in elaborazione, annullato o fallito.
 8. Riuscito: conferma a schermo, email con biglietti nominativi e codice QR, invito a prenotare le sessioni incluse con posti limitati.
 
-### 4.2 Acquisto da membro con prezzo ridotto
+### 4.2 Acquisto da membro con prezzo membro
 
-1. Il membro accede. L'intestazione dice «Vista: Membro»; la home già mostra 120 € grande con 180 € barrato.
-2. Passi 1-5 come sopra: il prezzo membro si applica da solo al Partecipante 1; un avviso spiega perché gli altri pagano il pubblico.
-3. Il riepilogo mostra il prezzo membro; nessuna proposta di membership.
+1. Il membro accede. L'intestazione dice «Vista: Membro»; la home già mostra 100 € grande con 150 € barrato (fascia early bird).
+2. Passi 1-5 come sopra: il **primo biglietto dell'ordine** è intestato al membro (nome ed email dall'account, in sola lettura) e prende il prezzo membro; i biglietti degli altri partecipanti sono al prezzo pubblico. Una riga nella sezione «Per chi» lo spiega, anche con una persona sola («se aggiungi altre persone, loro pagano il prezzo pubblico»).
+3. Il riepilogo ha una riga per il Partecipante 1 (prezzo membro) e una per gli altri (prezzo pubblico), più la nota «Il prezzo membro è applicato solo al tuo biglietto»; nessuna proposta di membership. Le sessioni a pagamento vanno al Partecipante 1 e prendono il prezzo membro.
 4. Pagamento e ritorno come in 4.1.
 5. **Se la membership è scaduta:** avviso giallo in cima («la tua membership è scaduta, paghi il prezzo pubblico») con link a «Rinnova». Mai applicare il prezzo membro in silenzio e poi correggerlo al pagamento.
 6. **Diventare membro:** `membership.html`, «Diventa membro», abbonamento su Stripe; al ritorno la membership è attiva e i prezzi si aggiornano subito.
 
-### 4.3 Studente che chiede la verifica
+### 4.3 Chi compra per altri
 
-1. In `biglietti.html`, sezione «Prezzi ridotti: come ottenerli», colonna Studente: tre passi (accedi, scegli come verificarti, compra dopo l'approvazione).
-2. Se non è connesso: avviso «Per chiedere la verifica devi prima accedere».
-3. Apre «Chiedi la verifica studente» e sceglie il metodo: **email universitaria** (link di conferma) o **documento** (caricamento, controllo a mano).
-4. Invia. **Sistema:** controlla il campo (errore scritto accanto al campo), poi mostra «Richiesta in attesa. Ti scriviamo appena è controllata»; il ruolo diventa «studente in attesa».
-5. Nell'attesa può comprare al prezzo pubblico; il prezzo studente compare dove serve, con la riga che spiega quando si attiva.
-6. Esito per email e nell'area personale: approvata (prezzo studente attivo), rifiutata (motivo scritto, può riprovare), scaduta (da definire la durata).
-7. Admin: coda di verifiche con approva/rifiuta e motivo; il documento si vede solo lì e si cancella dopo l'esito (regola da confermare con la consulenza privacy).
+1. In `biglietti.html`, sezione «Il prezzo membro: come ottenerlo», colonna «Chi compra per altri»: il primo biglietto è di chi compra, gli altri costano il prezzo pubblico; un amico membro compra con il proprio account.
+2. Se non è connesso: avviso «Per comprare al prezzo membro devi prima accedere» con il link a «Accedi».
+3. Nota di decisione: il ruolo «studente» non esiste (Giulio, 05/11/2026). Niente verifica, niente documenti da custodire, niente coda admin.
 
 ### 4.4 Acquisto di una sessione a pagamento aggiunta al pass
 
@@ -177,8 +171,8 @@ Convenzione: **Sistema** è ciò che risponde; **Se…** è un ramo di errore o 
 | **Pass esaurito o vendita chiusa** | Avviso nella pagina biglietti, opzione disattivata con motivo | Nessun ordine possibile |
 | **Membership scaduta** | Avviso giallo, prezzo pubblico, link a «Rinnova» | Il prezzo membro non si applica; rinnovo da Stripe |
 | **Membership in scadenza prima dell'evento** | Nota «scade il … prima dell'evento» | Domanda 2: conta la data d'acquisto o quella dell'evento |
-| **Verifica studente in attesa** | Prezzo pubblico, riga «si attiva quando la verifica viene approvata», avviso con orologio | Compra al pubblico oppure aspetta; nessun rimborso automatico della differenza (domanda 7) |
-| **Verifica rifiutata** | Motivo scritto, bottone per riprovare | Resta il prezzo pubblico |
+| **Ordine con più persone, acquirente membro** | Riga «Prezzo membro solo sul tuo biglietto», riepilogo con una riga per il Partecipante 1 e una per gli altri | Il prezzo membro si applica solo al primo biglietto, intestato all'account |
+| **Nessuna fascia di vendita aperta** | Riga «oggi nessuna fascia di vendita è aperta: il pass non si può comprare» sotto il prezzo | Nessun ordine di pass possibile |
 | **Pagamento fallito** | Titolo «Il pagamento non è andato a buon fine», avviso rosso `role="alert"`, «Non ti abbiamo addebitato nulla», bottoni «Riprova» e «Torna al riepilogo» | L'ordine resta aperto |
 | **Pagamento in elaborazione** | «Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.» | La conferma arriva dal webhook di Stripe; la pagina non dichiara il successo da sola |
 | **Pagamento annullato** | «Non ti abbiamo addebitato nulla», ordine ancora recuperabile | Posti delle sessioni a pagamento tenuti per un tempo da definire |
@@ -239,25 +233,23 @@ Gli obiettivi sono ipotesi di lavoro, non misure.
 
 | # | Domanda | Proposta |
 |---|---|---|
-| 1 | Chi compra per altri: a chi spetta il prezzo ridotto? | Segue l'account del partecipante; chi compra paga il suo prezzo per sé e il pubblico per gli altri (come nel prototipo) |
+| 1 | ~~Chi compra per altri: a chi spetta il prezzo ridotto?~~ | **Decisa il 05/11/2026:** solo il biglietto del membro che compra; gli accompagnatori pagano il pubblico. Resta da definire se un accompagnatore già membro, che compra con il proprio account, abbia il suo prezzo (sì, per come è scritta la regola) |
 | 2 | La membership conta alla data d'acquisto o a quella dell'evento? | Alla data d'acquisto; avviso se scade prima dell'evento |
 | 3 | La sessione a pagamento si compra anche senza pass? | Sì |
 | 4 | Acquisto senza account (ospite)? | Account obbligatorio, con link via email, per ritrovare biglietti e dare il prezzo giusto |
 | 5 | I codici si sommano al prezzo ridotto? Limiti, scadenza, uno per ordine? | Sconto sul totale già ridotto; un solo codice per ordine |
 | 6 | Posti delle sessioni durante il pagamento e lista d'attesa? | Posti tenuti per un tempo breve; lista d'attesa semplice |
-| 7 | Studente in attesa che ha già pagato il pubblico: differenza rimborsata? | Da decidere con la consulenza legale e fiscale |
 | 8 | Nome vero dell'evento, luogo, date, orari porte, accessibilità della sede | Servono da te |
 | 9 | Altri vantaggi della membership oltre al prezzo | Elenco da te |
-| 10 | Durata di una verifica studente e tempi di approvazione | Un anno accademico; risposta entro un numero di giorni da definire |
 | 11 | Famiglia di caratteri e logo | Scelta con licenza e ospitata in proprio |
-| 12 | Condizioni di vendita, recesso, rimborsi, IVA, privacy dei documenti studente | Alla catena legale-fiscale prima di scrivere le pagine |
+| 12 | Condizioni di vendita, recesso, rimborsi, IVA, privacy | Alla catena legale-fiscale prima di scrivere le pagine |
 | 13 | Accesso con Google | `docs/architettura.md` prevede solo il codice via email: il bottone nel prototipo è spento e dichiarato «da decidere» |
 | 14 | Rimborso: pannello o Dashboard Stripe? | Il prototipo segue l'architettura (§4.8): si rimborsa dal pannello, la Dashboard serve a guardare. Un rimborso fatto in Dashboard finisce in «Da rivedere» |
 
 ## 10. Area personale, admin e check-in (seconda parte)
 
 File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. Coerente con `docs/architettura.md`
-(ruoli derivati dai dati, ordini, verifica studenti, check-in con QR firmato).
+(ruoli derivati dai dati, ordini, check-in con QR firmato). Nota: `docs/architettura.md` e `db/schema.sql` descrivono ancora il ruolo studente e vanno allineati alla decisione del 05/11/2026 (nessuno studente).
 
 ### 10.1 Accesso
 
@@ -271,11 +263,10 @@ File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. 
 
 | Scheda | Cosa fa | Casi coperti |
 |---|---|---|
-| I miei biglietti | Un biglietto per persona con QR nero su bianco, codice breve a 8 caratteri, stato, PDF e wallet (simulati) | Valido, rimborsato (QR sostituito dal testo «QR revocato»). Il QR non contiene il nome |
+| I miei biglietti | Un biglietto per persona con QR nero su bianco, codice breve a 8 caratteri, stato, PDF e wallet (simulati) | Valido, rimborsato (QR sostituito dal testo «QR revocato»). Il QR non contiene il nome. L'importo pagato dice se era prezzo membro o pubblico |
 | Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, massimo 2 cambi | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; limite cambi raggiunto; errori sui campi |
 | La mia agenda | Sessioni prenotate e a pagamento per giorno | Orari sovrapposti: avviso che nomina le due sessioni e offre «Annulla la prenotazione» solo dove è gratis; sessioni a pagamento in conflitto: nessun annullamento, rimando all'organizzazione |
 | Membership | Stato, scadenza, rinnovo, apertura del portale clienti Stripe (simulato in pagina) | Nessuna, attiva, disdetta a fine periodo, pagamento fallito (non vale come membro, regola proposta), scaduta con «Rinnova» |
-| Verifica studente | Email d'ateneo (dominio nell'elenco) oppure documento (PDF, JPEG, PNG, 5 MB) | Non richiesta, in attesa via email (rinvia il link), in revisione, approvata con scadenza (31/10), rifiutata con motivo e nuovo invio, scaduta. Errori su dominio, tipo e peso del file |
 | Ordini e ricevute | Elenco con stato e ricevuta | Pagato, in elaborazione («non pagare di nuovo»), non riuscito e scaduto (con «Riprova»), rimborsato |
 
 I selettori «Prototipo: simula lo stato» nelle schede servono solo a vedere tutti gli stati; nel sito vero lo stato viene dal database.
@@ -286,16 +277,15 @@ Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle 
 
 | Pagina | Flusso | Controlli e casi limite |
 |---|---|---|
-| Cruscotto | «Da fare» in cima (verifiche in attesa, ordini da rivedere, pagamenti in elaborazione), vendite per tipo e ruolo, posti rimasti per pass e per sessioni a pagamento, ultimi ordini | Posti: venduti, in riserva, rimasti con barra **e** numero; il pass intero conta il giorno più pieno; sessione esaurita scritta |
-| Programma | Giorni, sale e tracce (sale e tracce riordinabili); sessioni per giorno con modulo completo e interventi riordinabili | Sala occupata nello stesso orario (errore), fine prima dell'inizio, capienza sotto i venduti, prezzi mancanti, interventi fuori orario o non in ordine, speaker in due sessioni contemporanee (avviso), sala o traccia usata da sessioni non rimovibile, sessione con posti venduti non eliminabile, eliminazione in due passi |
+| Cruscotto | «Da fare» in cima (ordini da rivedere, pagamenti in elaborazione), vendite per tipo e ruolo, posti rimasti per pass e per sessioni a pagamento, ultimi ordini | Posti: venduti, in riserva, rimasti con barra **e** numero; il pass intero conta il giorno più pieno; sessione esaurita scritta |
+| Programma | Giorni, sale e tracce (sale e tracce riordinabili); sessioni per giorno con modulo completo e interventi riordinabili | Ogni campo degli interventi ha un nome accessibile per riga («Ora, intervento «…»»); i riquadri che contengono il riordino lo dicono nel titolo («dentro: elenco e riordino»). Sala occupata nello stesso orario (errore), fine prima dell'inizio, capienza sotto i venduti, prezzi mancanti, interventi fuori orario o non in ordine, speaker in due sessioni contemporanee (avviso), sala o traccia usata da sessioni non rimovibile, sessione con posti venduti non eliminabile, eliminazione in due passi |
 | Riordino | Trascinamento con il mouse **e** pulsanti Su e Giù (tastiera, telefono); la nuova posizione è annunciata ai lettori di schermo | Il trascinamento HTML non funziona al tocco: i pulsanti sono l'alternativa completa |
 | Speaker | Elenco, modulo, foto con testo alternativo obbligatorio | Foto troppo pesante o di tipo sbagliato, speaker con sessioni non eliminabile |
-| Biglietti e prezzi | Matrice tipo × ruolo (pass dalla fascia in corso, sessioni modificabili), fasce di vendita con early bird, capienze | Fasce sovrapposte per lo stesso pass, fine prima dell'inizio, nessuna fascia aperta alla data simulata (pass non acquistabile), prezzo ridotto sopra il pubblico (avviso: vale il più basso), capienza sotto venduti più riserva |
+| Biglietti e prezzi | Matrice tipo × due ruoli (pass dalla fascia in corso, sessioni modificabili), fasce di vendita con early bird (stessa fonte dati del sito pubblico: la fascia aperta è quella che si vede in home e in biglietti), capienze | Fasce sovrapposte per lo stesso pass, fine prima dell'inizio, nessuna fascia aperta alla data simulata (pass non acquistabile), prezzo membro sopra il pubblico (avviso: nessun vantaggio), capienza sotto venduti più riserva |
 | Codici sconto | Elenco con stato, creazione con ruoli, biglietti, finestra, limiti, cumulabilità | Codice troppo corto o duplicato, percentuale oltre 100, usi per persona sopra i totali; testo sul cumulo come in `architettura.md` §4.4 |
 | Ordini | Ricerca per numero, nome o email, filtro per stato, dettaglio con eventi Stripe | Da rivedere (importo che non torna) con «Segna come riconciliato»; in elaborazione con «Ricontrolla su Stripe»; link alla Dashboard solo per guardare |
 | Rimborso | Scelta dei biglietti (importo al netto dello sconto), posti da rimettere in vendita, motivo, conferma con avvertenze, invio a Stripe, conferma simulata | Motivo obbligatorio, nota se «Altro»; avvisi: biglietti revocati subito, commissioni non restituite, rimborsi in Dashboard non si collegano ai biglietti; esito: rimborsato o parziale |
-| Verifiche studenti | Coda con «Esamina»; documento solo da link di 60 secondi (conto alla rovescia, anteprima simulata, apertura registrata); approva con scadenza o rifiuta con motivo | Richieste ferme da oltre 30 giorni segnalate; motivo obbligatorio al rifiuto; file cancellato entro 24 ore; email in attesa del link elencate a parte |
-| Membri | Elenco con stato, ricerca, dettaglio; apertura del cliente su Stripe | Pagamento non riuscito con «Rimanda l'email»; chi è anche studente paga il più basso; sola lettura |
+| Membri | Elenco con stato, ricerca, dettaglio; apertura del cliente su Stripe | Pagamento non riuscito con «Rimanda l'email»; il prezzo membro vale solo sul biglietto di chi compra; sola lettura |
 
 ### 10.4 Check-in (`checkin.html`, telefono, una mano)
 

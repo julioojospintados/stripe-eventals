@@ -28,34 +28,29 @@
   <section class="sezione" aria-labelledby="t-prezzi">
     <div class="wrap">
       <h1 class="t-1">Biglietti</h1>
-      <p class="t-lead misura">Il prezzo dipende dal tuo account: pubblico, membro o studente verificato.</p>
+      <p class="t-lead misura">Due prezzi: pubblico e membro. Il prezzo membro vale solo sul biglietto del membro che compra; chi viene con lui paga il prezzo pubblico.</p>
 
       <!-- Avviso sul ruolo corrente: uno solo visibile alla volta -->
       <div class="avviso avviso--info" data-ruoli="visitatore" role="note">
         <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-        <div><b>Stai guardando come visitatore.</b> Qui sotto vedi tutti i prezzi. Se sei membro o studente, accedi: il tuo prezzo comparirà in evidenza. Senza accesso si paga il prezzo pubblico.</div>
-      </div>
-      <div class="avviso avviso--info" data-ruoli="studente-attesa" role="note">
-        <svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg>
-        <div><b>Verifica studente in attesa.</b> Finché non è approvata paghi il prezzo pubblico. Puoi comprare adesso o aspettare l’esito.</div>
+        <div><b>Stai guardando come visitatore.</b> Qui sotto vedi i due prezzi. Se sei membro, accedi: il tuo prezzo comparirà in evidenza. Senza accesso si paga il prezzo pubblico.</div>
       </div>
       <div class="avviso avviso--warn" data-ruoli="membro-scaduto" role="note">
         <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
         <div><b>La tua membership è scaduta.</b> Paghi il prezzo pubblico. <a href="membership.html">Rinnova la membership</a> per riavere il prezzo membro.</div>
       </div>
-      <div class="avviso avviso--ok" data-ruoli="membro,studente,pubblico" role="note">
+      <div class="avviso avviso--ok" data-ruoli="membro,pubblico" role="note">
         <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
         <div><b>Vedi il tuo prezzo.</b> La colonna con «Tu» è quella che ti spetta.</div>
       </div>
 
       <table class="tabella tabella--stack" id="tab-prezzi">
-        <caption id="t-prezzi">Prezzi per ruolo</caption>
+        <caption id="t-prezzi">Prezzi per ruolo (fascia di vendita aperta oggi)</caption>
         <thead>
           <tr>
             <th scope="col">Cosa</th>
-            <th scope="col" data-colonna-tua="pub">Pubblico <span class="badge badge--ruolo" data-ruoli="pubblico,studente-attesa,membro-scaduto">Tu</span></th>
+            <th scope="col" data-colonna-tua="pub">Pubblico <span class="badge badge--ruolo" data-ruoli="pubblico,membro-scaduto">Tu</span></th>
             <th scope="col" data-colonna-tua="mem">Membro <span class="badge badge--ruolo" data-ruoli="membro">Tu</span></th>
-            <th scope="col" data-colonna-tua="stu">Studente <span class="badge badge--ruolo" data-ruoli="studente">Tu</span></th>
           </tr>
         </thead>
         <tbody>
@@ -63,22 +58,24 @@
             <th scope="row">Pass intero, tre giorni</th>
             <td class="num" data-label="Pubblico" data-colonna-tua="pub"><span data-euro="intero.pub"></span></td>
             <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="intero.mem"></span></td>
-            <td class="num" data-label="Studente" data-colonna-tua="stu"><span data-euro="intero.stu"></span></td>
           </tr>
           <tr>
             <th scope="row">Pass giornaliero, un giorno</th>
             <td class="num" data-label="Pubblico" data-colonna-tua="pub"><span data-euro="giornaliero.pub"></span></td>
             <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="giornaliero.mem"></span></td>
-            <td class="num" data-label="Studente" data-colonna-tua="stu"><span data-euro="giornaliero.stu"></span></td>
           </tr>
           <tr>
             <th scope="row">Workshop e masterclass, a sessione, da</th>
             <td class="num" data-label="Pubblico" data-colonna-tua="pub" id="da-pub"></td>
             <td class="num" data-label="Membro" data-colonna-tua="mem" id="da-mem"></td>
-            <td class="num" data-label="Studente" data-colonna-tua="stu" id="da-stu"></td>
           </tr>
         </tbody>
       </table>
+      <div class="stack" style="--stack:var(--s-1);margin-top:var(--s-3)">
+        <div data-fascia="intero" data-con-nome="1"></div>
+        <div data-fascia="giornaliero" data-con-nome="1"></div>
+      </div>
+      <p class="t-small t-muted misura" id="nota-da"></p>
       <p class="t-small t-muted misura">Le sessioni incluse nel pass non costano altro. Il prezzo esatto di ogni workshop è nella sua pagina.</p>
     </div>
   </section>
@@ -102,9 +99,9 @@
             <legend class="t-2" style="margin-bottom:var(--s-3)">1. Che cosa compri</legend>
             <div class="stack" style="--stack:var(--s-3)">
               <label class="opzione"><input type="radio" name="tipo" value="intero" checked>
-                <span class="opzione__corpo"><span class="opzione__titolo">Pass intero</span><span class="t-small">Tre giorni, tutte le sessioni incluse.</span><span data-prezzo="180,120,60" data-var="inline"></span></span></label>
+                <span class="opzione__corpo"><span class="opzione__titolo">Pass intero</span><span class="t-small">Tre giorni, tutte le sessioni incluse.</span><span data-prezzo-tipo="intero" data-var="inline"></span><span data-fascia="intero"></span></span></label>
               <label class="opzione"><input type="radio" name="tipo" value="giornaliero">
-                <span class="opzione__corpo"><span class="opzione__titolo">Pass giornaliero</span><span class="t-small">Un giorno a scelta, con le sessioni incluse di quel giorno.</span><span data-prezzo="80,55,30" data-var="inline"></span></span></label>
+                <span class="opzione__corpo"><span class="opzione__titolo">Pass giornaliero</span><span class="t-small">Un giorno a scelta, con le sessioni incluse di quel giorno.</span><span data-prezzo-tipo="giornaliero" data-var="inline"></span><span data-fascia="giornaliero"></span></span></label>
               <label class="opzione"><input type="radio" name="tipo" value="sessioni">
                 <span class="opzione__corpo"><span class="opzione__titolo">Solo sessioni a pagamento</span><span class="t-small">Workshop e masterclass scelti qui sotto, senza pass. Prezzo per sessione.</span></span></label>
             </div>
@@ -128,7 +125,7 @@
             <div id="partecipanti" class="stack" style="margin-top:var(--s-4)"></div>
             <div id="nota-persone" class="avviso avviso--info" hidden style="margin-top:var(--s-3)" role="note">
               <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-              <div>Il prezzo ridotto spetta all’account di chi lo ha, quindi vale per il Partecipante 1 (tu). Gli altri partecipanti pagano il prezzo pubblico. Una persona membro o studente può comprare con il suo account.</div>
+              <div id="testo-nota-persone"></div>
             </div>
           </fieldset>
 
@@ -181,59 +178,25 @@
 
   <section class="sezione" id="prezzi-ridotti" aria-labelledby="t-ridotti">
     <div class="wrap">
-      <h2 class="t-1" id="t-ridotti">Prezzi ridotti: come ottenerli</h2>
+      <h2 class="t-1" id="t-ridotti">Il prezzo membro: come ottenerlo</h2>
       <div class="grid-2">
         <div class="colonna-testo">
           <h3 class="t-2">Membro</h3>
           <p>La membership annuale costa <b data-membership></b> e dà il prezzo membro su pass e sessioni a pagamento.</p>
+          <p>Il prezzo membro vale <b>solo sul biglietto del membro che compra</b>. Se compri anche per altre persone, loro pagano il prezzo pubblico.</p>
           <div class="avviso avviso--ok" data-ruoli="membro"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>Sei già membro.</div></div>
           <div class="avviso avviso--warn" data-ruoli="membro-scaduto"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div>La tua membership è scaduta: rinnovala per riavere il prezzo membro.</div></div>
           <p><a class="btn btn--secondary" href="membership.html">Vedi la membership</a></p>
         </div>
 
         <div class="colonna-testo">
-          <h3 class="t-2">Studente</h3>
-          <ol class="passi">
-            <li><span><b>Accedi o registrati.</b> La verifica è legata al tuo account.</span></li>
-            <li><span><b>Scegli come verificarti:</b> con l’email universitaria (ti mandiamo un link) o caricando un documento, che l’organizzazione controlla a mano. Tempi di approvazione: da definire.</span></li>
-            <li><span><b>Compra al prezzo studente</b> appena la verifica è approvata. Fino ad allora paghi il prezzo pubblico.</span></li>
-          </ol>
-
+          <h3 class="t-2">Chi compra per altri</h3>
+          <p>Nell’ordine il <b>primo biglietto</b> è intestato a chi compra, e solo quello prende il prezzo membro. Gli altri biglietti sono nominativi e costano il prezzo pubblico.</p>
+          <p>Un amico membro che vuole il prezzo membro compra con il proprio account.</p>
           <div class="avviso avviso--info" data-ruoli="visitatore">
             <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
-            <div><p>Per chiedere la verifica devi prima accedere.</p><p><button type="button" class="btn btn--secondary" id="accedi-sim">Accedi (simulato)</button></p></div>
+            <div><p>Per comprare al prezzo membro devi prima accedere.</p><p><a class="btn btn--secondary" href="accesso.html?next=biglietti.html">Accedi</a></p></div>
           </div>
-          <div class="avviso avviso--ok" data-ruoli="studente">
-            <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
-            <div><b>Sei verificato come studente.</b> Validità: da definire (per esempio un anno accademico).</div>
-          </div>
-          <div class="avviso avviso--info" data-ruoli="studente-attesa" role="status">
-            <svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg>
-            <div><b>Richiesta in attesa.</b> Ti scriviamo appena è controllata. Puoi comprare intanto al prezzo pubblico.</div>
-          </div>
-
-          <details class="acc" id="verifica-studente" data-ruoli="pubblico,membro,membro-scaduto">
-            <summary>Chiedi la verifica studente<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
-            <form class="acc__corpo stack" id="form-verifica" novalidate>
-              <fieldset class="campo">
-                <legend>Come vuoi verificarti</legend>
-                <label class="scelta"><input type="radio" name="metodo" value="email" checked><span>Email universitaria</span></label>
-                <label class="scelta"><input type="radio" name="metodo" value="documento"><span>Documento</span></label>
-              </fieldset>
-              <div class="campo" id="c-email">
-                <label for="v-email">Email universitaria</label>
-                <input class="input" id="v-email" type="email" autocomplete="email" placeholder="nome.cognome@universita.example">
-                <p class="campo__aiuto">Ti mandiamo un link di conferma. Non salviamo altro.</p>
-              </div>
-              <div class="campo" id="c-doc" hidden>
-                <label for="v-doc">Documento che prova l’iscrizione</label>
-                <input class="input" id="v-doc" type="file" accept="image/*,.pdf">
-                <p class="campo__aiuto">Libretto o certificato di iscrizione. Lo controlla una persona e poi lo cancelliamo (regola da confermare con la consulenza privacy).</p>
-              </div>
-              <p class="campo__errore" id="v-err" role="alert" hidden></p>
-              <button type="submit" class="btn btn--primary">Invia la richiesta</button>
-            </form>
-          </details>
         </div>
       </div>
     </div>
@@ -255,9 +218,13 @@
     var pagamento = D.sessioni.filter(function (s) { return s.pagamento; });
 
     /* riga "da" della tabella e quota membership */
-    ['pub', 'mem', 'stu'].forEach(function (k) {
+    // il "da" e' il minimo reale tra le sessioni a pagamento, calcolato dai dati (mai scritto a mano)
+    ['pub', 'mem'].forEach(function (k) {
       $('#da-' + k).textContent = CV.euro(Math.min.apply(null, pagamento.map(function (s) { return s.pagamento[k]; })));
     });
+    var meno = pagamento.slice().sort(function (a, b) { return a.pagamento.pub - b.pagamento.pub; })[0];
+    $('#nota-da').textContent = 'Le sessioni a pagamento sono ' + pagamento.length + ', da ' + CV.euro(meno.pagamento.pub) + ' a ' +
+      CV.euro(Math.max.apply(null, pagamento.map(function (s) { return s.pagamento.pub; }))) + ' al prezzo pubblico. La più economica: «' + meno.titolo + '».';
     $$('[data-membership]').forEach(function (e) { e.textContent = CV.euro(D.prezzi.membership) + ' all’anno'; });
 
     $('#giorno').innerHTML = D.giorni.map(function (g) { return '<option value="' + g.id + '">' + g.lungo + '</option>'; }).join('');
@@ -277,10 +244,14 @@
     /* ---- disegno dei blocchi ---- */
     function partecipanti() {
       var h = '';
+      var socio = CV.stato.ruolo === 'membro';
       for (var i = 0; i < S.n; i++) {
-        h += '<fieldset class="campo scheda"><legend class="etichetta">Partecipante ' + (i + 1) + (i === 0 ? ' (tu)' : '') + '</legend>' +
-          '<div class="campo"><label for="nome-' + i + '">Nome e cognome</label><input class="input" id="nome-' + i + '" autocomplete="' + (i === 0 ? 'name' : 'off') + '" value="' + (S.nomi[i] || '') + '"></div>' +
-          '<div class="campo"><label for="email-' + i + '">Email</label><input class="input" id="email-' + i + '" type="email" autocomplete="' + (i === 0 ? 'email' : 'off') + '" value="' + (S.email[i] || '') + '"></div></fieldset>';
+        // il membro: il primo biglietto e' intestato a lui (dati dell'account, non modificabili qui) e prende il prezzo membro
+        var mio = socio && i === 0, nm = mio ? 'Alessia Demo' : (S.nomi[i] || ''), em = mio ? 'alessia.demo@example.test' : (S.email[i] || '');
+        h += '<fieldset class="campo scheda"><legend class="etichetta">Partecipante ' + (i + 1) + (i === 0 ? ' (tu)' : '') + (mio ? ' · prezzo membro' : (socio ? ' · prezzo pubblico' : '')) + '</legend>' +
+          '<div class="campo"><label for="nome-' + i + '">Nome e cognome</label><input class="input" id="nome-' + i + '" autocomplete="' + (i === 0 ? 'name' : 'off') + '" value="' + nm + '"' + (mio ? ' readonly aria-describedby="aiuto-mio"' : '') + '></div>' +
+          '<div class="campo"><label for="email-' + i + '">Email</label><input class="input" id="email-' + i + '" type="email" autocomplete="' + (i === 0 ? 'email' : 'off') + '" value="' + em + '"' + (mio ? ' readonly' : '') + '>' +
+          (mio ? '<p class="campo__aiuto" id="aiuto-mio">Biglietto intestato a te, dall’account: il prezzo membro vale solo qui.</p>' : '') + '</div></fieldset>';
       }
       $('#partecipanti').innerHTML = h;
       $$('#partecipanti input').forEach(function (inp) {
@@ -288,7 +259,11 @@
           var m = inp.id.split('-'); (m[0] === 'nome' ? S.nomi : S.email)[+m[1]] = inp.value;
         });
       });
-      $('#nota-persone').hidden = !(S.n > 1 && CV.stato.ruolo !== 'visitatore' && CV.stato.ruolo !== 'pubblico');
+      // riga che spiega il prezzo membro: solo per il membro, anche con una persona sola
+      $('#nota-persone').hidden = !(socio && S.tipo !== 'sessioni');
+      $('#testo-nota-persone').innerHTML = S.n > 1
+        ? '<b>Prezzo membro solo sul tuo biglietto.</b> Il Partecipante 1 (tu) paga il prezzo membro; gli altri ' + (S.n - 1) + (S.n === 2 ? ' partecipante paga' : ' partecipanti pagano') + ' il prezzo pubblico.'
+        : '<b>Prezzo membro sul tuo biglietto.</b> Se aggiungi altre persone, loro pagano il prezzo pubblico.';
     }
 
     function elencoSessioni() {
@@ -313,13 +288,14 @@
         p = D.prezzi[tipo];
         var nome = tipo === 'intero' ? 'Pass intero' : 'Pass giornaliero · ' + CV.giorno(S.giorno).lungo;
         mio = CV.prezzoMio(p);
-        righe.push({ t: nome + ' · Partecipante 1', v: mio });
+        // solo il primo biglietto (intestato a chi compra) prende il prezzo del suo ruolo; gli altri pagano il pubblico
+        righe.push({ t: nome + ' · Partecipante 1 (tu) · ' + (mio < p.pub ? 'prezzo membro' : 'prezzo pubblico'), v: mio });
         sub += mio; risp += p.pub - p.mem;
-        if (n > 1) { righe.push({ t: nome + ' × ' + (n - 1) + ' · prezzo pubblico', v: p.pub * (n - 1) }); sub += p.pub * (n - 1); }
+        if (n > 1) { righe.push({ t: nome + ' × ' + (n - 1) + ' · Partecipanti 2' + (n > 2 ? '–' + n : '') + ' · prezzo pubblico', v: p.pub * (n - 1) }); sub += p.pub * (n - 1); }
       }
       S.sessioni.forEach(function (id) {
         var s = CV.sessione(id); mio = CV.prezzoMio(s.pagamento);
-        righe.push({ t: s.titolo, v: mio }); sub += mio; risp += s.pagamento.pub - s.pagamento.mem;
+        righe.push({ t: s.titolo + ' · Partecipante 1' + (mio < s.pagamento.pub ? ' · prezzo membro' : ''), v: mio }); sub += mio; risp += s.pagamento.pub - s.pagamento.mem;
       });
       var sc = S.codice ? Math.round(sub * S.codice.pc / 100) : 0;
       return { righe: righe, sub: sub, sconto: sc, totale: sub - sc, risp: risp };
@@ -336,10 +312,12 @@
 
       /* la membership conviene? Solo per chi non e' gia' membro */
       var r = CV.stato.ruolo, nota = '';
-      if ((r === 'visitatore' || r === 'pubblico' || r === 'studente-attesa' || r === 'membro-scaduto') && c.risp > 0) {
+      if (r === 'membro' && S.n > 1 && S.tipo !== 'sessioni') {
+        nota = '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Il prezzo membro è applicato solo al tuo biglietto (Partecipante 1). Gli altri ' + (S.n - 1) + ' biglietti sono al prezzo pubblico.</div></div>';
+      } else if ((r === 'visitatore' || r === 'pubblico' || r === 'membro-scaduto') && c.risp > 0) {
         var netto = c.risp - D.prezzi.membership;
         nota = netto > 0
-          ? '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Con la membership (' + CV.euro(D.prezzi.membership) + ' all’anno) questo ordine costerebbe ' + CV.euro(c.risp) + ' in meno: risparmio netto ' + CV.euro(netto) + '. <a href="membership.html">Come funziona</a></div></div>'
+          ? '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Con la membership (' + CV.euro(D.prezzi.membership) + ' all’anno) il tuo biglietto costerebbe ' + CV.euro(c.risp) + ' in meno: risparmio netto ' + CV.euro(netto) + '. Vale solo sul tuo biglietto. <a href="membership.html">Come funziona</a></div></div>'
           : '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Per questo solo ordine la membership non conviene: risparmieresti ' + CV.euro(c.risp) + ' contro ' + CV.euro(D.prezzi.membership) + ' di quota.</div></div>';
       }
       $('#nota-membro').innerHTML = nota;
@@ -427,31 +405,7 @@
       setTimeout(function () { location.href = 'checkout-esito.html'; }, 400);
     });
 
-    /* ---- verifica studente (simulata) ---- */
-    $$('input[name="metodo"]').forEach(function (r) {
-      r.addEventListener('change', function () {
-        $('#c-email').hidden = r.value !== 'email' || !r.checked;
-        $('#c-doc').hidden = r.value !== 'documento' || !r.checked;
-      });
-    });
-    $('#form-verifica').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var m = $('input[name="metodo"]:checked').value, ok = true;
-      if (m === 'email' && !/^\S+@\S+\.\S+$/.test($('#v-email').value.trim())) ok = false;
-      if (m === 'documento' && !$('#v-doc').files.length) ok = false;
-      var ve = $('#v-err');
-      if (!ok) {
-        ve.hidden = false;
-        ve.innerHTML = CV.ic('alert') + '<span>' + (m === 'email' ? 'Scrivi un’email universitaria valida, per esempio nome.cognome@universita.example.' : 'Scegli il file del documento da caricare.') + '</span>';
-        return;
-      }
-      ve.hidden = true;
-      CV.setStato({ ruolo: 'studente-attesa' });
-    });
-    $('#accedi-sim').addEventListener('click', function () { CV.setStato({ ruolo: 'pubblico' }); });
-
     document.addEventListener('cv:stato', function () { elencoSessioni(); partecipanti(); riepilogo(); });
-    if (location.hash === '#prezzi-ridotti') { var v = $('#verifica-studente'); if (v) v.open = false; }
 
     elencoSessioni(); aggiornaTipo(); qta(0);
   });

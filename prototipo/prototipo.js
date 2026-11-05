@@ -233,11 +233,11 @@
   }
 
   // Nota sulla fascia di vendita aperta (early bird) per un pass; vuota se la fascia aperta e' l'ultima.
-  function fasciaHTML(tipo) {
-    var f = DATA.prezzi[tipo].fascia, n = f && fasciaDopo(f);
-    if (!f) return '<p class="t-small t-muted">Oggi nessuna fascia di vendita è aperta: il pass non si può comprare.</p>';
-    return '<p class="t-small t-muted"><b>Fascia «' + f.nome + '» fino al ' + dataIt(f.al) + '</b>' +
-      (n ? '; poi pubblico ' + euro(n.pub) + ' · membro ' + euro(n.mem) + '.' : '.') + '</p>';
+  function fasciaHTML(tipo, conNome) {
+    var f = DATA.prezzi[tipo].fascia, n = f && fasciaDopo(f), nome = conNome ? { intero: 'Pass intero', giornaliero: 'Pass giornaliero' }[tipo] + ': ' : '';
+    if (!f) return '<span class="t-small t-muted fascia-nota">' + nome + (conNome ? 'o' : 'O') + 'ggi nessuna fascia di vendita è aperta: il pass non si può comprare.</span>';
+    return '<span class="t-small t-muted fascia-nota">' + nome + '<b>' + (conNome ? 'fascia' : 'Fascia') + ' «' + f.nome + '» fino al ' + dataIt(f.al) + '</b>' +
+      (n ? ' · poi pubblico ' + euro(n.pub) + ', membro ' + euro(n.mem) : '') + '</span>';
   }
 
   /* ------------------------------------------------------------------ pezzi di interfaccia riusati */
@@ -376,7 +376,7 @@
     qa('[data-prezzo-tipo]').forEach(function (el) {
       el.innerHTML = prezzoHTML(DATA.prezzi[el.getAttribute('data-prezzo-tipo')], { inline: el.getAttribute('data-var') === 'inline' });
     });
-    qa('[data-fascia]').forEach(function (el) { el.innerHTML = fasciaHTML(el.getAttribute('data-fascia')); });
+    qa('[data-fascia]').forEach(function (el) { el.innerHTML = fasciaHTML(el.getAttribute('data-fascia'), el.hasAttribute('data-con-nome')); });
     qa('[data-euro]').forEach(function (el) {
       var v = el.getAttribute('data-euro').split('.'), x = DATA.prezzi[v[0]];
       if (typeof x === 'object') x = x[v[1]];

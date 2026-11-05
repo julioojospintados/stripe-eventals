@@ -798,6 +798,7 @@ body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 .avviso a.btn:hover { color: var(--c-bg); }
 .avviso a.btn--primary, .avviso a.btn--primary:hover { color: var(--c-accent-on); }
 .hero__prezzi .t-muted, .hero__prezzi .t-small { color: var(--hero-ink-2); }
+.fascia-nota { display: block; }
 /* link "Admin" e simili: bersaglio di almeno 44 px anche in larghezza */
 .header-link { min-width: 2.75rem; justify-content: center; }
 /* select di tabella: mai piu stretti di 8rem */
