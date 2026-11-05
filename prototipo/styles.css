@@ -201,7 +201,8 @@
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 1rem; }
+/* il fuoco non deve finire sotto la barra in basso o la barra del totale (WCAG 2.2, 2.4.11) */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 1rem; scroll-padding-bottom: calc(var(--nav-h) + 6rem); }
 body {
   margin: 0;
   background: var(--c-bg);
@@ -281,7 +282,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .proto-bar__controlli { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); }
 .proto-bar label { font-weight: 600; }
-.proto-bar .select { min-height: 2.75rem; padding-block: 0; font-size: var(--fs-sm); background: var(--c-bg); color: var(--c-ink); border-color: var(--c-bg); }
+.proto-bar .select { width: auto; max-width: 100%; min-height: 2.75rem; padding-block: 0; font-size: var(--fs-sm); background: var(--c-bg); color: var(--c-ink); border-color: var(--c-bg); }
 .proto-bar .scelta { min-height: 2.75rem; }
 .proto-bar :focus-visible { outline-color: var(--c-bg); }
 
