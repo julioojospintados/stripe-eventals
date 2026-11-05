@@ -1,0 +1,252 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Programma · Admin · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
+  </div>
+</header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head">
+      <h1 class="t-1">Programma</h1>
+      <p class="t-small t-muted">Le modifiche di questo prototipo non si salvano davvero. Nel sito ogni modifica finisce nel registro audit.</p>
+    </div>
+
+    <section aria-labelledby="h-struttura">
+      <h2 class="t-2" id="h-struttura">Giorni, sale e tracce</h2>
+      <p class="t-muted misura">Si riordina trascinando la maniglia con il mouse, oppure con i pulsanti Su e Giù (tastiera e telefono). L’ordine delle sale è l’ordine delle colonne nella griglia pubblica.</p>
+
+      <details class="acc" open>
+        <summary>Giorni<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <div class="acc__corpo"><ul class="elenco-pulito" id="l-giorni"></ul></div>
+      </details>
+      <details class="acc">
+        <summary>Sale<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <div class="acc__corpo"><ul class="riordina" id="l-sale"></ul>
+          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-sala">Aggiungi una sala</button></div>
+          <div id="st-sale" role="status" aria-live="polite"></div></div>
+      </details>
+      <details class="acc">
+        <summary>Tracce<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <div class="acc__corpo"><ul class="riordina" id="l-tracce"></ul>
+          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-traccia">Aggiungi una traccia</button></div>
+          <div id="st-tracce" role="status" aria-live="polite"></div></div>
+      </details>
+    </section>
+
+    <section aria-labelledby="h-sessioni">
+      <h2 class="t-2" id="h-sessioni">Sessioni</h2>
+      <div class="tabs" role="tablist" aria-label="Giorno da modificare" id="tabs-g"></div>
+      <div id="pannello" role="tabpanel" tabindex="0" class="tabpanel">
+        <div id="st-sessioni" role="status" aria-live="polite"></div>
+        <div id="l-sessioni"></div>
+        <p style="margin-top:var(--s-4)"><button type="button" class="btn btn--primary" id="add-sessione">Aggiungi una sessione a questo giorno</button></p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
+    var copia = function (x) { return JSON.parse(JSON.stringify(x)); };
+    var S = copia(D.sessioni), SALE = copia(D.sale), TR = copia(D.tracce), GG = copia(D.giorni);
+    var giorno = 'g1', aperta = null, nuovo = 0;
+    var DATE = { g1: '2027-10-14', g2: '2027-10-15', g3: '2027-10-16' };
+
+    var ORE = []; for (var m = 540; m <= 1080; m += 30) ORE.push((Math.floor(m / 60) < 10 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00'));
+    function opt(lista, sel, v, l) { return lista.map(function (x) { var val = v ? x[v] : x; return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + (l ? x[l] : x) + '</option>'; }).join(''); }
+    function venduti(s) { return s.posti.tot ? s.posti.tot - s.posti.res : 0; }
+    function tipoAcc(s) { return s.pagamento ? 'pagamento' : (s.posti.libero ? 'libero' : 'prenotazione'); }
+    function nomiSp(s) { return s.sp.map(function (i) { return CV.persona(i).nome; }).join(', '); }
+
+    /* ---------------- struttura ---------------- */
+    $('#l-giorni').innerHTML = GG.map(function (g) {
+      return '<li class="azioni-riga"><div class="campo" style="flex:1 1 14rem"><label for="gn-' + g.id + '">Nome del giorno</label><input class="input" id="gn-' + g.id + '" value="' + g.lungo + '"></div>' +
+        '<div class="campo"><label for="gd-' + g.id + '">Data</label><input class="input" id="gd-' + g.id + '" type="date" value="' + DATE[g.id] + '"></div></li>';
+    }).join('');
+
+    function strutt(ul, lista, chiave, tipo) {
+      ul.innerHTML = lista.map(function (x) {
+        return AD.rigaRiordina(x.nome, '<div class="campo"><label for="n-' + x.id + '">Nome ' + tipo + '</label><input class="input" id="n-' + x.id + '" value="' + x.nome + '"></div>' +
+          '<button type="button" class="btn btn--quiet btn--piccolo" data-rimuovi="' + x.id + '" data-tipo="' + chiave + '">Rimuovi</button>');
+      }).join('');
+      $$('li', ul).forEach(function (li, i) { li.setAttribute('data-id', lista[i].id); });
+    }
+    function disegnaStruttura() {
+      strutt($('#l-sale'), SALE, 'sala', 'della sala'); strutt($('#l-tracce'), TR, 'traccia', 'della traccia');
+      AD.riordina($('#l-sale')); AD.riordina($('#l-tracce'));
+    }
+    function aggiungi(lista, pre, chiave, ul, st) {
+      var id = pre + (++nuovo); lista.push({ id: id, nome: 'Nuova ' + chiave + ' ' + nuovo, nota: 'da definire' });
+      disegnaStruttura(); var inp = $('#n-' + id, ul); inp.focus(); inp.select();
+      CV.msg(st, 'ok', 'Aggiunta. Rinominala e riordinala: la modifica vale quando salvi (simulato).');
+    }
+    $('#add-sala').addEventListener('click', function () { aggiungi(SALE, 'sala', 'sala', $('#l-sale'), $('#st-sale')); });
+    $('#add-traccia').addEventListener('click', function () { aggiungi(TR, 'tr', 'traccia', $('#l-tracce'), $('#st-tracce')); });
+    d_rimuovi();
+    function d_rimuovi() {
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-rimuovi]'); if (!b) return;
+        var id = b.getAttribute('data-rimuovi'), sala = b.getAttribute('data-tipo') === 'sala';
+        var usate = S.filter(function (s) { return (sala ? s.sala : s.t) === id; }).length;
+        var st = sala ? $('#st-sale') : $('#st-tracce');
+        if (usate) { CV.msg(st, 'err', 'Non si può rimuovere: ' + usate + (usate === 1 ? ' sessione la usa' : ' sessioni la usano') + '. Spostale prima in un’altra ' + (sala ? 'sala' : 'traccia') + '.'); return; }
+        var lista = sala ? SALE : TR; lista.splice(lista.map(function (x) { return x.id; }).indexOf(id), 1);
+        disegnaStruttura(); CV.msg(st, 'ok', 'Rimossa (simulato).');
+      });
+    }
+
+    /* ---------------- sessioni ---------------- */
+    function riepilogo(s) {
+      return '<span class="t-num"><b>' + s.da + '–' + s.a + '</b></span> · ' + s.titolo + ' <span class="t-muted">· ' + (SALE.filter(function (y) { return y.id === s.sala; })[0] || { nome: '?' }).nome + '</span> ' +
+        '<span class="badge badge--' + (s.pagamento ? 'pagamento' : 'inclusa') + '">' + (s.pagamento ? 'A pagamento' : 'Inclusa') + '</span>';
+    }
+    function formSessione(s) {
+      var acc = tipoAcc(s), v = venduti(s), id = s.id;
+      var sub = s.subs.map(function (x) { return rigaSub(x.ora, x.titolo, x.chi); }).join('');
+      return '<form class="acc__corpo stack" data-id="' + id + '" novalidate style="--stack:var(--s-4)">' +
+        '<div class="campo"><label for="f-' + id + '-titolo">Titolo</label><input class="input" id="f-' + id + '-titolo" value="' + s.titolo.replace(/"/g, '&quot;') + '"></div>' +
+        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-g">Giorno</label><select class="select" id="f-' + id + '-g">' + opt(GG, s.g, 'id', 'lungo') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-da">Inizio</label><select class="select" id="f-' + id + '-da">' + opt(ORE, s.da) + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-a">Fine</label><select class="select" id="f-' + id + '-a">' + opt(ORE, s.a) + '</select></div></div>' +
+        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-sala">Sala</label><select class="select" id="f-' + id + '-sala">' + opt(SALE, s.sala, 'id', 'nome') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-t">Traccia</label><select class="select" id="f-' + id + '-t">' + opt(TR, s.t, 'id', 'nome') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-tipo">Tipo</label><select class="select" id="f-' + id + '-tipo">' + Object.keys(D.tipi).map(function (k) { return '<option value="' + k + '"' + (k === s.tipo ? ' selected' : '') + '>' + D.tipi[k] + '</option>'; }).join('') + '</select></div></div>' +
+        '<fieldset class="campo"><legend class="etichetta">Accesso</legend>' +
+        ['libero|Inclusa nel pass, ingresso libero', 'prenotazione|Inclusa nel pass, con prenotazione gratuita', 'pagamento|A pagamento, a parte'].map(function (o) {
+          var p = o.split('|'); return '<label class="scelta"><input type="radio" name="acc-' + id + '" value="' + p[0] + '"' + (p[0] === acc ? ' checked' : '') + '><span>' + p[1] + '</span></label>'; }).join('') + '</fieldset>' +
+        '<div class="campo" data-cap' + (acc === 'libero' ? ' hidden' : '') + '><label for="f-' + id + '-cap">Capienza</label><input class="input input--num" id="f-' + id + '-cap" type="number" min="0" step="1" value="' + (s.posti.tot || '') + '" aria-describedby="h-' + id + '-cap">' +
+        '<p class="campo__aiuto" id="h-' + id + '-cap">' + (v ? 'Già venduti o prenotati: ' + v + '. Non si può scendere sotto questo numero.' : 'Nessun posto ancora venduto.') + '</p></div>' +
+        '<fieldset class="campo" data-prezzi' + (acc === 'pagamento' ? '' : ' hidden') + '><legend class="etichetta">Prezzi per ruolo (€)</legend><div class="grid-3">' +
+        ['pub|Pubblico', 'mem|Membro', 'stu|Studente'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="1" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
+        '<fieldset class="campo"><legend class="etichetta">Speaker</legend><div class="grid-2">' + D.speakers.map(function (p) {
+          return '<label class="scelta"><input type="checkbox" value="' + p.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + ' data-sp><span>' + p.nome + '</span></label>'; }).join('') + '</div></fieldset>' +
+        '<fieldset class="campo"><legend class="etichetta">Interventi (sottosezioni)</legend>' +
+        '<p class="campo__aiuto">Ordina con la maniglia o con Su e Giù. Gli orari devono salire e stare dentro la sessione.</p>' +
+        '<ul class="riordina" data-subs>' + sub + '</ul>' +
+        '<p><button type="button" class="btn btn--secondary btn--piccolo" data-add-sub>Aggiungi un intervento</button></p></fieldset>' +
+        '<div id="er-' + id + '" role="alert" aria-live="assertive"></div>' +
+        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Salva la sessione</button><button type="button" class="btn btn--quiet" data-elimina="' + id + '">Elimina</button></div>' +
+        '<div id="el-' + id + '" role="status" aria-live="polite"></div></form>';
+    }
+    function rigaSub(ora, titolo, chi) {
+      return AD.rigaRiordina(titolo || 'Nuovo intervento',
+        '<div class="grid-3"><div class="campo"><label>Ora</label><select class="select" data-s="ora">' + opt(ORE.concat(['09:15', '11:15', '11:45', '12:05', '12:30', '11:40']).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort(), ora || '09:00') + '</select></div>' +
+        '<div class="campo"><label>Titolo</label><input class="input" data-s="titolo" value="' + (titolo || '').replace(/"/g, '&quot;') + '"></div>' +
+        '<div class="campo"><label>Chi interviene</label><input class="input" data-s="chi" value="' + (chi || '') + '"></div></div>');
+    }
+    function disegnaSessioni() {
+      var l = S.filter(function (s) { return s.g === giorno; }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da); });
+      $('#l-sessioni').innerHTML = l.length ? l.map(function (s) {
+        return '<details class="acc" id="d-' + s.id + '"' + (aperta === s.id ? ' open' : '') + '><summary>' + riepilogo(s) + '<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>' + formSessione(s) + '</details>';
+      }).join('') : '<p class="vuoto">Nessuna sessione in questo giorno.</p>';
+      $$('[data-subs]').forEach(function (ul) { AD.riordina(ul); });
+    }
+
+    /* schede dei giorni */
+    $('#tabs-g').innerHTML = GG.map(function (g, i) { return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '" data-g="' + g.id + '">' + g.breve + '<small>ottobre</small></button>'; }).join('');
+    var tabs = $$('.tab');
+    function scegli(t, sposta) {
+      tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t); x.tabIndex = x === t ? 0 : -1; });
+      giorno = t.getAttribute('data-g'); $('#pannello').setAttribute('aria-labelledby', t.id); if (sposta) t.focus(); disegnaSessioni();
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { scegli(t, false); });
+      t.addEventListener('keydown', function (e) { var n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key]; if (n === undefined) return; e.preventDefault(); scegli(tabs[(n + tabs.length) % tabs.length], true); });
+    });
+
+    var box = $('#l-sessioni');
+    box.addEventListener('toggle', function (e) { if (e.target.open) aperta = e.target.id.replace('d-', ''); }, true);
+    box.addEventListener('change', function (e) {
+      var f = e.target.closest('form'); if (!f) return;
+      if (e.target.name && e.target.name.indexOf('acc-') === 0) {
+        f.querySelector('[data-cap]').hidden = e.target.value === 'libero'; f.querySelector('[data-prezzi]').hidden = e.target.value !== 'pagamento';
+      }
+    });
+    box.addEventListener('click', function (e) {
+      var f = e.target.closest('form'); if (!f) return;
+      if (e.target.closest('[data-add-sub]')) {
+        var ul = f.querySelector('[data-subs]'); ul.insertAdjacentHTML('beforeend', rigaSub('', '', '')); AD.riordina(ul);
+        ul.lastElementChild.querySelector('input').focus(); AD.annuncio('Intervento aggiunto in fondo.');
+      }
+      var el = e.target.closest('[data-elimina]');
+      if (el) {
+        var s = S.filter(function (x) { return x.id === f.getAttribute('data-id'); })[0], st = $('#el-' + s.id);
+        if (venduti(s)) { CV.msg(st, 'err', 'Non si elimina: ci sono ' + venduti(s) + ' posti venduti o prenotati. Rimborsa o sposta prima gli ordini.'); return; }
+        if (!el.getAttribute('data-conferma')) { el.setAttribute('data-conferma', '1'); el.textContent = 'Conferma: elimina davvero'; el.className = 'btn btn--danger'; CV.msg(st, 'warn', 'Premi di nuovo per eliminare «' + s.titolo + '». Non si può annullare.'); return; }
+        S = S.filter(function (x) { return x.id !== s.id; }); aperta = null; disegnaSessioni(); CV.msg($('#st-sessioni'), 'ok', 'Sessione eliminata (simulato). Registrato nel registro audit.');
+      }
+    });
+    box.addEventListener('submit', function (e) {
+      var f = e.target.closest('form'); if (!f) return; e.preventDefault();
+      var id = f.getAttribute('data-id'), s = S.filter(function (x) { return x.id === id; })[0], g = function (k) { return $('#f-' + id + '-' + k).value; };
+      var er = [], acc = f.querySelector('input[name="acc-' + id + '"]:checked').value;
+      var n = { titolo: g('titolo').trim(), g: g('g'), da: g('da'), a: g('a'), sala: g('sala'), t: g('t'), tipo: g('tipo') };
+      $$('[aria-invalid]', f).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      function err(k, m) { er.push({ k: k, m: m }); }
+      if (!n.titolo) err('titolo', 'Scrivi il titolo della sessione.');
+      if (CV.min(n.a) <= CV.min(n.da)) err('a', 'La fine deve essere dopo l’inizio.');
+      else S.forEach(function (o) { if (o.id !== id && o.g === n.g && o.sala === n.sala && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) err('sala', 'La sala è occupata da «' + o.titolo + '» (' + o.da + '–' + o.a + '). Cambia sala o orario.'); });
+      var cap = parseInt(g('cap'), 10), pr = { pub: +g('pub'), mem: +g('mem'), stu: +g('stu') };
+      if (acc !== 'libero') {
+        if (isNaN(cap) || cap < 1) err('cap', 'Scrivi la capienza: un numero da 1 in su.');
+        else if (cap < venduti(s)) err('cap', 'La capienza non può scendere sotto ' + venduti(s) + ': ci sono già posti venduti o prenotati.');
+      }
+      if (acc === 'pagamento') {
+        ['pub', 'mem', 'stu'].forEach(function (k) { if (isNaN(pr[k]) || pr[k] < 0 || $('#f-' + id + '-' + k).value === '') err(k, 'Scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro', stu: 'studente' }[k] + ' (anche 0).'); });
+      }
+      var subs = $$('[data-subs] > li', f).map(function (li) { return { ora: $('[data-s="ora"]', li).value, titolo: $('[data-s="titolo"]', li).value.trim(), chi: $('[data-s="chi"]', li).value.trim() }; });
+      subs.forEach(function (x, i) {
+        if (!x.titolo) err('titolo', 'L’intervento ' + (i + 1) + ' non ha un titolo.');
+        if (CV.min(x.ora) < CV.min(n.da) || CV.min(x.ora) >= CV.min(n.a)) err('da', 'L’intervento «' + (x.titolo || i + 1) + '» è fuori dall’orario della sessione.');
+        if (i && CV.min(x.ora) < CV.min(subs[i - 1].ora)) err('da', 'Gli interventi non sono in ordine di orario: «' + (x.titolo || i + 1) + '» comincia prima del precedente.');
+      });
+      var spk = $$('[data-sp]:checked', f).map(function (c) { return c.value; });
+      var avv = [];
+      S.forEach(function (o) { if (o.id !== id && o.g === n.g && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) spk.forEach(function (p) { if (o.sp.indexOf(p) > -1) avv.push(CV.persona(p).nome + ' è anche in «' + o.titolo + '» alla stessa ora'); }); });
+      var box2 = $('#er-' + id);
+      if (er.length) {
+        box2.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + id + '">Controlla ' + er.length + (er.length === 1 ? ' campo' : ' campi') + '</h3><ul>' +
+          er.map(function (x) { return '<li><a href="#f-' + id + '-' + x.k + '">' + x.m + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { var el = $('#f-' + id + '-' + x.k); if (el) el.setAttribute('aria-invalid', 'true'); });
+        $('#he-' + id).focus(); return;
+      }
+      s.titolo = n.titolo; s.g = n.g; s.da = n.da; s.a = n.a; s.sala = n.sala; s.t = n.t; s.tipo = n.tipo; s.sp = spk; s.subs = subs;
+      var vend = venduti(s);
+      if (acc === 'libero') { s.posti = { libero: true }; s.pagamento = undefined; }
+      else { s.posti = { tot: cap, res: cap - vend }; s.pagamento = acc === 'pagamento' ? pr : undefined; }
+      giorno = s.g; aperta = null;
+      tabs.forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-g') === giorno); t.tabIndex = t.getAttribute('data-g') === giorno ? 0 : -1; });
+      disegnaSessioni();
+      CV.msg($('#st-sessioni'), 'ok', '<b>Sessione salvata</b> (simulato): «' + s.titolo + '». Registrato nel registro audit.' + (avv.length ? '<br><b>Attenzione:</b> ' + avv.join('; ') + '.' : ''));
+      var sm = $('#d-' + s.id + ' > summary'); if (sm) sm.focus();
+    });
+    $('#add-sessione').addEventListener('click', function () {
+      var id = 'sn' + (++nuovo);
+      S.push({ id: id, g: giorno, da: '09:00', a: '10:00', sala: SALE[0].id, t: TR[0].id, tipo: 'talk', titolo: 'Nuova sessione (bozza)', sp: [], desc: '', posti: { libero: true }, subs: [] });
+      aperta = id; disegnaSessioni(); var t = $('#f-' + id + '-titolo'); t.focus(); t.select();
+      AD.annuncio('Sessione aggiunta e aperta per la modifica.');
+    });
+
+    disegnaStruttura(); disegnaSessioni();
+  });
+</script>
+</body>
+</html>

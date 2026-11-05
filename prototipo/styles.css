@@ -787,6 +787,7 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .prezzi--inline .sep { color: var(--c-ink-2); }
 .sessione__titolo a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 .avviso a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.tabella a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 .qta button[disabled] { opacity: 1; background: var(--c-surface-2); color: var(--c-ink-2); border: 1px dashed var(--c-line-strong); }
 body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 @media (min-width: 64rem) { body { padding-bottom: 0; } }

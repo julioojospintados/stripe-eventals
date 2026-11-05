@@ -1,0 +1,226 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Check-in · Staff · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="senza-nav" data-area="checkin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="checkin.html">Check-in · Convegno 2027</a>
+    <span class="badge badge--info"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Staff</span>
+  </div>
+</header>
+
+<main id="contenuto" class="wrap" style="padding-block:var(--s-4) var(--s-8)">
+  <h1 class="sr-only">Check-in</h1>
+
+  <div class="stato-rete" id="rete" role="status" aria-live="polite"></div>
+  <label class="scelta" style="margin-top:var(--s-2)"><input type="checkbox" id="offline"><span>Prototipo: simula di essere offline</span></label>
+
+  <details class="acc" id="imp">
+    <summary>Varco, giorno e modo<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+    <div class="acc__corpo stack">
+      <div class="grid-3">
+        <div class="campo"><label for="varco">Varco</label><select class="select" id="varco"><option>Varco A</option><option>Varco B</option><option>Sala Grande</option></select></div>
+        <div class="campo"><label for="giorno">Giorno di oggi</label><select class="select" id="giorno"></select></div>
+        <div class="campo"><label for="modo">Che cosa controlli</label><select class="select" id="modo"><option value="evento">Ingresso all’evento</option><option value="sala">Ingresso a una sessione</option></select></div>
+      </div>
+      <div class="campo" id="c-sess" hidden><label for="sess">Sessione</label><select class="select" id="sess"></select></div>
+      <label class="scelta"><input type="checkbox" id="vibra"><span>Vibrazione all’esito</span></label>
+      <label class="scelta"><input type="checkbox" id="suono"><span>Suono all’esito</span></label>
+    </div>
+  </details>
+
+  <div style="margin-top:var(--s-4)" id="esito" role="status" aria-live="polite"></div>
+
+  <section aria-labelledby="h-scan" style="margin-top:var(--s-5)">
+    <h2 class="t-3" id="h-scan">Scansione</h2>
+    <div class="mirino" style="margin-top:var(--s-2)">
+      <div><svg class="ic" aria-hidden="true" style="width:3rem;height:3rem"><use href="#i-camera"></use></svg><p>Qui si apre la fotocamera per inquadrare il QR.<br>Nel prototipo simula una lettura con i pulsanti.</p></div>
+    </div>
+    <fieldset class="campo" style="margin-top:var(--s-3)">
+      <legend class="etichetta">Prototipo: simula una lettura</legend>
+      <div class="grid-2">
+        <button type="button" class="btn btn--secondary" data-sim="valido">Biglietto valido</button>
+        <button type="button" class="btn btn--secondary" data-sim="usato">Già usato</button>
+        <button type="button" class="btn btn--secondary" data-sim="invalido">QR non valido</button>
+        <button type="button" class="btn btn--secondary" data-sim="rimborsato">Biglietto rimborsato</button>
+        <button type="button" class="btn btn--secondary" data-sim="giorno">Giorno sbagliato</button>
+        <button type="button" class="btn btn--secondary" data-sim="sessione" id="b-sess">Sessione sbagliata</button>
+        <button type="button" class="btn btn--secondary" data-sim="nonlista">Non in lista</button>
+      </div>
+      <p class="campo__aiuto" id="aiuto-sess" hidden>«Sessione sbagliata» ha senso solo quando controlli una sessione: cambia il modo nelle impostazioni.</p>
+    </fieldset>
+  </section>
+
+  <section aria-labelledby="h-cerca" style="margin-top:var(--s-6)">
+    <h2 class="t-3" id="h-cerca">Cerca per nome o codice</h2>
+    <p class="t-small t-muted">Se il QR non si legge o il telefono è scarico. Il codice breve ha 8 caratteri.</p>
+    <div class="campo" style="margin-top:var(--s-2)"><label for="q">Nome o codice breve</label>
+      <div class="codice"><input class="input" id="q" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" style="text-transform:none"><button type="button" class="btn btn--secondary" id="vai">Cerca</button></div></div>
+    <p class="t-small t-muted" id="conto-ric" role="status" aria-live="polite" style="margin-block:var(--s-2)"></p>
+    <ul class="elenco-pulito" id="risultati"></ul>
+  </section>
+
+  <section aria-labelledby="h-log" style="margin-top:var(--s-6)">
+    <h2 class="t-3" id="h-log">Ultimi ingressi</h2>
+    <p class="t-small" id="contatore"></p>
+    <ul class="elenco-pulito" id="log"><li class="t-muted">Ancora nessun ingresso.</li></ul>
+  </section>
+</main>
+
+<div class="barra-azione" role="region" aria-label="Azioni rapide">
+  <button type="button" class="btn btn--primary btn--grande" id="prossimo" style="flex:1">Prossimo biglietto</button>
+  <a class="btn btn--secondary btn--grande" href="#q" id="vai-cerca">Cerca</a>
+</div>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
+    var T = [
+      { code: 'K7M2QX4P', nome: 'Alessia Demo', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
+      { code: 'R3T9WB6N', nome: 'Marco Prova', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
+      { code: 'D5H8LC2Y', nome: 'Alessia Demo', tipo: 'Workshop · Progettare un servizio culturale', g: ['g1'], sess: 's03', uso: {} },
+      { code: 'H4J8NZ3C', nome: 'Carla Prova', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
+      { code: 'M9B2TF7E', nome: 'Bruno Esempio', tipo: 'Pass giornaliero · Venerdì 15', g: ['g2'], uso: {} },
+      { code: 'Z3V7RP2S', nome: 'Davide Nuovo', tipo: 'Pass giornaliero · Sabato 16', g: ['g3'], uso: {} },
+      { code: 'Q6X5KD8L', nome: 'Giada Segnaposto', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: { g1: '09:41 · Varco B' } },
+      { code: 'W2Y6PV9A', nome: 'Nora Esempio', tipo: 'Pass giornaliero · Venerdì 15', g: ['g2'], uso: {}, rimborsato: true }
+    ];
+    var coda = 0, entrati = 187, attesi = 212, log = [], ultimo = null;
+    var ORA = function () { var n = new Date(); return (n.getHours() < 10 ? '0' : '') + n.getHours() + ':' + (n.getMinutes() < 10 ? '0' : '') + n.getMinutes(); };
+
+    $('#giorno').innerHTML = D.giorni.map(function (g) { return '<option value="' + g.id + '">' + g.lungo + '</option>'; }).join('');
+    function sessioni() {
+      var g = $('#giorno').value;
+      $('#sess').innerHTML = D.sessioni.filter(function (s) { return s.g === g && !s.posti.libero; }).map(function (s) { return '<option value="' + s.id + '">' + s.da + ' · ' + s.titolo + '</option>'; }).join('');
+    }
+    function modo() {
+      var sala = $('#modo').value === 'sala';
+      $('#c-sess').hidden = !sala; $('#b-sess').setAttribute('aria-disabled', !sala); $('#aiuto-sess').hidden = sala;
+    }
+    $('#giorno').addEventListener('change', function () { sessioni(); contatore(); }); $('#modo').addEventListener('change', modo);
+    sessioni(); modo();
+
+    function rete() {
+      var off = $('#offline').checked;
+      $('#rete').innerHTML = off
+        ? CV.ic('alert') + '<span><b>Offline.</b> I check-in restano sul telefono e partono appena torna la rete. Da inviare: ' + coda + '.</span>'
+        : CV.ic('check') + '<span><b>Online.</b> Ultima sincronizzazione ' + ORA() + '. Da inviare: ' + coda + '.</span>';
+    }
+    $('#offline').addEventListener('change', function () {
+      var eraCoda = coda;
+      if (!this.checked && eraCoda) { coda = 0; rete(); CV.msg($('#esito'), 'info', 'Di nuovo online: inviati ' + eraCoda + ' check-in. Se un altro varco ha già fatto entrare la stessa persona, ti avvisiamo qui.'); }
+      else rete();
+    });
+    function contatore() { $('#contatore').textContent = 'Entrati oggi: ' + entrati + ' su ' + attesi + ' attesi (' + D.giorni.filter(function (g) { return g.id === $('#giorno').value; })[0].lungo + ').'; }
+
+    /* esito grande: colore + parola + icona + dettaglio */
+    function esito(tipo, icona, parola, dettaglio, dopo, assertivo) {
+      var b = $('#esito'); b.setAttribute('aria-live', assertivo ? 'assertive' : 'polite');
+      b.innerHTML = '<div class="esito esito--' + tipo + '">' + CV.ic(icona) + '<p class="esito__parola">' + parola + '</p><p class="esito__dettaglio">' + dettaglio + '</p>' + (dopo || '') + '</div>';
+      if ($('#vibra').checked && navigator.vibrate) navigator.vibrate(tipo === 'ok' ? 80 : [200, 100, 200]);
+      if ($('#suono').checked) beep(tipo === 'ok');
+      b.scrollIntoView({ block: 'nearest' });
+    }
+    var ctx = null;
+    function beep(ok) {
+      try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = ok ? 880 : 220; g.gain.value = 0.1; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + (ok ? 0.12 : 0.35)); } catch (e) { /* nessun audio */ }
+    }
+    function registra(t) {
+      var g = $('#giorno').value, v = $('#varco').value;
+      t.uso[g] = ORA() + ' · ' + v; entrati++; if ($('#offline').checked) coda++;
+      var li = document.createElement('li'); li.innerHTML = '<b>' + t.nome + '</b> · ' + t.tipo + ' <span class="t-small t-muted">· ' + ORA() + ' · ' + v + (log.length >= 0 && $('#offline').checked ? ' · da inviare' : '') + '</span>';
+      var ul = $('#log'); if (!log.length) ul.innerHTML = ''; log.unshift(1); ul.insertBefore(li, ul.firstChild); while (ul.children.length > 5) ul.removeChild(ul.lastChild);
+      contatore(); rete();
+    }
+    function nome(t) { return '<b>' + t.nome + '</b><small>' + t.tipo + (t.sess ? '' : '') + '</small>'; }
+    function consente(t) {
+      var g = $('#giorno').value;
+      if (t.rimborsato) return { k: 'rimborsato' };
+      if (t.g.indexOf(g) < 0) return { k: 'giorno' };
+      if ($('#modo').value === 'sala') {
+        var s = $('#sess').value, sess = CV.sessione(s);
+        if (t.sess && t.sess !== s) return { k: 'sessione' };
+        if (!t.sess && sess.pagamento) return { k: 'sessione' };
+      }
+      if (t.uso[g]) return { k: 'usato' };
+      return { k: 'ok' };
+    }
+    function mostra(t, r, viaRicerca) {
+      var g = $('#giorno').value, gl = function (id) { return D.giorni.filter(function (x) { return x.id === id; })[0].lungo; };
+      if (r.k === 'ok') { registra(t); esito('ok', 'check', 'Valido', nome(t), null, false); }
+      if (r.k === 'usato') esito('warn', 'alert', 'Già usato', nome(t) + '<small>Ingresso: ' + t.uso[g] + '. Chiedi un documento: potrebbe essere una copia.</small>', null, true);
+      if (r.k === 'rimborsato') esito('err', 'x', 'Non valido', nome(t) + '<small>Biglietto rimborsato: non vale più.</small>', null, true);
+      if (r.k === 'giorno') esito('err', 'x', 'Giorno sbagliato', nome(t) + '<small>Vale solo: ' + t.g.map(gl).join(', ') + '. Oggi è ' + gl(g) + '.</small>', null, true);
+      if (r.k === 'sessione') esito('err', 'x', 'Sessione sbagliata', nome(t) + '<small>Questo biglietto non include «' + CV.sessione($('#sess').value).titolo + '».</small>', null, true);
+      if (viaRicerca) risultati();
+    }
+
+    var SIM = {
+      valido: function () {
+        var g = $('#giorno').value, t = T.filter(function (x) { return consente(x).k === 'ok'; })[0];
+        if (!t) { esito('info', 'info', 'Finiti', 'Nel prototipo non restano biglietti validi per questo giorno e questa sessione. Prova un altro esito.', null, false); return; }
+        mostra(t, { k: 'ok' });
+      },
+      usato: function () { var g = $('#giorno').value; T[6].uso[g] = T[6].uso[g] || '09:41 · Varco B'; mostra(T[6], { k: 'usato' }); },
+      rimborsato: function () { mostra(T[7], { k: 'rimborsato' }); },
+      giorno: function () { var g = $('#giorno').value, t = T.filter(function (x) { return x.g.indexOf(g) < 0 && !x.rimborsato; })[0]; if (!t) { esito('info', 'info', 'Nessun caso', 'Per questo giorno tutti i biglietti d’esempio valgono: scegli un altro giorno.', null, false); return; } mostra(t, { k: 'giorno' }); },
+      sessione: function () {
+        if ($('#modo').value !== 'sala') { esito('info', 'info', 'Cambia modo', 'Per provare «Sessione sbagliata» scegli «Ingresso a una sessione» nelle impostazioni.', null, false); $('#imp').open = true; return; }
+        // il biglietto del workshop s03 non include altre sessioni; un pass non include una sessione a pagamento
+        mostra(T[2].sess !== $('#sess').value ? T[2] : T[0], { k: 'sessione' });
+      },
+      invalido: function () { esito('err', 'x', 'Non valido', 'QR non riconosciuto: la firma non torna. Può essere una copia o un QR di un altro evento.<small>Non fare entrare. Se la persona insiste, cerca per nome.</small>', null, true); },
+      nonlista: function () {
+        esito('warn', 'alert', 'Non in lista', '<b>Davide Nuovo</b><small>Il QR è autentico ma il biglietto è stato comprato dopo l’ultima sincronizzazione. Controlla un documento, poi accetta.</small>',
+          '<button type="button" class="btn btn--primary btn--grande" id="accetta">Documento controllato: fai entrare</button>', true);
+        $('#accetta').addEventListener('click', function () { registra({ nome: 'Davide Nuovo', tipo: 'Pass giornaliero · da verificare', uso: {} }); esito('ok', 'check', 'Entrato', '<b>Davide Nuovo</b><small>Registrato come «non in lista, controllato a mano».</small>', null, false); });
+      }
+    };
+    $$('[data-sim]').forEach(function (b) {
+      b.addEventListener('click', function () { SIM[b.getAttribute('data-sim')](); });
+    });
+
+    $('#prossimo').addEventListener('click', function () {
+      var b = $('#esito'); b.setAttribute('aria-live', 'polite');
+      b.innerHTML = '<div class="esito esito--attesa">' + CV.ic('camera') + '<p class="esito__parola">Pronto</p><p class="esito__dettaglio">Inquadra il prossimo QR.</p></div>';
+      window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    });
+    $('#vai-cerca').addEventListener('click', function (e) { e.preventDefault(); $('#q').focus(); $('#q').scrollIntoView({ block: 'center' }); });
+
+    /* ricerca per nome o codice */
+    function risultati() {
+      var q = $('#q').value.trim().toLowerCase(), ul = $('#risultati');
+      if (q.length < 2) { ul.innerHTML = ''; $('#conto-ric').textContent = q ? 'Scrivi almeno 2 caratteri.' : ''; return; }
+      var l = T.filter(function (t) { return t.nome.toLowerCase().indexOf(q) > -1 || t.code.toLowerCase().indexOf(q) > -1; });
+      $('#conto-ric').textContent = l.length ? l.length + (l.length === 1 ? ' risultato' : ' risultati') : 'Nessun biglietto trovato. Controlla l’ortografia o prova con il codice.';
+      ul.innerHTML = l.map(function (t) {
+        var r = consente(t), g = $('#giorno').value;
+        var st = { ok: '<span class="badge badge--ok">' + CV.ic('check') + 'Può entrare</span>', usato: '<span class="badge badge--warn">' + CV.ic('alert') + 'Già entrato ' + (t.uso[g] || '') + '</span>', rimborsato: '<span class="badge badge--err">' + CV.ic('x') + 'Rimborsato</span>', giorno: '<span class="badge badge--err">' + CV.ic('x') + 'Giorno sbagliato</span>', sessione: '<span class="badge badge--err">' + CV.ic('x') + 'Sessione sbagliata</span>' }[r.k];
+        return '<li class="stack" style="--stack:var(--s-2)"><p><b>' + t.nome + '</b><br><span class="t-small t-muted">' + t.tipo + ' · codice <span class="t-num">' + t.code + '</span></span></p><p>' + st + '</p>' +
+          (r.k === 'ok' ? '<button type="button" class="btn btn--primary btn--block" data-entra="' + t.code + '">Segna come entrato</button>' : '') + '</li>';
+      }).join('');
+    }
+    $('#q').addEventListener('input', risultati); $('#vai').addEventListener('click', risultati);
+    $('#q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); risultati(); } });
+    $('#risultati').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-entra]'); if (!b) return;
+      var t = T.filter(function (x) { return x.code === b.getAttribute('data-entra'); })[0]; mostra(t, { k: 'ok' }, true);
+      window.scrollTo({ top: 0 });
+    });
+
+    rete(); contatore();
+    $('#prossimo').click();
+  });
+</script>
+</body>
+</html>

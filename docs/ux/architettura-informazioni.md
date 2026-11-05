@@ -36,7 +36,7 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Biglietti | `biglietti.html` | P | Tabella prezzi per ruolo, ordine, codice sconto, come ottenere i prezzi ridotti |
 | Membership | `membership.html` | P | Vantaggi, quota, confronto con/senza |
 | Esito pagamento | `checkout-esito.html?stato=` | P | Riuscito, in elaborazione, annullato, fallito; simula Stripe |
-| Accesso / registrazione | — | — | Email + link o password; nessun test cognitivo |
+| Accesso / registrazione | `accesso.html` | P | Codice di 6 cifre via email (niente password), account creato al primo accesso, nessun test cognitivo. «Continua senza account» non c'è: vedi capitolo 10 |
 | Condizioni, privacy, rimborsi, contatti, accessibilità della sede | — | — | Pagine legali: vanno alla catena legale prima di scriverle |
 
 ### 2.2 Area personale (con accesso)
@@ -251,3 +251,76 @@ Gli obiettivi sono ipotesi di lavoro, non misure.
 | 10 | Durata di una verifica studente e tempi di approvazione | Un anno accademico; risposta entro un numero di giorni da definire |
 | 11 | Famiglia di caratteri e logo | Scelta con licenza e ospitata in proprio |
 | 12 | Condizioni di vendita, recesso, rimborsi, IVA, privacy dei documenti studente | Alla catena legale-fiscale prima di scrivere le pagine |
+| 13 | Accesso con Google | `docs/architettura.md` prevede solo il codice via email: il bottone nel prototipo è spento e dichiarato «da decidere» |
+| 14 | Rimborso: pannello o Dashboard Stripe? | Il prototipo segue l'architettura (§4.8): si rimborsa dal pannello, la Dashboard serve a guardare. Un rimborso fatto in Dashboard finisce in «Da rivedere» |
+
+## 10. Area personale, admin e check-in (seconda parte)
+
+File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. Coerente con `docs/architettura.md`
+(ruoli derivati dai dati, ordini, verifica studenti, check-in con QR firmato).
+
+### 10.1 Accesso
+
+1. Email, poi «Mandami il codice». Errore scritto sotto il campo se l'email non è valida.
+2. Codice di 6 cifre (campo con `autocomplete="one-time-code"`, si può incollare). Errori: formato sbagliato, codice errato con tentativi rimasti, troppi tentativi (chiedi un nuovo codice). «Rinvia il codice» si riattiva dopo 30 secondi; «Cambia email» torna indietro.
+3. Si entra e si torna alla pagina da cui si veniva (`?next=`, solo pagine dell'elenco consentito).
+4. **Senza account non si compra**: servono il prezzo di ruolo calcolato dal server e il ritrovamento dei biglietti. Programma, speaker e prezzi restano pubblici. La pagina lo dice, non offre il bottone.
+5. Gli admin hanno un secondo passaggio (TOTP) dopo il codice: citato nella pagina, non prototipato.
+
+### 10.2 Area personale (`account.html`, schede con modello ARIA, `#biglietti` ecc. nell'indirizzo)
+
+| Scheda | Cosa fa | Casi coperti |
+|---|---|---|
+| I miei biglietti | Un biglietto per persona con QR nero su bianco, codice breve a 8 caratteri, stato, PDF e wallet (simulati) | Valido, rimborsato (QR sostituito dal testo «QR revocato»). Il QR non contiene il nome |
+| Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, massimo 2 cambi | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; limite cambi raggiunto; errori sui campi |
+| La mia agenda | Sessioni prenotate e a pagamento per giorno | Orari sovrapposti: avviso che nomina le due sessioni e offre «Annulla la prenotazione» solo dove è gratis; sessioni a pagamento in conflitto: nessun annullamento, rimando all'organizzazione |
+| Membership | Stato, scadenza, rinnovo, apertura del portale clienti Stripe (simulato in pagina) | Nessuna, attiva, disdetta a fine periodo, pagamento fallito (non vale come membro, regola proposta), scaduta con «Rinnova» |
+| Verifica studente | Email d'ateneo (dominio nell'elenco) oppure documento (PDF, JPEG, PNG, 5 MB) | Non richiesta, in attesa via email (rinvia il link), in revisione, approvata con scadenza (31/10), rifiutata con motivo e nuovo invio, scaduta. Errori su dominio, tipo e peso del file |
+| Ordini e ricevute | Elenco con stato e ricevuta | Pagato, in elaborazione («non pagare di nuovo»), non riuscito e scaduto (con «Riprova»), rimborsato |
+
+I selettori «Prototipo: simula lo stato» nelle schede servono solo a vedere tutti gli stati; nel sito vero lo stato viene dal database.
+
+### 10.3 Admin (`admin/`)
+
+Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle che diventano blocchi, bersagli da 44px). Barra con «Sessione con MFA verificata»: ogni scrittura vera richiede `aal2` e finisce nel registro audit (la scritta compare dopo ogni salvataggio simulato).
+
+| Pagina | Flusso | Controlli e casi limite |
+|---|---|---|
+| Cruscotto | «Da fare» in cima (verifiche in attesa, ordini da rivedere, pagamenti in elaborazione), vendite per tipo e ruolo, posti rimasti per pass e per sessioni a pagamento, ultimi ordini | Posti: venduti, in riserva, rimasti con barra **e** numero; il pass intero conta il giorno più pieno; sessione esaurita scritta |
+| Programma | Giorni, sale e tracce (sale e tracce riordinabili); sessioni per giorno con modulo completo e interventi riordinabili | Sala occupata nello stesso orario (errore), fine prima dell'inizio, capienza sotto i venduti, prezzi mancanti, interventi fuori orario o non in ordine, speaker in due sessioni contemporanee (avviso), sala o traccia usata da sessioni non rimovibile, sessione con posti venduti non eliminabile, eliminazione in due passi |
+| Riordino | Trascinamento con il mouse **e** pulsanti Su e Giù (tastiera, telefono); la nuova posizione è annunciata ai lettori di schermo | Il trascinamento HTML non funziona al tocco: i pulsanti sono l'alternativa completa |
+| Speaker | Elenco, modulo, foto con testo alternativo obbligatorio | Foto troppo pesante o di tipo sbagliato, speaker con sessioni non eliminabile |
+| Biglietti e prezzi | Matrice tipo × ruolo (pass dalla fascia in corso, sessioni modificabili), fasce di vendita con early bird, capienze | Fasce sovrapposte per lo stesso pass, fine prima dell'inizio, nessuna fascia aperta alla data simulata (pass non acquistabile), prezzo ridotto sopra il pubblico (avviso: vale il più basso), capienza sotto venduti più riserva |
+| Codici sconto | Elenco con stato, creazione con ruoli, biglietti, finestra, limiti, cumulabilità | Codice troppo corto o duplicato, percentuale oltre 100, usi per persona sopra i totali; testo sul cumulo come in `architettura.md` §4.4 |
+| Ordini | Ricerca per numero, nome o email, filtro per stato, dettaglio con eventi Stripe | Da rivedere (importo che non torna) con «Segna come riconciliato»; in elaborazione con «Ricontrolla su Stripe»; link alla Dashboard solo per guardare |
+| Rimborso | Scelta dei biglietti (importo al netto dello sconto), posti da rimettere in vendita, motivo, conferma con avvertenze, invio a Stripe, conferma simulata | Motivo obbligatorio, nota se «Altro»; avvisi: biglietti revocati subito, commissioni non restituite, rimborsi in Dashboard non si collegano ai biglietti; esito: rimborsato o parziale |
+| Verifiche studenti | Coda con «Esamina»; documento solo da link di 60 secondi (conto alla rovescia, anteprima simulata, apertura registrata); approva con scadenza o rifiuta con motivo | Richieste ferme da oltre 30 giorni segnalate; motivo obbligatorio al rifiuto; file cancellato entro 24 ore; email in attesa del link elencate a parte |
+| Membri | Elenco con stato, ricerca, dettaglio; apertura del cliente su Stripe | Pagamento non riuscito con «Rimanda l'email»; chi è anche studente paga il più basso; sola lettura |
+
+### 10.4 Check-in (`checkin.html`, telefono, una mano)
+
+1. Stato di rete sempre visibile con icona e testo: online con ultima sincronizzazione, offline con numero di check-in da inviare. Casella del prototipo per simulare l'assenza di rete; al ritorno online compare l'avviso su eventuali doppi ingressi da altri varchi.
+2. Impostazioni in una tendina: varco, giorno, che cosa controlli (ingresso all'evento o a una sessione), vibrazione e suono (spenti di partenza).
+3. L'esito occupa la parte alta dello schermo: bordo spesso, **parola grande**, icona grande e dettaglio. Mai solo colore.
+
+| Esito | Parola | Dettaglio |
+|---|---|---|
+| Entra | VALIDO (verde, spunta) | Nome e tipo di biglietto |
+| Già entrato | GIÀ USATO (giallo, avviso) | Ora e varco del primo ingresso; chiedere un documento |
+| QR non riconosciuto | NON VALIDO (rosso, croce) | Firma che non torna: non far entrare |
+| Rimborsato | NON VALIDO (rosso, croce) | Biglietto rimborsato |
+| Altro giorno | GIORNO SBAGLIATO (rosso, croce) | Giorni validi e giorno di oggi |
+| Altra sessione | SESSIONE SBAGLIATA (rosso, croce) | Sessione che il biglietto non include |
+| Firma valida ma non in lista | NON IN LISTA (giallo, avviso) | Controllare un documento e poi «fai entrare» (come in `architettura.md` §6.2) |
+
+4. Le scansioni sono simulate con pulsanti (la fotocamera vera la gestirà la PWA).
+5. Barra in basso con «Prossimo biglietto» (azzera l'esito) e «Cerca».
+6. **Ricerca per nome o codice breve**, alternativa alla scansione: almeno 2 caratteri, risultato con stato e pulsante «Segna come entrato» solo se può entrare.
+7. Ultimi cinque ingressi e contatore degli entrati. Errori e avvisi sono annunciati in modo assertivo, gli esiti positivi in modo cortese.
+
+### 10.5 Cosa resta fuori o è semplificato
+
+- Doppio ingresso tra due varchi offline: si dichiara l'avviso alla sincronizzazione, ma la regola di risoluzione non è prototipata.
+- Accesso admin con TOTP, registro audit consultabile, lista d'attesa e liquidazione dei biglietti in massa (evento annullato) non sono disegnati.
+- Il pannello admin non ha ancora una vista del registro delle azioni né dei lavori in coda.
+- Tutti i contrasti nuovi usano i token esistenti (avvisi e tinte già calcolati); non misurati sulla build.

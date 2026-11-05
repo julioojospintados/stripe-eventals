@@ -1,0 +1,124 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Verifiche studenti · Admin · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
+  </div>
+</header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head"><h1 class="t-1">Verifiche studenti</h1></div>
+    <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+      <div>Il documento non si vede qui: si apre solo da un link temporaneo di un minuto, e ogni apertura finisce nel registro audit. Dopo l’esito il file si cancella entro 24 ore. Le richieste ferme da più di 30 giorni si chiudono da sole.</div></div>
+
+    <section aria-labelledby="h-coda">
+      <h2 class="t-2" id="h-coda">Da controllare</h2>
+      <div id="st-coda" role="status" aria-live="polite"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Richieste con documento in attesa</caption>
+        <thead><tr><th scope="col">Chi</th><th scope="col">Metodo</th><th scope="col">Da quanto</th><th scope="col"><span class="sr-only">Azioni</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+      <div id="vuoto" class="vuoto" hidden>Nessuna richiesta da controllare.</div>
+    </section>
+
+    <section id="dett" aria-labelledby="h-dett" hidden></section>
+
+    <section aria-labelledby="h-email">
+      <h2 class="t-2" id="h-email">Email in attesa del link</h2>
+      <p class="t-muted misura">Queste si chiudono da sole quando la persona apre il link: non serve fare niente.</p>
+      <ul class="elenco-pulito">
+        <li>Paola Riva · paola.riva@universita.example <span class="badge badge--info">Link mandato 3 ore fa</span></li>
+        <li>Enrico Dotti · enrico.dotti@ateneo.example <span class="badge badge--info">Link mandato ieri, scade tra poche ore</span></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="h-esiti">
+      <h2 class="t-2" id="h-esiti">Esiti recenti</h2>
+      <ul class="elenco-pulito" id="esiti"><li class="t-muted">Nessun esito in questa sessione.</li></ul>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, Q = JSON.parse(JSON.stringify(AD.verifiche)), corrente = null, timer = null;
+
+    function coda() {
+      $('#righe').innerHTML = Q.map(function (v) {
+        return '<tr><th scope="row">' + v.nome + '<br><span class="t-small t-muted">' + v.email + '</span></th><td data-label="Metodo">Documento</td>' +
+          '<td data-label="Da quanto">' + v.giorni + (v.giorni === 1 ? ' giorno' : ' giorni') + (v.giorni > 30 ? ' <span class="badge badge--warn">' + AD.icona('alert') + 'Verrà chiusa</span>' : '') + '</td>' +
+          '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-esamina="' + v.id + '">Esamina<span class="sr-only"> la richiesta di ' + v.nome + '</span></button></td></tr>';
+      }).join('');
+      $('#vuoto').hidden = Q.length > 0;
+    }
+    $('#righe').addEventListener('click', function (e) { var b = e.target.closest('[data-esamina]'); if (b) esamina(b.getAttribute('data-esamina')); });
+
+    function esamina(id) {
+      clearInterval(timer);
+      corrente = Q.filter(function (v) { return v.id === id; })[0]; var v = corrente;
+      var p = $('#dett'); p.hidden = false;
+      p.innerHTML = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">Richiesta di ' + v.nome + '</h2></div>' +
+        '<div class="layout-2"><div class="stack">' +
+        (v.giorni > 30 ? '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div>Ferma da ' + v.giorni + ' giorni: oltre i 30 verrebbe chiusa come scaduta. Decidi ora o lascia che si chiuda.</div></div>' : '') +
+        '<dl class="meta-lista"><div><dt>Email</dt><dd>' + v.email + '</dd></div><div><dt>File</dt><dd>' + v.doc + '</dd></div><div><dt>Ricevuta</dt><dd>' + v.giorni + ' giorni fa</dd></div></dl>' +
+        '<div><button type="button" class="btn btn--secondary" id="genera">' + AD.icona('external') + 'Genera il link al documento (60 secondi)</button></div>' +
+        '<div id="doc" role="status" aria-live="polite"></div></div>' +
+        '<div class="stack"><form id="f-dec" class="stack" novalidate>' +
+        '<fieldset class="campo"><legend class="etichetta">Esito</legend>' +
+        '<label class="scelta"><input type="radio" name="esito" value="ok" checked><span>Approva</span></label><label class="scelta"><input type="radio" name="esito" value="no"><span>Rifiuta</span></label></fieldset>' +
+        '<div class="campo" id="c-valida"><label for="valida">Valida fino al</label><input class="input" id="valida" type="date" value="2027-10-31" aria-describedby="a-valida"><p class="campo__aiuto" id="a-valida">Di norma il 31 ottobre, fine dell’anno accademico.</p></div>' +
+        '<div id="c-rifiuto" hidden class="stack"><div class="campo"><label for="motivo">Motivo (lo legge la persona)</label><select class="select" id="motivo"><option value="">Scegli…</option><option>Il documento è illeggibile</option><option>Non mostra l’iscrizione all’anno in corso</option><option>Il nome non corrisponde all’account</option><option>Il documento non è valido</option><option>Altro</option></select></div>' +
+        '<div class="campo"><label for="dettaglio-m">Dettaglio (obbligatorio se «Altro»)</label><textarea class="textarea" id="dettaglio-m"></textarea></div></div>' +
+        '<div id="er" role="alert" aria-live="assertive"></div>' +
+        '<button type="submit" class="btn btn--primary">Conferma l’esito</button></form></div></div>';
+      $('#h-dett').focus();
+      $('#genera').addEventListener('click', genera);
+      document.querySelectorAll('input[name="esito"]').forEach(function (r) { r.addEventListener('change', function () { var no = $('input[name="esito"]:checked').value === 'no'; $('#c-valida').hidden = no; $('#c-rifiuto').hidden = !no; }); });
+      $('#f-dec').addEventListener('submit', decidi);
+    }
+    function genera() {
+      clearInterval(timer); var s = 60, d = $('#doc');
+      d.innerHTML = '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Link generato. Apertura registrata nel registro audit. <span id="conto" class="t-num"></span></div></div><div class="doc-finto" aria-label="Anteprima simulata del documento">Anteprima simulata di<br>' + corrente.doc + '</div>';
+      function tick() {
+        var c = $('#conto'); if (!c) { clearInterval(timer); return; }
+        if (s <= 0) { clearInterval(timer); CV.msg(d, 'warn', 'Il link è scaduto. Generane un altro: anche la nuova apertura viene registrata.'); return; }
+        c.textContent = 'Scade tra ' + s + ' s.'; s--;
+      }
+      tick(); timer = setInterval(tick, 1000);
+    }
+    function decidi(e) {
+      e.preventDefault(); var v = corrente, no = $('input[name="esito"]:checked').value === 'no', er = [];
+      if (!no) { var d = $('#valida').value; if (!d) er.push('Scrivi fino a quando vale la verifica.'); else if (d < '2027-03-10') er.push('La data di scadenza è già passata.'); }
+      else { if (!$('#motivo').value) er.push('Scegli il motivo del rifiuto: la persona lo leggerà.'); if ($('#motivo').value === 'Altro' && !$('#dettaglio-m').value.trim()) er.push('Con «Altro» scrivi il dettaglio.'); }
+      if (er.length) { $('#er').innerHTML = '<div class="riepilogo-errori"><ul>' + er.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul></div>'; return; }
+      clearInterval(timer);
+      var testo = no ? 'Rifiutata: ' + $('#motivo').value : 'Approvata fino al ' + $('#valida').value.split('-').reverse().join('/');
+      Q = Q.filter(function (x) { return x.id !== v.id; }); coda();
+      $('#dett').hidden = true; $('#dett').innerHTML = '';
+      var li = document.createElement('li'); li.innerHTML = '<span class="badge badge--' + (no ? 'err' : 'ok') + '">' + AD.icona(no ? 'x' : 'check') + (no ? 'Rifiutata' : 'Approvata') + '</span> ' + v.nome + ' · ' + testo.replace(/^[^:]*: ?/, '').replace(/^Approvata /, '') + ' <span class="t-small t-muted">· file da cancellare entro 24 ore</span>';
+      var ul = $('#esiti'); if (ul.children.length === 1 && ul.firstElementChild.className === 't-muted') ul.innerHTML = ''; ul.insertBefore(li, ul.firstChild);
+      CV.msg($('#st-coda'), 'ok', '<b>' + testo + '</b> per ' + v.nome + ' (simulato). Email mandata, registrato nel registro audit; il documento si cancella entro 24 ore.');
+      var b = document.querySelector('[data-esamina]'); if (b) b.focus(); else $('#st-coda').setAttribute('tabindex', '-1');
+    }
+    coda();
+  });
+</script>
+</body>
+</html>
