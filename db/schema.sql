@@ -39,6 +39,7 @@ create type public.order_status as enum (
   'paid',
   'expired',            -- Checkout Session scaduta, posti rilasciati
   'failed',             -- pagamento asincrono fallito
+  'needs_refund',       -- pagato quando i posti non c'erano più: rimborso automatico in coda, avviso all'admin
   'cancelled',          -- annullato dall'utente o dall'admin prima del pagamento
   'partially_refunded',
   'refunded'
@@ -181,6 +182,8 @@ create table public.capacity_pools (
   capacity    integer not null check (capacity >= 0),
   held        integer not null default 0 check (held >= 0),       -- in riserva durante il checkout
   confirmed   integer not null default 0 check (confirmed >= 0),  -- venduti o prenotati
+  -- Limite di posti di questo pool in un solo ordine (es. 2 sui workshop piccoli), contro chi accaparra.
+  max_per_order integer check (max_per_order is null or max_per_order > 0),
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   unique (event_id, name),
@@ -288,9 +291,8 @@ create table public.ticket_types (
   description        text,
   event_day_id       uuid,
   session_id         uuid,
-  -- Prodotto Stripe corrispondente: i prezzi si passano con price_data (vedi architettura.md).
-  stripe_product_id  text unique,
-  max_per_order      integer not null default 10 check (max_per_order between 1 and 50),
+  -- Nessun Product Stripe salvato: la riga di Checkout si crea con price_data.product_data (vedi architettura.md).
+  max_per_order      integer not null default 4 check (max_per_order between 1 and 50),
   sales_start        timestamptz,
   sales_end          timestamptz,
   active             boolean not null default true,
@@ -424,11 +426,13 @@ create trigger student_verifications_touch before update on public.student_verif
   for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------------------------------------
--- Codici sconto: regole qui, applicazione in Stripe (coupon + promotion code speculari)
+-- Codici sconto: regole e calcolo solo qui, nessun Coupon o Promotion Code in Stripe
 -- ---------------------------------------------------------------------------------------------------------
 
--- Le regole che Stripe non sa esprimere (ruoli ammessi, cumulo con il prezzo di ruolo) le controlla il server
--- leggendo questa tabella; poi passa a Checkout il promotion code Stripe corrispondente.
+-- Checkout accetta un solo coupon per sessione e non distingue due righe dello stesso prodotto: la regola
+-- "migliore tra prezzo di ruolo e codice, riga per riga" non si esprime con i Coupon. Il server calcola lo
+-- sconto per unità e lo mette già dentro price_data.unit_amount (order_items.unit_discount_cents).
+-- Gli utilizzi si contano in reserve_order con UPDATE ... WHERE redeemed_count < max_redemptions.
 create table public.discount_codes (
   id                          uuid primary key default gen_random_uuid(),
   code                        citext not null unique check (length(code) between 6 and 40),
@@ -444,12 +448,12 @@ create table public.discount_codes (
   applies_to_membership       boolean not null default false,
   max_redemptions             integer check (max_redemptions is null or max_redemptions > 0),
   per_user_limit              integer check (per_user_limit is null or per_user_limit > 0),
+  -- Utilizzi riservati o confermati. Niente CHECK redeemed_count <= max_redemptions: il limite vale alla
+  -- riserva, ma un pagamento arrivato in ritardo e già incassato si onora anche oltre il limite.
   redeemed_count              integer not null default 0 check (redeemed_count >= 0),
   valid_from                  timestamptz,
   valid_to                    timestamptz,
   active                      boolean not null default true,
-  stripe_coupon_id            text,
-  stripe_promotion_code_id    text unique,
   created_by                  uuid references public.profiles (id) on delete set null,
   created_at                  timestamptz not null default now(),
   updated_at                  timestamptz not null default now(),
@@ -457,7 +461,6 @@ create table public.discount_codes (
     (discount_type = 'percent' and percent_off is not null and amount_off_cents is null) or
     (discount_type = 'amount'  and amount_off_cents is not null and percent_off is null and currency is not null)
   ),
-  check (max_redemptions is null or redeemed_count <= max_redemptions),
   check (valid_to is null or valid_from is null or valid_to > valid_from)
 );
 create trigger discount_codes_touch before update on public.discount_codes
@@ -491,7 +494,9 @@ create table public.orders (
   discount_code_id            uuid references public.discount_codes (id) on delete set null,
   stripe_checkout_session_id  text unique,
   stripe_payment_intent_id    text unique,
-  checkout_expires_at         timestamptz,
+  checkout_expires_at         timestamptz,  -- expires_at della Checkout Session (almeno 30 minuti, minimo Stripe)
+  -- true se un utilizzo del codice sconto è stato contato per questo ordine (va restituito se l'ordine scade).
+  discount_reserved           boolean not null default false,
   paid_at                     timestamptz,
   livemode                    boolean not null,
   -- Importo effettivamente incassato secondo Stripe (amount_total): la riconciliazione lo confronta con total_cents.
@@ -503,6 +508,8 @@ create table public.orders (
 );
 create index orders_profile_idx on public.orders (profile_id, created_at desc);
 create index orders_status_idx on public.orders (status, checkout_expires_at) where status in ('pending', 'processing');
+-- Una sola riserva aperta per persona: prima di un nuovo checkout il server fa expire della sessione precedente.
+create unique index orders_one_pending_per_profile on public.orders (profile_id) where status = 'pending';
 create trigger orders_touch before update on public.orders
   for each row execute function public.touch_updated_at();
 
@@ -513,21 +520,30 @@ create table public.order_items (
   quantity           integer not null check (quantity between 1 and 50),
   -- Ruolo applicato a questa riga: con la regola "prezzo di ruolo solo per il biglietto dell'acquirente"
   -- un ordine può avere una riga member (quantità 1) e una riga public per gli accompagnatori.
-  price_role         public.price_role not null,
-  unit_amount_cents  integer not null check (unit_amount_cents >= 0),
-  discount_cents     integer not null default 0 check (discount_cents >= 0),
-  total_cents        integer not null check (total_cents >= 0),
+  price_role              public.price_role not null,
+  list_unit_amount_cents  integer not null check (list_unit_amount_cents >= 0),  -- listino del ruolo
+  unit_discount_cents     integer not null default 0 check (unit_discount_cents >= 0),
+  -- Importo per unità inviato a Stripe in price_data.unit_amount: sconto già incluso.
+  unit_amount_cents       integer not null check (unit_amount_cents >= 0),
+  total_cents             integer not null check (total_cents >= 0),
+  -- Testo mostrato sulla pagina Stripe e in ricevuta, es. "Pass intero · prezzo membro" o "… · codice ESTATE −20%".
+  stripe_line_name        text not null,
   ticket_price_id    uuid references public.ticket_prices (id) on delete set null,
   -- Nominativi raccolti nel carrello, prima del pagamento: [{"name": "...", "email": "..."}], uno per unità.
   -- Al pagamento confermato diventano righe di tickets.
   attendees          jsonb not null default '[]'::jsonb,
-  check (total_cents = unit_amount_cents * quantity - discount_cents),
+  check (unit_discount_cents <= list_unit_amount_cents),
+  check (unit_amount_cents = list_unit_amount_cents - unit_discount_cents),
+  check (total_cents = unit_amount_cents * quantity),
   check (jsonb_typeof(attendees) = 'array' and jsonb_array_length(attendees) = quantity)
 );
 create index order_items_order_idx on public.order_items (order_id);
 
 -- Riserva temporanea dei posti, una riga per (ordine, pool).
--- expires_at = scadenza della Checkout Session + margine; null quando il pagamento è asincrono in corso.
+-- expires_at = scadenza della Checkout Session + 5 minuti; null quando il pagamento è asincrono in corso.
+-- Una riserva scaduta NON si libera da sola: la libera close_unpaid_order solo dopo che Stripe ha confermato
+-- che la sessione è scaduta (webhook checkout.session.expired o job che chiama expire). Se il job è fermo
+-- i posti restano bloccati (si vende di meno), mai venduti due volte.
 create table public.capacity_holds (
   id              uuid primary key default gen_random_uuid(),
   order_id        uuid not null references public.orders (id) on delete cascade,
@@ -552,6 +568,7 @@ create table public.tickets (
   event_id             uuid not null references public.events (id) on delete restrict,
   order_id             uuid not null references public.orders (id) on delete restrict,
   order_item_id        uuid not null references public.order_items (id) on delete restrict,
+  seq                  integer not null check (seq >= 1),  -- n-esimo biglietto della riga d'ordine
   ticket_type_id       uuid not null references public.ticket_types (id) on delete restrict,
   price_role           public.price_role not null,
   attendee_name        text not null,
@@ -566,7 +583,9 @@ create table public.tickets (
   cancelled_at         timestamptz,
   name_changes_count   integer not null default 0 check (name_changes_count >= 0),
   created_at           timestamptz not null default now(),
-  updated_at           timestamptz not null default now()
+  updated_at           timestamptz not null default now(),
+  -- Seconda difesa contro l'emissione doppia: lo stesso biglietto della stessa riga non può nascere due volte.
+  unique (order_item_id, seq)
 );
 create index tickets_order_idx on public.tickets (order_id);
 create index tickets_event_status_idx on public.tickets (event_id, status);
