@@ -4,14 +4,17 @@
 --
 -- Bozza per Postgres 16 su Supabase. Usa oggetti che Supabase crea da solo:
 --   - schema auth (tabella auth.users, funzioni auth.uid() e auth.jwt());
---   - schema storage (tabella storage.objects, funzione storage.foldername());
 --   - ruoli anon, authenticated, service_role.
+-- Lo Storage serve solo per il bucket pubblico "speaker-photos": nessuna policy in questo file.
 -- Su un Postgres "nudo" questi oggetti vanno simulati prima di eseguire il file.
 --
 -- Principi (dettagli in docs/architettura.md):
 --   1. Importi sempre in centesimi interi (integer), mai float. Valuta ISO minuscola come in Stripe ('eur').
---   2. Membro e studente NON sono ruoli salvati: si derivano da memberships e student_verifications
---      al momento dell'acquisto (funzione price_roles_for). I soli ruoli salvati sono admin e staff check-in.
+--   2. Membro NON è un ruolo salvato: si deriva da memberships al momento dell'acquisto (funzione
+--      price_roles_for). I soli ruoli salvati sono admin e staff check-in.
+--   2b. Prezzo membro solo sul biglietto del membro che compra (decisione di Giulio del 05/11/2026): in un ordine
+--      al massimo una riga member, di quantità 1, intestata all'acquirente. Lo fanno rispettare il server, i
+--      vincoli di order_items (CHECK, indice unico, trigger) e reserve_order; tickets ha un secondo indice unico.
 --   3. Le scritture che toccano soldi, posti e biglietti le fa solo il server con la chiave service_role
 --      (che salta la RLS). Utenti e anonimi leggono solo ciò che le policy permettono.
 --   4. La capienza è garantita dal database: contatori con CHECK, aggiornati in modo atomico.
@@ -25,7 +28,9 @@ create extension if not exists btree_gist;  -- vincoli di esclusione su interval
 -- Enum
 -- ---------------------------------------------------------------------------------------------------------
 
-create type public.price_role as enum ('public', 'member', 'student');
+-- Ruoli di prezzo. Il ruolo studente è stato tolto (decisione di Giulio del 05/11/2026); un ruolo nuovo si
+-- aggiunge con ALTER TYPE ... ADD VALUE, una riga di ticket_prices per tipo e un ramo in price_roles_for.
+create type public.price_role as enum ('public', 'member');
 create type public.app_role as enum ('admin', 'checkin_staff');
 create type public.event_status as enum ('draft', 'published', 'cancelled', 'archived');
 create type public.ticket_kind as enum ('full_pass', 'day_pass', 'paid_session');
@@ -51,15 +56,6 @@ create type public.waitlist_status as enum ('waiting', 'offered', 'accepted', 'e
 -- Stati di una subscription Stripe, copiati tali e quali.
 create type public.membership_status as enum (
   'incomplete', 'incomplete_expired', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'paused'
-);
-create type public.verification_method as enum ('university_email', 'document');
-create type public.verification_status as enum (
-  'pending_email',   -- in attesa del clic sul link inviato alla email universitaria
-  'pending_review',  -- documento caricato, in attesa di un admin
-  'approved',
-  'rejected',
-  'expired',         -- approvata ma scaduta, oppure richiesta abbandonata
-  'withdrawn'        -- ritirata dall'utente
 );
 create type public.discount_type as enum ('percent', 'amount');
 create type public.refund_status as enum ('requested', 'pending', 'succeeded', 'failed', 'canceled');
@@ -99,7 +95,7 @@ create table public.profiles (
 create trigger profiles_touch before update on public.profiles
   for each row execute function public.touch_updated_at();
 
--- Solo i ruoli "di permesso". Membro e studente si derivano (vedi price_roles_for).
+-- Solo i ruoli "di permesso". Membro si deriva (vedi price_roles_for).
 -- event_id null = ruolo globale; per checkin_staff si può limitare a un evento.
 create table public.user_roles (
   user_id     uuid not null references public.profiles (id) on delete cascade,
@@ -323,7 +319,7 @@ create index ticket_type_pools_pool_idx on public.ticket_type_pools (pool_id);
 
 -- Prezzo per (tipo di biglietto, ruolo), con finestre temporali (early bird, ultimo minuto).
 -- Il vincolo di esclusione impedisce due prezzi validi nello stesso istante per la stessa coppia.
--- Se manca il prezzo member o student per un tipo, quel ruolo paga il prezzo public.
+-- Se manca il prezzo member per un tipo, il membro paga il prezzo public.
 create table public.ticket_prices (
   id              uuid primary key default gen_random_uuid(),
   ticket_type_id  uuid not null references public.ticket_types (id) on delete cascade,
@@ -379,53 +375,6 @@ create trigger memberships_touch before update on public.memberships
   for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------------------------------------------
--- Verifica studenti
--- ---------------------------------------------------------------------------------------------------------
-
--- Domini accettati per la verifica via email (es. studenti.unipd.it). Gestiti dall'admin.
-create table public.university_domains (
-  domain            citext primary key check (domain ~ '^[a-z0-9.-]+\.[a-z]{2,}$'),
-  institution_name  text not null,
-  active            boolean not null default true
-);
-
--- Minimizzazione: del documento si conservano solo tipo, esito, date e revisore.
--- Il file sta nel bucket privato "student-docs" e viene cancellato dopo l'esito (document_deleted_at).
-create table public.student_verifications (
-  id                      uuid primary key default gen_random_uuid(),
-  profile_id              uuid not null references public.profiles (id) on delete cascade,
-  method                  public.verification_method not null,
-  status                  public.verification_status not null,
-  university_email        citext,
-  -- Hash SHA-256 del token inviato per email: il token in chiaro non si salva.
-  email_token_hash        bytea,
-  email_token_expires_at  timestamptz,
-  document_path           text,  -- "<profile_id>/<verification_id>.<ext>" nel bucket privato
-  document_kind           text check (document_kind is null or document_kind in
-                                     ('certificato_iscrizione', 'libretto', 'tesserino', 'altro')),
-  document_deleted_at     timestamptz,
-  submitted_at            timestamptz not null default now(),
-  reviewed_by             uuid references public.profiles (id) on delete set null,
-  reviewed_at             timestamptz,
-  rejection_reason        text,
-  valid_until             date,  -- fine validità dello sconto studente (es. fine anno accademico)
-  created_at              timestamptz not null default now(),
-  updated_at              timestamptz not null default now(),
-  check (method <> 'university_email' or university_email is not null),
-  check (method <> 'document' or status = 'withdrawn' or document_path is not null or document_deleted_at is not null),
-  check (status <> 'approved' or valid_until is not null)
-);
--- Al massimo una richiesta aperta per persona.
-create unique index student_verifications_one_open
-  on public.student_verifications (profile_id)
-  where status in ('pending_email', 'pending_review');
-create index student_verifications_review_idx
-  on public.student_verifications (status, submitted_at)
-  where status = 'pending_review';
-create trigger student_verifications_touch before update on public.student_verifications
-  for each row execute function public.touch_updated_at();
-
--- ---------------------------------------------------------------------------------------------------------
 -- Codici sconto: regole e calcolo solo qui, nessun Coupon o Promotion Code in Stripe
 -- ---------------------------------------------------------------------------------------------------------
 
@@ -442,8 +391,10 @@ create table public.discount_codes (
   percent_off                 numeric(5,2) check (percent_off is null or (percent_off > 0 and percent_off <= 100)),
   amount_off_cents            integer check (amount_off_cents is null or amount_off_cents > 0),
   currency                    text check (currency is null or currency ~ '^[a-z]{3}$'),
-  eligible_roles              public.price_role[] not null default '{public,member,student}',
-  -- false (consigliato): si applica il migliore tra prezzo di ruolo e prezzo pubblico scontato, mai entrambi.
+  -- Ruoli dell'acquirente che possono usare il codice (controllati con price_roles_for).
+  eligible_roles              public.price_role[] not null default '{public,member}',
+  -- false (consigliato): sulla riga del biglietto del membro si applica il migliore tra prezzo membro e prezzo
+  -- pubblico scontato, mai entrambi; le altre righe sono a prezzo pubblico e ricevono il codice.
   combinable_with_role_price  boolean not null default false,
   applies_to_membership       boolean not null default false,
   max_redemptions             integer check (max_redemptions is null or max_redemptions > 0),
@@ -483,7 +434,8 @@ create table public.orders (
   profile_id                  uuid not null references public.profiles (id) on delete restrict,
   buyer_email                 citext not null,
   status                      public.order_status not null default 'pending',
-  -- Ruolo di prezzo "fotografato" alla creazione della Checkout Session: non cambia dopo.
+  -- Ruolo di prezzo dell'acquirente "fotografato" alla creazione della Checkout Session: non cambia dopo.
+  -- 'member' permette (non obbliga) una riga member in order_items.
   price_role                  public.price_role not null,
   currency                    text not null default 'eur' check (currency ~ '^[a-z]{3}$'),
   subtotal_cents              integer not null check (subtotal_cents >= 0),
@@ -518,8 +470,9 @@ create table public.order_items (
   order_id           uuid not null references public.orders (id) on delete cascade,
   ticket_type_id     uuid not null references public.ticket_types (id) on delete restrict,
   quantity           integer not null check (quantity between 1 and 50),
-  -- Ruolo applicato a questa riga: con la regola "prezzo di ruolo solo per il biglietto dell'acquirente"
-  -- un ordine può avere una riga member (quantità 1) e una riga public per gli accompagnatori.
+  -- Ruolo applicato a questa riga. Prezzo membro solo sul biglietto del membro che compra: al massimo una riga
+  -- member per ordine (indice order_items_one_member_per_order), di quantità 1, intestata all'acquirente
+  -- (trigger order_items_member_rules). Accompagnatori e altri biglietti: righe public.
   price_role              public.price_role not null,
   list_unit_amount_cents  integer not null check (list_unit_amount_cents >= 0),  -- listino del ruolo
   unit_discount_cents     integer not null default 0 check (unit_discount_cents >= 0),
@@ -535,9 +488,39 @@ create table public.order_items (
   check (unit_discount_cents <= list_unit_amount_cents),
   check (unit_amount_cents = list_unit_amount_cents - unit_discount_cents),
   check (total_cents = unit_amount_cents * quantity),
-  check (jsonb_typeof(attendees) = 'array' and jsonb_array_length(attendees) = quantity)
+  check (jsonb_typeof(attendees) = 'array' and jsonb_array_length(attendees) = quantity),
+  constraint order_items_member_qty_one check (price_role <> 'member' or quantity = 1)
 );
 create index order_items_order_idx on public.order_items (order_id);
+-- Un solo biglietto a prezzo membro per ordine.
+create unique index order_items_one_member_per_order on public.order_items (order_id) where price_role = 'member';
+
+-- La riga member deve essere intestata all'acquirente (stessa email) e l'acquirente deve essere membro
+-- secondo il ruolo fotografato nell'ordine. Se le righe si scrivono prima dell'ordine, l'insert fallisce: è voluto.
+create function public.order_items_member_rules() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_role  public.price_role;
+  v_email text;
+begin
+  if new.price_role <> 'member' then
+    return new;
+  end if;
+  select o.price_role, o.buyer_email::text into v_role, v_email from public.orders o where o.id = new.order_id;
+  if v_role is distinct from 'member' then
+    raise exception 'member_price_buyer_not_member' using errcode = 'P0001';
+  end if;
+  -- Confronto senza maiuscole come citext, senza dipendere dallo schema in cui sta l'estensione.
+  if lower(new.attendees -> 0 ->> 'email') is distinct from lower(v_email) then
+    raise exception 'member_price_attendee_not_buyer' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+create trigger order_items_member_rules before insert or update on public.order_items
+  for each row execute function public.order_items_member_rules();
 
 -- Riserva temporanea dei posti, una riga per (ordine, pool).
 -- expires_at = scadenza della Checkout Session + 5 minuti; null quando il pagamento è asincrono in corso.
@@ -590,6 +573,8 @@ create table public.tickets (
 create index tickets_order_idx on public.tickets (order_id);
 create index tickets_event_status_idx on public.tickets (event_id, status);
 create index tickets_attendee_profile_idx on public.tickets (attendee_profile_id) where attendee_profile_id is not null;
+-- Seconda difesa: un solo biglietto a prezzo membro per ordine.
+create unique index tickets_one_member_per_order on public.tickets (order_id) where price_role = 'member';
 create trigger tickets_touch before update on public.tickets
   for each row execute function public.touch_updated_at();
 
@@ -694,7 +679,7 @@ create table public.stripe_events (
 create index stripe_events_object_idx on public.stripe_events (object_id, stripe_created_at);
 create index stripe_events_pending_idx on public.stripe_events (received_at) where status in ('received', 'failed');
 
--- Coda dei lavori pesanti (email, PDF, riconciliazione, cancellazione documenti).
+-- Coda dei lavori pesanti (email, PDF, riconciliazione, rimborsi automatici).
 -- Il webhook e le azioni utente scrivono qui; un worker su cron li esegue. dedupe_key evita doppioni.
 create table public.jobs (
   id            bigint generated always as identity primary key,
@@ -719,7 +704,7 @@ create table public.audit_log (
   occurred_at  timestamptz not null default now(),
   actor_id     uuid,  -- niente FK: il log sopravvive alla cancellazione del profilo
   actor_type   text not null check (actor_type in ('user', 'admin', 'staff', 'system', 'stripe')),
-  action       text not null,      -- es. 'ticket.name_changed', 'refund.requested', 'student.approved'
+  action       text not null,      -- es. 'ticket.name_changed', 'refund.requested', 'discount.created'
   entity_type  text not null,
   entity_id    text,
   ip           inet,
@@ -784,8 +769,8 @@ $$;
 
 -- Ruoli di prezzo a cui la persona ha diritto nell'istante p_at. 'public' c'è sempre.
 -- Membro: subscription active o trialing con periodo in corso. past_due NON vale (domanda aperta).
--- Studente: verifica approvata e non scaduta.
--- Il server poi sceglie per ogni tipo di biglietto il prezzo più basso tra i ruoli ammessi.
+-- Il prezzo membro vale solo per il biglietto del membro che compra (una riga, quantità 1): gli altri biglietti
+-- dell'ordine sono a prezzo public anche se l'acquirente è membro.
 create function public.price_roles_for(p_profile_id uuid, p_at timestamptz default now())
 returns public.price_role[]
 language sql stable security definer
@@ -798,17 +783,12 @@ as $$
       where m.profile_id = p_profile_id
         and m.status in ('active', 'trialing')
         and m.current_period_end > p_at
-    ) then 'member'::public.price_role end,
-    case when exists (
-      select 1 from public.student_verifications v
-      where v.profile_id = p_profile_id
-        and v.status = 'approved'
-        and v.valid_until >= (p_at at time zone 'Europe/Rome')::date
-    ) then 'student'::public.price_role end
+    ) then 'member'::public.price_role end
   ], null);
 $$;
 
--- Prezzo migliore per un tipo di biglietto tra i ruoli ammessi, all'istante dato.
+-- Prezzo migliore per un tipo di biglietto tra i ruoli ammessi, all'istante dato. Per il biglietto del membro
+-- si passa {public,member}; per tutti gli altri biglietti dell'ordine solo {public}.
 create function public.best_price(p_ticket_type_id uuid, p_roles public.price_role[], p_at timestamptz default now())
 returns table (ticket_price_id uuid, price_role public.price_role, amount_cents integer)
 language sql stable
@@ -855,7 +835,8 @@ $$;
 -- Mette in riserva posti e utilizzo del codice sconto di un ordine 'pending', in un'unica transazione.
 -- p_session_expires_at è l'expires_at che il server passerà a Stripe: almeno 30 minuti (minimo di Stripe);
 -- la riserva dura 5 minuti in più. Errori: hold_too_short, order_not_pending, already_reserved,
--- too_many_for_pool, sold_out, discount_exhausted, discount_user_limit. In caso di errore non si crea la sessione.
+-- member_price_not_allowed, too_many_for_pool, sold_out, discount_exhausted, discount_user_limit.
+-- In caso di errore non si crea la sessione.
 create function public.reserve_order(p_order_id uuid, p_session_expires_at timestamptz)
 returns void
 language plpgsql security definer
@@ -876,6 +857,11 @@ begin
   end if;
   if exists (select 1 from public.capacity_holds h where h.order_id = p_order_id) then
     raise exception 'already_reserved' using errcode = 'P0001';
+  end if;
+  -- Ricontrollo lato database: una riga member solo se l'acquirente è membro fino alla scadenza della sessione.
+  if exists (select 1 from public.order_items oi where oi.order_id = p_order_id and oi.price_role = 'member')
+     and not ('member'::public.price_role = any (public.price_roles_for(v_order.profile_id, p_session_expires_at))) then
+    raise exception 'member_price_not_allowed' using errcode = 'P0001';
   end if;
 
   for r in select * from public.order_pool_needs(p_order_id) loop
@@ -1126,13 +1112,15 @@ begin
          stripe_amount_total_cents = p_amount_total_cents
    where id = p_order_id;
 
-  -- Un biglietto per unità, con il nominativo raccolto nel carrello.
+  -- Un biglietto per unità, con il nominativo raccolto nel carrello. Il biglietto a prezzo membro è
+  -- intestato all'acquirente anche come account (attendee_profile_id).
   for i in select * from public.order_items where order_id = p_order_id order by id loop
     for k in 1 .. i.quantity loop
       insert into public.tickets (event_id, order_id, order_item_id, seq, ticket_type_id, price_role,
-                                  attendee_name, attendee_email, qr_key_id, short_code)
+                                  attendee_name, attendee_email, attendee_profile_id, qr_key_id, short_code)
       values (v_order.event_id, p_order_id, i.id, k, i.ticket_type_id, i.price_role,
               i.attendees -> (k - 1) ->> 'name', i.attendees -> (k - 1) ->> 'email',
+              case when i.price_role = 'member' then v_order.profile_id end,
               p_qr_key_id, public.new_short_code())
       on conflict (order_item_id, seq) do nothing;
     end loop;
@@ -1228,6 +1216,7 @@ revoke execute on function public.mark_order_paid(uuid, text, text, integer, tex
 revoke execute on function public.stale_pending_orders(integer) from public;
 revoke execute on function public.book_session(uuid, uuid) from public;
 revoke execute on function public.price_roles_for(uuid, timestamptz) from public;
+revoke execute on function public.order_items_member_rules() from public;
 grant execute on function public.reserve_order(uuid, timestamptz) to service_role;
 grant execute on function public.close_unpaid_order(uuid, public.order_status, text) to service_role;
 grant execute on function public.mark_order_processing(uuid, text) to service_role;
@@ -1259,8 +1248,6 @@ alter table public.ticket_type_pools          enable row level security;
 alter table public.ticket_prices              enable row level security;
 alter table public.membership_plans           enable row level security;
 alter table public.memberships                enable row level security;
-alter table public.university_domains         enable row level security;
-alter table public.student_verifications      enable row level security;
 alter table public.discount_codes             enable row level security;
 alter table public.discount_code_ticket_types enable row level security;
 alter table public.orders                     enable row level security;
@@ -1319,7 +1306,7 @@ create policy ticket_types_public_read on public.ticket_types
   using ((active and exists (select 1 from public.events e where e.id = event_id and e.status = 'published'))
          or public.is_admin());
 
--- I listini sono pubblici (si mostrano anche prezzo membro e studente per invogliare a iscriversi).
+-- I listini sono pubblici (si mostra anche il prezzo membro per invogliare a iscriversi).
 create policy ticket_prices_public_read on public.ticket_prices
   for select to anon, authenticated
   using (exists (select 1 from public.ticket_types t
@@ -1348,8 +1335,6 @@ create policy speakers_admin_write on public.speakers for all to authenticated
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
 create policy session_speakers_admin_write on public.session_speakers for all to authenticated
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
-create policy university_domains_admin_all on public.university_domains for all to authenticated
-  using (public.is_admin_mfa()) with check (public.is_admin_mfa());
 -- Pool e codici sconto toccano capienza e incassi: li scrive il server (service_role) dopo aver verificato
 -- sessione admin e MFA, con controlli e registro audit. L'admin li può leggere.
 create policy capacity_pools_admin_read on public.capacity_pools for select to authenticated
@@ -1375,14 +1360,6 @@ create policy user_roles_self_read on public.user_roles for select to authentica
 
 create policy memberships_self_read on public.memberships for select to authenticated
   using (profile_id = auth.uid() or public.is_admin());
-
--- Lo studente vede lo stato delle sue richieste, ma non l'hash del token (permesso per colonna).
-create policy student_verifications_self_read on public.student_verifications for select to authenticated
-  using (profile_id = auth.uid() or public.is_admin());
-revoke select on public.student_verifications from authenticated;
-grant select (id, profile_id, method, status, university_email, document_kind, submitted_at,
-              reviewed_at, rejection_reason, valid_until, created_at)
-  on public.student_verifications to authenticated;
 
 create policy orders_self_read on public.orders for select to authenticated
   using (profile_id = auth.uid() or public.is_admin());
@@ -1429,27 +1406,12 @@ create policy audit_log_admin_read on public.audit_log for select to authenticat
 
 -- Difesa in profondità: anon non ha privilegi sulle tabelle con dati personali o tecnici,
 -- anche se un giorno qualcuno aggiungesse per errore una policy troppo larga.
-revoke all on public.profiles, public.user_roles, public.memberships, public.student_verifications,
+revoke all on public.profiles, public.user_roles, public.memberships,
               public.orders, public.order_items, public.capacity_holds, public.tickets,
               public.session_bookings, public.waitlist_entries, public.checkins, public.refunds,
               public.stripe_events, public.jobs, public.audit_log, public.rate_limits,
               public.discount_codes, public.discount_code_ticket_types, public.capacity_pools,
               public.ticket_type_pools
   from anon;
-
--- ---------------------------------------------------------------------------------------------------------
--- Storage (Supabase): bucket privato per i documenti degli studenti
--- ---------------------------------------------------------------------------------------------------------
--- Il bucket "student-docs" si crea privato (public = false), con limite di 5 MB e tipi pdf/jpeg/png.
--- L'utente può solo caricare nella propria cartella "<uid>/...": non può rileggere né elencare i file.
--- L'admin li vede solo tramite URL firmati di 60 secondi generati dal server (service_role).
--- Dopo l'esito un job cancella il file e valorizza document_deleted_at.
-
-create policy student_docs_owner_insert on storage.objects
-  for insert to authenticated
-  with check (
-    bucket_id = 'student-docs'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
 
 commit;
