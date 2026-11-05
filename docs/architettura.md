@@ -29,7 +29,7 @@ vengono da ricerche web su fonti secondarie e sono marcati **non verificati**.
 | File | Supabase Storage: bucket pubblico `speaker-photos`, bucket privato `student-docs` | Stesse policy del database; URL firmati brevi per i documenti |
 | Pagamenti | Stripe Checkout ospitato, Stripe Billing, Customer Portal | Pagina di pagamento di Stripe: carte, wallet e SCA già gestiti, nessun dato di carta sul nostro sito, nessuna chiave Stripe nel browser |
 | Email | Resend (anche come SMTP di Supabase Auth) | API semplice, piano gratuito per partire; alternativa Postmark |
-| Job | Tabella `jobs` in Postgres + `pg_cron` (lavori solo SQL) + Vercel Cron che chiama `/api/jobs/run` | Nessun fornitore in più; i lavori pesanti stanno fuori dalle richieste |
+| Job | Tabella `jobs` in Postgres + Vercel Cron che chiama `/api/jobs/run` (scadenze ordini, email, rimborsi automatici) + `pg_cron` per le sole pulizie SQL | Nessun fornitore in più; i lavori pesanti stanno fuori dalle richieste |
 | Check-in | PWA dentro lo stesso sito (`/checkin`), funziona offline | Niente app negli store per ora; gira su qualunque telefono dello staff |
 
 Regola sul cookie di sessione (regola 1 del ruolo): Supabase Auth si usa **solo lato server** (`@supabase/ssr` in
@@ -44,7 +44,9 @@ la password, Supabase Auth la salva con bcrypt, non scrypt o argon2 `[likely]`: 
 
 | Area | Alternativa | Perché scartata |
 |---|---|---|
-| Ticketing | Pretix (open source), Tito, Eventbrite | Pretix ha già check-in, liste d'attesa e Stripe: è l'alternativa seria se i tempi stringono. Scartata perché il brief chiede un sito proprio con membership integrata e prezzi per ruolo; Eventbrite e Tito aggiungono commissioni per biglietto e non gestiscono la membership |
+| Ticketing | Pretix (open source) | **Non scartata: da decidere.** Pretix ha account cliente con membership che sbloccano prodotti riservati, app di check-in offline (pretixSCAN) con QR firmati e pagamento con Stripe `[likely]` (fonti: <https://docs.pretix.eu/guides/customer-accounts/>, <https://docs.pretix.eu/guides/products/restricted-audience/>, segnalate dalla revisione, non aperte in questa sessione). La lacuna vera: la membership di pretix probabilmente non è un abbonamento Stripe ricorrente con rinnovo automatico `[uncertain]`. Si decide con una prova di 1-2 giorni (vedi riga sotto e §14) |
+| Ticketing | Soluzione mista: agenda, speaker e membership (Stripe Billing) su misura; biglietteria, capienza e check-in su pretix | **Da valutare con la stessa prova.** Toglie la parte più rischiosa (posti, biglietti, check-in offline). Costo: due sistemi, accesso unico da collegare, membership da comunicare a pretix per il prezzo membro, commissioni o hosting di pretix da stimare |
+| Ticketing | Tito, Eventbrite | Commissioni per biglietto e nessuna membership in abbonamento |
 | Framework | SvelteKit, Remix, Laravel | Nessun vantaggio tale da perdere il riuso di Eventy |
 | Hosting | Cloudflare Workers, VPS | Workers più economico a grande scala ma con limiti di runtime per SDK Node; il VPS chiede manutenzione |
 | Database e auth | Neon + Clerk o Auth.js; Firebase | Due fornitori invece di uno; Firebase non ha vincoli SQL né transazioni comode per la capienza |
@@ -80,7 +82,7 @@ flowchart LR
     DB[(Postgres<br/>RLS, funzioni capienza,<br/>stripe_events, jobs, audit_log)]
     AUTH[Auth<br/>OTP email, TOTP admin]
     ST[Storage<br/>speaker-photos pubblico,<br/>student-docs privato]
-    CRON[pg_cron<br/>rilascio riserve scadute]
+    CRON[pg_cron<br/>pulizie solo SQL]
   end
 
   subgraph Stripe
@@ -155,9 +157,13 @@ può modificare.
    - applica la regola **proposta** «prezzo di ruolo solo per il biglietto intestato all'acquirente»: gli
      accompagnatori pagano il prezzo pubblico. Senza questa regola un membro potrebbe comprare dieci biglietti
      scontati per altri;
-   - valida l'eventuale codice sconto (§4.4);
-   - crea l'ordine `pending` con il ruolo «fotografato» (`orders.price_role`, `order_items.price_role`), mette in
-     riserva i posti e crea la Checkout Session con gli importi già decisi.
+   - valida l'eventuale codice sconto e calcola lo sconto riga per riga (§4.4);
+   - se l'utente ha già un ordine `pending` (è tornato al carrello), chiama `expire` sulla Checkout Session
+     precedente e chiude quell'ordine; se Stripe risponde che la sessione è già pagata, la conferma invece di
+     chiuderla (§5.2);
+   - crea l'ordine `pending` con il ruolo «fotografato» (`orders.price_role`, `order_items.price_role`), chiama
+     `reserve_order` (posti e utilizzo del codice nella stessa transazione) e crea la Checkout Session con gli
+     importi già decisi.
 3. Se il totale è diverso da quello mostrato nel carrello, l'utente vede una pagina di riepilogo con il motivo
    prima del redirect a Stripe.
 
@@ -186,10 +192,9 @@ possibile in Stripe `[likely]` ma complica riserve, rimborsi e fatture: **propos
 | Oggetto | Uso |
 |---|---|
 | Customer | Uno per profilo, creato dal server al primo acquisto, id in `profiles.stripe_customer_id` |
-| Product | Uno per tipo di biglietto (`ticket_types.stripe_product_id`) e uno per la membership; creati dal server quando l'admin salva il tipo |
-| Price | Solo per la membership: un Price ricorrente (annuale, **proposta**) in `membership_plans.stripe_price_id`. Serve al Customer Portal |
+| Product e Price | Solo per la membership: un Product e un Price ricorrente (annuale, **proposta**) in `membership_plans.stripe_price_id`. Servono al Customer Portal. Per i biglietti nessun Product salvato: la riga nasce da `price_data.product_data` |
 | Checkout Session | `mode=payment` per i biglietti, `mode=subscription` per la membership |
-| Coupon + Promotion Code | Specchio dei codici della tabella `discount_codes` |
+| Coupon e Promotion Code | **Non usati per i biglietti** (§4.4). Eventualmente solo per uno sconto sulla membership |
 | Billing Portal Session | Gestione della membership da parte del membro |
 | Refund | Solo creati dal nostro pannello (vedi §4.7) |
 
@@ -201,12 +206,14 @@ Parametri principali della sessione (bozza, da verificare sulla documentazione A
 mode                    payment
 customer                cus_... (sempre, così ricevute e storico sono legati alla persona)
 client_reference_id     <order_id>
-line_items[]            price_data: { currency: eur, product: <stripe_product_id>, unit_amount: <centesimi> }, quantity
-discounts[]             [{ promotion_code: promo_... }]  solo se il server ha validato il codice
-allow_promotion_codes   false (il campo codice sulla pagina Stripe salterebbe le nostre regole)
-metadata                { order_id, kind: tickets, price_role, env }
+line_items[]            price_data: { currency: eur, unit_amount: <order_items.unit_amount_cents, sconto incluso>,
+                          product_data: { name: <order_items.stripe_line_name>,
+                                          metadata: { ticket_type_id, price_role, discount_code } } },
+                        quantity
+allow_promotion_codes   false (nessun codice sulla pagina Stripe: lo sconto è già nel prezzo)
+metadata                { order_id, kind: tickets, price_role, discount_code, env }
 payment_intent_data     { metadata: { order_id } }
-expires_at              adesso + 30 minuti (minimo consentito da Stripe [likely])
+expires_at              adesso + 31 minuti (il minimo di Stripe è 30 [likely]; la riserva dura 5 minuti in più)
 locale                  it
 success_url             /ordini/<order_id>?session_id={CHECKOUT_SESSION_ID}
 cancel_url              /carrello
@@ -219,44 +226,48 @@ Idempotency-Key         checkout-<order_id>
 - **Ordini a costo zero** (sconto 100% o sessione gratuita a pagamento zero): si confermano senza passare da
   Stripe, con le stesse funzioni SQL (**proposta**: meno casi limite di una Checkout a zero).
 - **Pagina di successo:** non è la prova del pagamento. Mostra lo stato letto dal database; se l'ordine è ancora
-  `pending`, il server recupera la sessione da Stripe e chiama **la stessa funzione idempotente** del webhook.
-  Così l'utente vede i biglietti subito anche se il webhook tarda.
+  `pending`, il server recupera la sessione da Stripe e chiama **la stessa funzione idempotente** del webhook
+  (`mark_order_paid`). Così l'utente vede i biglietti subito anche se il webhook tarda.
 
 ### 4.3 Prezzi: `price_data`, non un Price per combinazione
 
-**Scelta (proposta):** prezzi dei biglietti passati con `price_data` legato al Product del tipo di biglietto.
+**Scelta (proposta):** prezzi dei biglietti passati con `price_data.product_data`, importo per unità già
+scontato.
 
-| | `price_data` + Product | Price pre-creati (tipo × ruolo × finestra) |
+| | `price_data` con `product_data` | Price pre-creati (tipo × ruolo × finestra) |
 |---|---|---|
 | Sorgente del prezzo | Una sola: `ticket_prices` nel nostro database (regola 2 del ruolo) | Due: database e Stripe, da tenere allineate |
 | Early bird e cambi di prezzo | Si cambia una riga | Un Price è immutabile: va archiviato e ricreato, e l'id aggiornato |
-| Report in Stripe | Per Product (tipo di biglietto); il ruolo sta nei metadata | Per Price |
-| Coupon limitati a certi biglietti | Funzionano (`applies_to.products`) `[likely]` | Funzionano |
+| Sconto riga per riga | Sì: è già nell'importo per unità | No: un solo coupon per sessione (§4.4) |
+| Report | Dal nostro database (ordini, righe, ruolo, codice); in Stripe nome e metadata della riga | Per Price in Stripe |
 | Customer Portal | Non serve per i biglietti | Non serve per i biglietti |
 
-La membership invece usa un Price vero, perché il Customer Portal e i rinnovi lo richiedono.
+Da verificare: se `product_data` in linea lascia prodotti nell'elenco Stripe e quanto lo appesantisce
+`[uncertain]`. La membership invece usa un Price vero, perché il Customer Portal e i rinnovi lo richiedono.
 
 ### 4.4 Codici sconto e cumulo con il prezzo di ruolo
 
-Stripe non sa limitare un codice per ruolo né decidere il cumulo con un prezzo che calcoliamo noi. Quindi:
+Checkout accetta **un solo coupon per sessione** e un coupon limitato a un prodotto non distingue due righe dello
+stesso prodotto `[likely]`. La regola «migliore tra prezzo di ruolo e codice, riga per riga» (es. riga membro
+dell'acquirente + riga pubblica degli accompagnatori) quindi non si esprime con i Coupon. Per questo:
 
-1. Le regole stanno in `discount_codes`: ruoli ammessi, tipi di biglietto, finestre, limiti totali e per
-   persona, `combinable_with_role_price`.
-2. L'admin crea il codice dal pannello; il server crea in Stripe il Coupon (con `applies_to.products` se limitato)
-   e il Promotion Code con lo stesso testo e lo stesso limite di utilizzi.
-3. Nel carrello l'utente inserisce il codice nel **nostro** campo; il server lo valida (con rate limit, §8) e lo
-   passa a Checkout come `discounts`. Un solo codice per ordine (limite di Checkout `[likely]`).
+1. Le regole stanno solo in `discount_codes`: ruoli ammessi, tipi di biglietto, finestre, limiti totali e per
+   persona, `combinable_with_role_price`. **Nessun Coupon o Promotion Code in Stripe** per i biglietti.
+2. Nel carrello l'utente inserisce il codice nel nostro campo; il server lo valida (con rate limit, §8) e calcola
+   lo sconto **per unità e per riga** (`order_items.list_unit_amount_cents`, `unit_discount_cents`,
+   `unit_amount_cents`). Arrotondamento al centesimo per unità, deciso dal server.
+3. Lo sconto si vede sulla pagina Stripe e in ricevuta nel nome della riga (`stripe_line_name`, es. «Pass intero ·
+   codice ESTATE −20%») e nei metadata.
+4. Gli utilizzi si contano in `reserve_order`, nella stessa transazione della riserva dei posti:
+   `UPDATE ... SET redeemed_count = redeemed_count + 1 WHERE redeemed_count < max_redemptions`. Se l'ordine scade,
+   l'utilizzo torna disponibile. Un pagamento tardivo già incassato si onora anche oltre il limite.
 
-**Regola di cumulo (proposta):**
+**Regola di cumulo (proposta), applicata riga per riga:**
 
 | `combinable_with_role_price` | Effetto |
 |---|---|
-| `false` (default) | Il server calcola sia «prezzo di ruolo» sia «prezzo pubblico − codice» e applica il più basso. Mai entrambi. Se vince il ruolo, il codice non viene consumato e l'utente lo vede scritto |
-| `true` | Il codice si applica sopra il prezzo di ruolo (per codici speciali, es. speaker o partner) |
-
-L'importo definitivo dello sconto è quello calcolato da Stripe (`total_details.amount_discount`), salvato in
-`orders.discount_cents` alla conferma; un arrotondamento di un centesimo rispetto alla stima è accettato e
-registrato.
+| `false` (default) | Per ogni riga il server calcola «prezzo di ruolo» e «prezzo pubblico − codice» e applica il più basso. Mai entrambi. Se su tutte le righe vince il ruolo, il codice non viene consumato e l'utente lo vede scritto |
+| `true` | Il codice si applica sopra il prezzo di ruolo (codici speciali, es. speaker o partner) |
 
 ### 4.5 Membership
 
@@ -285,6 +296,14 @@ Un endpoint per ambiente: `POST /api/stripe/webhook`, runtime Node.js, regione `
 4. Elaborare in **una sola transazione**, dentro una funzione SQL chiamata via RPC (supabase-js non apre
    transazioni su più chiamate): aggiornamento di ordine, posti, biglietti o membership e inserimento dei job
    (email) nella stessa transazione.
+   - **Lock sull'ordine:** ogni funzione (`mark_order_paid`, `mark_order_processing`, `close_unpaid_order`) parte
+     da `SELECT ... FOR UPDATE` sulla riga dell'ordine. Pagina di successo e due consegne parallele dello stesso
+     webhook si mettono in fila; la seconda trova lo stato già cambiato ed esce con `already_done` (provato).
+   - **Transizioni ammesse:** `pending → paid | processing | expired | cancelled | failed`,
+     `processing → paid | failed`. Un pagamento che arriva su un ordine `expired`, `failed` o `cancelled` non si
+     ignora (i soldi sono stati presi): passa dal ramo «pagamento tardivo» di §5.2.
+   - **Seconda difesa:** `tickets` ha `unique (order_item_id, seq)`; i job hanno `dedupe_key`.
+   - La sessione del webhook deve coincidere con `orders.stripe_checkout_session_id`, altrimenti errore.
 5. Segnare l'evento `processed` e rispondere 200 in pochi secondi. Niente email o PDF dentro la richiesta
    (regola 3). In caso di errore: `failed`, `last_error`, risposta 500 così Stripe ritenta.
 
@@ -294,10 +313,10 @@ Un endpoint per ambiente: `POST /api/stripe/webhook`, runtime Node.js, regione `
 
 | Evento | Azione |
 |---|---|
-| `checkout.session.completed` | Biglietti: se `payment_status = paid` conferma posti, emette i biglietti dai nominativi del carrello, conta l'uso del codice, mette in coda l'email; se `unpaid` ordine `processing` e riserve `awaiting_payment` senza scadenza. Membership: collega subscription e profilo. Controlla che `amount_total` e valuta coincidano con l'ordine, altrimenti segna l'ordine da rivedere |
-| `checkout.session.async_payment_succeeded` | Come «pagato» sopra |
-| `checkout.session.async_payment_failed` | Ordine `failed`, posti rilasciati, email all'utente |
-| `checkout.session.expired` | Ordine `expired`, posti rilasciati, eventuale offerta alla lista d'attesa |
+| `checkout.session.completed` | Biglietti: se `payment_status = paid` → `mark_order_paid` (posti confermati o riprenotati, biglietti emessi dai nominativi del carrello, email in coda; esito `paid`, `paid_late`, `needs_refund` o `already_done`); se `unpaid` → `mark_order_processing` (riserve `awaiting_payment` senza scadenza). Membership: collega subscription e profilo. Se `amount_total` non coincide con l'ordine, avviso all'admin |
+| `checkout.session.async_payment_succeeded` | `mark_order_paid` |
+| `checkout.session.async_payment_failed` | `close_unpaid_order(..., 'failed')`, posti e codice rilasciati, email all'utente |
+| `checkout.session.expired` | `close_unpaid_order(..., 'expired')`, posti e codice rilasciati, eventuale offerta alla lista d'attesa |
 | `charge.refunded` | Aggiorna `refunds`. Se il rimborso non è nato dal pannello: riga `stripe_dashboard`, `needs_review`; rimborso totale → tutti i biglietti dell'ordine `refunded` |
 | `refund.updated` / `charge.refund.updated` | Rimborso fallito o annullato → avviso all'admin (nome esatto dell'evento da verificare sulla versione API `[uncertain]`) |
 | `charge.dispute.created` / `charge.dispute.closed` | Biglietti `disputed`, avviso all'admin; l'admin decide se bloccare l'ingresso |
@@ -312,8 +331,10 @@ Gli altri eventi non vanno abilitati sull'endpoint; se arrivano si salvano come 
 
 Job giornaliero (e manuale dal pannello):
 
-- Checkout Session completate nelle ultime 72 ore su Stripe ↔ ordini `paid`: mancanze in una coda «da riconciliare».
-- Ordini `pending` con sessione scaduta ↔ riserve: rilascio di quelle rimaste.
+- Checkout Session completate nelle ultime 72 ore su Stripe ↔ ordini `paid`: le mancanti passano da
+  `mark_order_paid` (che gestisce anche il caso tardivo), le anomalie vanno in una coda «da riconciliare».
+- Ordini `needs_refund` ↔ rimborsi su Stripe: ognuno deve avere il suo rimborso riuscito.
+- Ordini `processing` fermi da più di 7 giorni: avviso all'admin.
 - Subscription attive su Stripe ↔ `memberships`.
 - Rimborsi su Stripe ↔ `refunds`.
 - Ricalcolo dei contatori `held` e `confirmed` di ogni pool dai dati reali: una differenza è un bug, va segnalata.
@@ -329,6 +350,13 @@ Job giornaliero (e manuale dal pannello):
    `refunds.idempotency_key`.
 2. I biglietti passano subito a `refunded` (QR revocato); l'admin sceglie se rimettere in vendita il posto.
 3. Il webhook conferma o segnala il fallimento.
+
+**Rimborso automatico:** un ordine `needs_refund` (pagato quando i posti non c'erano più, §5.2) mette in coda il
+job `stripe.refund_full`: il worker crea il Refund dell'intero PaymentIntent con Idempotency-Key
+`auto-refund-<order_id>`, avvisa l'admin e scrive all'utente. Non serve un clic dell'admin.
+
+Nella prima versione (§12) il pannello rimborsi non c'è: l'admin rimborsa dalla Dashboard Stripe e il webhook
+registra il rimborso (rimborso totale → biglietti `refunded`; parziale → coda «da riconciliare»).
 
 Le commissioni Stripe di un pagamento rimborsato non vengono restituite `[likely]`: è un costo. La politica di
 rimborso verso i consumatori è una domanda legale aperta.
@@ -373,20 +401,48 @@ per gli eventi, conservazione dei dati degli ordini.
 
 ### 5.2 Come si evita l'overselling
 
-1. Alla creazione della Checkout Session il server chiama `hold_order_capacity(order_id, expires_at)` nella stessa
-   transazione che crea l'ordine. La funzione fa `UPDATE ... SET held = held + n WHERE held + confirmed + n <= capacity`
-   pool per pool, in ordine di id (niente deadlock). Se un pool non basta, errore `sold_out` e nessuna sessione
-   Stripe viene creata.
-2. La riserva scade 5 minuti dopo la Checkout Session (`expires_at` della sessione = adesso + 30 minuti): non si
-   può pagare una sessione dopo che la sua riserva è sparita.
-3. `checkout.session.expired` → `release_order_capacity`. Se il webhook si perde, `pg_cron` ogni minuto chiama
-   `release_expired_holds`.
-4. Pagamento confermato → `confirm_order_capacity` (da `held` a `confirmed`).
-5. Pagamento asincrono in corso → riserva `awaiting_payment` senza scadenza, finché arriva l'esito.
+**Bug corretto (segnalato dalla revisione):** nella prima bozza un job `pg_cron` liberava le riserve scadute
+senza chiedere nulla a Stripe. Se il webhook di pagamento arrivava dopo (endpoint giù, Stripe che ritenta), la
+conferma non trovava riserve, non contava i posti ma i biglietti venivano emessi lo stesso: overselling
+silenzioso. Il flusso corretto:
 
-Il vincolo `CHECK` è l'ultima difesa: anche con un bug nel codice, il database rifiuta un posto in più. È stato
-provato su Postgres 16 in questa sessione: il secondo ordine oltre capienza riceve `sold_out`, la riserva
-scaduta viene rilasciata, ridurre la capienza sotto i venduti fallisce `[sure]` (prova locale con dati finti).
+1. **Riserva.** Alla creazione della Checkout Session il server chiama `reserve_order(order_id, session_expires_at)`
+   nella stessa transazione dell'ordine. La funzione blocca l'ordine, poi i pool in ordine di id (niente
+   deadlock), fa `UPDATE ... SET held = held + n WHERE held + confirmed + n <= capacity` e conta l'utilizzo del
+   codice sconto. Errori possibili: `sold_out`, `too_many_for_pool`, `discount_exhausted`,
+   `discount_user_limit`, `hold_too_short`. In caso di errore nessuna sessione Stripe viene creata.
+2. **Durata.** `expires_at` della sessione = adesso + 31 minuti (il minimo di Stripe è 30 `[likely]`); la riserva
+   dura 5 minuti in più. La funzione rifiuta durate sotto i 30 minuti.
+3. **Una sola riserva aperta per persona:** indice unico `orders_one_pending_per_profile`. Se l'utente torna al
+   carrello, il server chiama `expire` sulla sessione precedente prima di crearne una nuova.
+4. **Limiti per ordine:** `ticket_types.max_per_order` (4 di default) e `capacity_pools.max_per_order` (es. 2 sui
+   pool piccoli come i workshop), contro chi accaparra posti.
+5. **Rilascio solo con conferma di Stripe.** I posti si liberano solo con `close_unpaid_order`, chiamata:
+   - dal webhook `checkout.session.expired` o `async_payment_failed`;
+   - dal job (Node, ogni minuto) che prende gli ordini da `stale_pending_orders`, legge la sessione da Stripe e:
+     `open` → chiama `expire` e poi chiude; `expired` → chiude; `complete` → `mark_order_paid`.
+   Se il job è fermo, i posti restano bloccati: si vende di meno, mai due volte.
+6. **Conferma idempotente con riprenotazione** (`mark_order_paid`): converte le riserve ancora aperte; dove la
+   riserva non c'è più (pagamento tardivo), riprenota i posti se ci sono (`paid_late`, avviso all'admin). Se sono
+   esauriti, tutto il ciclo viene annullato (sottotransazione), l'ordine va in `needs_refund`, nessun biglietto
+   viene emesso e partono rimborso automatico, avviso all'admin ed email all'utente.
+7. **Pagamento asincrono** in corso → riserva `awaiting_payment` senza scadenza, finché arriva l'esito.
+
+Il vincolo `CHECK (held + confirmed <= capacity)` resta l'ultima difesa.
+
+**Prove su Postgres 16 in questa sessione, con dati finti** `[sure]`:
+
+| Prova | Esito |
+|---|---|
+| Riserva con durata sotto i 30 minuti | 🟢 rifiutata (`hold_too_short`) |
+| Seconda riserva aperta per la stessa persona | 🟢 rifiutata dall'indice unico |
+| Caso del bug: riserva di A chiusa, B prende i posti e paga, poi arriva il pagamento tardivo di A senza posti | 🟢 A va in `needs_refund`, 0 biglietti, posti invariati (2 su 3), job di rimborso, avviso ed email in coda |
+| Stesso webhook di A ripetuto | 🟢 `already_done`, nessun job in più |
+| Pagamento tardivo con posti ancora liberi | 🟢 `paid_late`, posto riprenotato, biglietto emesso |
+| Sessione Stripe diversa da quella dell'ordine | 🟢 rifiutata (`session_mismatch`) |
+| 3 posti chiesti su un pool con limite 2 per ordine | 🟢 rifiutata (`too_many_for_pool`) |
+| Due consegne parallele dello stesso webhook | 🟢 la prima `paid`, la seconda aspetta il lock ed esce con `already_done`; 2 biglietti, non 4 |
+| Codice sconto con un solo utilizzo: contato alla riserva, restituito alla scadenza | 🟢 |
 
 ### 5.3 Lista d'attesa (opzionale)
 
@@ -410,6 +466,8 @@ al successivo. Si può attivare dopo il primo evento.
 
 ### 6.2 Check-in offline-tollerante
 
+Nella prima versione (§12) il check-in è online con un export CSV di riserva; la parte offline sotto arriva dopo.
+
 1. Prima dell'evento lo staff fa login nella PWA; il dispositivo scarica per quell'evento: chiave pubblica,
    lista dei biglietti validi (id, versione, nome, tipo, giorni ammessi) e lista dei revocati.
 2. Alla lettura del QR la PWA verifica la firma, la versione e i giorni ammessi **in locale**, e registra il
@@ -432,7 +490,7 @@ Dopo l'evento la PWA cancella i dati locali; lo staff può cancellarli anche a m
 
 ## 7. Verifica studenti
 
-Due strade, scelte dall'utente:
+Due strade, scelte dall'utente. Nella prima versione (§12) solo l'email d'ateneo, con eccezioni a mano.
 
 | Strada | Come funziona | Limite |
 |---|---|---|
@@ -481,7 +539,8 @@ Informativa privacy, base giuridica e tempi di conservazione: domanda per la cat
 
 | Job | Frequenza | Dove |
 |---|---|---|
-| Rilascio riserve scadute (`release_expired_holds`) | Ogni minuto | `pg_cron` |
+| Ordini con riserva scaduta (`stale_pending_orders`): lettura della sessione su Stripe, `expire` se ancora aperta, poi chiusura o conferma | Ogni minuto | Vercel Cron → `/api/jobs/run` (serve Stripe, quindi non `pg_cron`) |
+| Rimborsi automatici degli ordini `needs_refund` | Ogni minuto | Coda `jobs` |
 | Coda `jobs`: email, PDF, offerte lista d'attesa, cancellazione documenti | Ogni minuto | Vercel Cron → `/api/jobs/run` |
 | Riconciliazione Stripe ↔ database | Ogni giorno, di notte | Vercel Cron |
 | Scadenza verifiche studenti, pulizia `rate_limits`, azzeramento payload webhook vecchi | Ogni giorno | `pg_cron` |
@@ -561,7 +620,33 @@ Numeri da passare a `monetization` o alla skill `unit-economics` per il prezzo d
 
 ---
 
-## 12. Rischi e limiti
+## 12. Prima versione (MVP)
+
+Obiettivo: vendere il primo evento senza perdere soldi né posti. Si taglia ciò che si può fare a mano o
+rimandare senza riscrivere nulla dopo.
+
+| Resta nella prima versione | Motivo |
+|---|---|
+| Capienza garantita dal database (`reserve_order`, vincolo `CHECK`, rilascio solo con conferma di Stripe) | Un posto venduto due volte non si ripara a mano |
+| Conferma idempotente (`mark_order_paid` con lock, riprenotazione, `needs_refund` e rimborso automatico) | Biglietti doppi o pagamenti senza posto sono gli errori più cari |
+| Membership con Stripe Billing e Customer Portal | Decisione di Giulio; il prezzo membro dipende da questa |
+| Prezzo di ruolo calcolato lato server, codici sconto nel prezzo | Decisione di Giulio |
+| Biglietti nominativi con QR firmato | Servono comunque per l'ingresso |
+
+| Si taglia | Al suo posto, per ora | Quando rimetterlo |
+|---|---|---|
+| PWA di check-in offline | Check-in online dalla stessa pagina (lettura QR e verifica sul server) + export CSV dei partecipanti come riserva se cade la rete | Quando un evento ha un luogo con rete debole o più varchi |
+| Lista d'attesa | Messaggio «esaurito» ed email di contatto | Dopo il primo evento esaurito |
+| API pubblica `/api/v1/*` | Server Actions interne | Quando parte l'app negli store |
+| Caricamento documento studenti | Solo email d'ateneo; eccezioni approvate a mano dall'admin (per email, senza conservare il documento) | Se le eccezioni diventano molte |
+| Cambio nominativo self-service | Cambio fatto dall'admin su richiesta, con registro audit | Quando le richieste pesano |
+| Rimborsi dal pannello | Rimborsi dalla Dashboard Stripe, registrati dal webhook (totale → biglietti `refunded`, parziale → coda da riconciliare). Il rimborso automatico di `needs_refund` resta | Quando i rimborsi parziali diventano frequenti |
+
+Lo schema dati resta quello completo: le tabelle delle parti tagliate restano vuote finché non servono.
+
+---
+
+## 13. Rischi e limiti
 
 - 🔴 Prezzi e commissioni non verificati su fonte primaria: la stima dei costi può cambiare. `[uncertain]`
 - 🔴 Obblighi fiscali (IVA, fattura elettronica, eventuale biglietteria) non definiti: possono cambiare il flusso di checkout. `[uncertain]`
@@ -569,16 +654,19 @@ Numeri da passare a `monetization` o alla skill `unit-economics` per il prezzo d
 - 🟡 Cookie `httpOnly` con `@supabase/ssr` senza client browser: da provare nel primo spike. `[uncertain]`
 - 🟡 Email universitaria non prova l'iscrizione in corso: possibile abuso del prezzo studente. `[likely]`
 - 🟡 Dati dei partecipanti salvati sui telefoni dello staff per il check-in offline: dispositivo perso = dati esposti fino alla cancellazione.
-- 🟡 Un rimborso fatto dalla Dashboard Stripe invece che dal pannello non si collega da solo ai biglietti: va riconciliato a mano.
+- 🟡 Un rimborso parziale fatto dalla Dashboard Stripe (il caso normale nella prima versione) non si collega da solo ai biglietti: va riconciliato a mano.
+- 🟡 Se il job delle scadenze è fermo, i posti delle sessioni abbandonate restano bloccati: si vende meno finché non riparte (scelta voluta, meglio che vendere due volte).
+- 🟡 Pagamento arrivato quando i posti sono finiti: la persona paga e viene rimborsata in automatico; rara ma brutta esperienza, e la commissione Stripe è persa. [likely]
+- 🟡 `product_data` in linea potrebbe affollare l'elenco prodotti di Stripe. [uncertain]
 - 🟡 Doppio ingresso possibile con due varchi offline nello stesso momento: si scopre solo alla sincronizzazione.
 - 🟡 Picco all'apertura vendite: limite di 100 email al giorno sul piano Free di Resend; bot sul checkout. `[uncertain]`
 - 🟡 Costi fissi superiori alle commissioni sotto le 1.000 persone all'anno.
-- 🟡 Sviluppo su misura più lungo di una piattaforma pronta come Pretix.
-- 🟢 Overselling: impedito dal vincolo nel database, provato in locale. `[sure]`
+- 🟡 Sviluppo su misura più lungo di una piattaforma pronta come pretix, che copre già gran parte della biglietteria. [likely]
+- 🟢 Overselling e biglietti doppi: impediti da vincolo, lock sull'ordine e riprenotazione; provati in locale con dati finti, compreso il caso del bug. `[sure]`
 
 ---
 
-## 13. Domande aperte per Giulio
+## 14. Domande aperte per Giulio
 
 1. **Fisco:** regime IVA di biglietti e membership, Stripe Tax sì o no, fattura elettronica, eventuale obbligo di
    biglietteria. Va alla catena `catena-legale-fiscale`.
@@ -587,10 +675,11 @@ Numeri da passare a `monetization` o alla skill `unit-economics` per il prezzo d
 4. **Membership:** durata e rinnovo (annuale?), prezzo, tolleranza di 24 ore sul rinnovo, `past_due` vale come membro?
 5. **Studenti:** basta l'email universitaria o serve sempre il documento? Fino a quando vale la verifica? Chi è
    in attesa può comprare a prezzo pieno e avere poi la differenza?
-6. **Codici sconto:** cumulo con il prezzo di ruolo vietato di default (proposta: si applica il migliore dei due)?
+6. **Codici sconto:** cumulo con il prezzo di ruolo vietato di default (proposta: riga per riga si applica il migliore dei due)?
 7. **Cambio nominativo:** fino a quante ore prima, quante volte, e i biglietti scontati per ruolo sono cedibili?
 8. **Metodi di pagamento:** escludere l'addebito SEPA e gli altri metodi a notifica differita per i biglietti?
 9. **Lista d'attesa:** serve dal primo evento?
 10. **Più organizzatori in futuro:** aggiungere già ora la tabella `organizations`?
 11. **App negli store:** in che tempi? Cambia le priorità delle API.
-12. **Pretix:** vale la pena confrontarlo davvero prima di sviluppare su misura?
+12. **Su misura o pretix?** Proposta: prova di 1-2 giorni con pretix (membership, prodotti riservati ai membri, check-in offline, Stripe) per scegliere tra tutto su misura, tutto pretix o la soluzione mista (agenda, speaker e membership su misura, biglietteria su pretix).
+13. **Prima versione:** confermi i tagli del §12?

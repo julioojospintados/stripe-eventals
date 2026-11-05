@@ -823,25 +823,66 @@ as $$
   limit 1;
 $$;
 
--- Mette in riserva i posti di un ordine su tutti i pool coinvolti, in un'unica transazione.
--- Blocca i pool in ordine di id (evita deadlock tra due checkout concorrenti). Se un pool non basta,
--- solleva 'sold_out' e la transazione del chiamante annulla tutto.
-create function public.hold_order_capacity(p_order_id uuid, p_expires_at timestamptz)
+-- Codice breve casuale di 8 caratteri dall'alfabeto senza caratteri ambigui (32 simboli).
+-- Usa i byte casuali di un UUID v4, saltando quelli con i bit di versione e variante. Non è un segreto
+-- (il segreto è la firma del QR); una collisione fa fallire la transazione e Stripe ritenta il webhook.
+create function public.new_short_code() returns text
+language sql volatile
+set search_path = ''
+as $$
+  select string_agg(
+           substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+                  (get_byte(s.b, case when g.i < 6 then g.i else g.i + 4 end) % 32) + 1, 1),
+           '' order by g.i)
+  from (select uuid_send(gen_random_uuid()) as b) s, generate_series(0, 7) as g(i);
+$$;
+
+-- Pool coinvolti da un ordine e quantità per pool, in ordine di id: tutte le funzioni bloccano i pool
+-- sempre in quest'ordine (e sempre dopo la riga dell'ordine), così due transazioni non vanno in deadlock.
+create function public.order_pool_needs(p_order_id uuid)
+returns table (pool_id uuid, qty integer)
+language sql stable
+set search_path = ''
+as $$
+  select ttp.pool_id, sum(oi.quantity)::integer
+  from public.order_items oi
+  join public.ticket_type_pools ttp on ttp.ticket_type_id = oi.ticket_type_id
+  where oi.order_id = p_order_id
+  group by ttp.pool_id
+  order by ttp.pool_id;
+$$;
+
+-- Mette in riserva posti e utilizzo del codice sconto di un ordine 'pending', in un'unica transazione.
+-- p_session_expires_at è l'expires_at che il server passerà a Stripe: almeno 30 minuti (minimo di Stripe);
+-- la riserva dura 5 minuti in più. Errori: hold_too_short, order_not_pending, already_reserved,
+-- too_many_for_pool, sold_out, discount_exhausted, discount_user_limit. In caso di errore non si crea la sessione.
+create function public.reserve_order(p_order_id uuid, p_session_expires_at timestamptz)
 returns void
 language plpgsql security definer
 set search_path = ''
 as $$
 declare
+  v_order public.orders%rowtype;
+  v_code public.discount_codes%rowtype;
   r record;
 begin
-  for r in
-    select ttp.pool_id, sum(oi.quantity)::integer as qty
-    from public.order_items oi
-    join public.ticket_type_pools ttp on ttp.ticket_type_id = oi.ticket_type_id
-    where oi.order_id = p_order_id
-    group by ttp.pool_id
-    order by ttp.pool_id
-  loop
+  if p_session_expires_at < now() + interval '30 minutes' then
+    raise exception 'hold_too_short' using errcode = 'P0001';
+  end if;
+
+  select * into v_order from public.orders where id = p_order_id for update;
+  if not found or v_order.status <> 'pending' then
+    raise exception 'order_not_pending' using errcode = 'P0001';
+  end if;
+  if exists (select 1 from public.capacity_holds h where h.order_id = p_order_id) then
+    raise exception 'already_reserved' using errcode = 'P0001';
+  end if;
+
+  for r in select * from public.order_pool_needs(p_order_id) loop
+    if exists (select 1 from public.capacity_pools p
+               where p.id = r.pool_id and p.max_per_order is not null and r.qty > p.max_per_order) then
+      raise exception 'too_many_for_pool' using detail = r.pool_id::text, errcode = 'P0001';
+    end if;
     update public.capacity_pools
        set held = held + r.qty
      where id = r.pool_id
@@ -850,45 +891,50 @@ begin
       raise exception 'sold_out' using detail = r.pool_id::text, errcode = 'P0001';
     end if;
     insert into public.capacity_holds (order_id, pool_id, quantity, status, expires_at)
-    values (p_order_id, r.pool_id, r.qty, 'active', p_expires_at);
+    values (p_order_id, r.pool_id, r.qty, 'active', p_session_expires_at + interval '5 minutes');
   end loop;
+
+  if v_order.discount_code_id is not null then
+    select * into v_code from public.discount_codes where id = v_order.discount_code_id;
+    if v_code.per_user_limit is not null and (
+         select count(*) from public.orders o
+         where o.profile_id = v_order.profile_id
+           and o.discount_code_id = v_order.discount_code_id
+           and o.id <> p_order_id
+           and o.status in ('pending', 'processing', 'paid', 'partially_refunded')
+       ) >= v_code.per_user_limit then
+      raise exception 'discount_user_limit' using errcode = 'P0001';
+    end if;
+    -- Il conteggio atomico: due ordini concorrenti non possono superare max_redemptions.
+    update public.discount_codes
+       set redeemed_count = redeemed_count + 1
+     where id = v_order.discount_code_id
+       and active
+       and (max_redemptions is null or redeemed_count < max_redemptions)
+       and (valid_from is null or valid_from <= now())
+       and (valid_to is null or valid_to > now());
+    if not found then
+      raise exception 'discount_exhausted' using errcode = 'P0001';
+    end if;
+  end if;
+
+  update public.orders
+     set checkout_expires_at = p_session_expires_at,
+         discount_reserved = (v_order.discount_code_id is not null)
+   where id = p_order_id;
 end;
 $$;
 
--- Pagamento confermato: i posti passano da held a confirmed.
--- Nota: con supabase-js non si aprono transazioni su più chiamate. Il "fulfillment" completo (ordine pagato,
--- posti confermati, biglietti emessi, job email in coda) va quindi in una funzione SQL unica chiamata via RPC,
--- da scrivere nella fase di codice, che usa questa funzione al suo interno.
-create function public.confirm_order_capacity(p_order_id uuid)
+-- Uso interno: libera riserve aperte e utilizzo del codice. La riga dell'ordine deve essere già bloccata.
+create function public.release_order_reservations(p_order_id uuid, p_reason text)
 returns void
 language plpgsql security definer
 set search_path = ''
 as $$
 declare
   h record;
-begin
-  for h in
-    select * from public.capacity_holds
-    where order_id = p_order_id and status in ('active', 'awaiting_payment')
-    order by pool_id
-    for update
-  loop
-    update public.capacity_pools
-       set held = held - h.quantity, confirmed = confirmed + h.quantity
-     where id = h.pool_id;
-    update public.capacity_holds set status = 'converted' where id = h.id;
-  end loop;
-end;
-$$;
-
--- Sessione scaduta, pagamento fallito o annullamento: i posti tornano disponibili.
-create function public.release_order_capacity(p_order_id uuid, p_reason text)
-returns void
-language plpgsql security definer
-set search_path = ''
-as $$
-declare
-  h record;
+  v_code uuid;
+  v_reserved boolean;
 begin
   for h in
     select * from public.capacity_holds
@@ -901,30 +947,241 @@ begin
        set status = 'released', released_at = now(), release_reason = p_reason
      where id = h.id;
   end loop;
+
+  select discount_code_id, discount_reserved into v_code, v_reserved
+  from public.orders where id = p_order_id;
+  if v_reserved then
+    update public.discount_codes set redeemed_count = redeemed_count - 1
+     where id = v_code and redeemed_count > 0;
+    update public.orders set discount_reserved = false where id = p_order_id;
+  end if;
 end;
 $$;
 
--- Rete di sicurezza per il webhook checkout.session.expired perso: da pg_cron ogni minuto.
--- Tocca solo le riserve 'active' scadute; quelle 'awaiting_payment' aspettano l'esito asincrono.
-create function public.release_expired_holds()
-returns integer
+-- Chiude un ordine non pagato. Da chiamare SOLO quando Stripe ha confermato che la sessione non si può più
+-- pagare: webhook checkout.session.expired / async_payment_failed, oppure il job dopo una chiamata expire
+-- riuscita o dopo aver letto status = 'expired'. Ammesso: pending -> expired|cancelled, pending|processing -> failed.
+-- Restituisce false se l'ordine era già in un altro stato (consegna doppia, pagamento già arrivato).
+create function public.close_unpaid_order(p_order_id uuid, p_new_status public.order_status, p_reason text)
+returns boolean
 language plpgsql security definer
 set search_path = ''
 as $$
 declare
-  o record;
-  n integer := 0;
+  v_status public.order_status;
 begin
-  for o in
-    select distinct order_id from public.capacity_holds
-    where status = 'active' and expires_at < now()
-  loop
-    perform public.release_order_capacity(o.order_id, 'expired_by_job');
-    update public.orders set status = 'expired' where id = o.order_id and status = 'pending';
-    n := n + 1;
-  end loop;
-  return n;
+  if p_new_status not in ('expired', 'cancelled', 'failed') then
+    raise exception 'invalid_target_status' using errcode = 'P0001';
+  end if;
+  select status into v_status from public.orders where id = p_order_id for update;
+  if not found then
+    raise exception 'order_not_found' using errcode = 'P0001';
+  end if;
+  if not (v_status = 'pending' or (v_status = 'processing' and p_new_status = 'failed')) then
+    return false;
+  end if;
+  perform public.release_order_reservations(p_order_id, p_reason);
+  update public.orders set status = p_new_status where id = p_order_id;
+  return true;
 end;
+$$;
+
+-- checkout.session.completed con payment_status = 'unpaid' (metodo asincrono): pending -> processing,
+-- riserve senza scadenza finché arriva l'esito.
+create function public.mark_order_processing(p_order_id uuid, p_session_id text)
+returns boolean
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_order public.orders%rowtype;
+begin
+  select * into v_order from public.orders where id = p_order_id for update;
+  if not found then
+    raise exception 'order_not_found' using errcode = 'P0001';
+  end if;
+  if v_order.stripe_checkout_session_id is distinct from p_session_id then
+    raise exception 'session_mismatch' using errcode = 'P0001';
+  end if;
+  if v_order.status <> 'pending' then
+    return false;
+  end if;
+  update public.capacity_holds set status = 'awaiting_payment', expires_at = null
+   where order_id = p_order_id and status = 'active';
+  update public.orders set status = 'processing' where id = p_order_id;
+  return true;
+end;
+$$;
+
+-- Pagamento confermato. Unica funzione che emette biglietti: la chiamano il webhook
+-- (checkout.session.completed pagato, async_payment_succeeded) e la pagina di successo.
+-- Idempotenza: la riga dell'ordine è bloccata con FOR UPDATE, quindi due chiamate parallele si mettono in fila
+-- e la seconda trova lo stato già cambiato ('already_done'). In più tickets ha unique (order_item_id, seq).
+-- Transizione normale: pending|processing -> paid.
+-- Pagamento tardivo (ordine già expired|failed|cancelled, riserva liberata): i soldi sono stati presi, quindi si
+-- prova a riprenotare i posti. Se non ci sono più: 'needs_refund', nessun biglietto, rimborso automatico e
+-- avviso all'admin in coda. Esiti: 'paid', 'paid_late', 'needs_refund', 'already_done'.
+create function public.mark_order_paid(
+  p_order_id           uuid,
+  p_session_id         text,
+  p_payment_intent_id  text,
+  p_amount_total_cents integer,
+  p_qr_key_id          text
+)
+returns text
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_order   public.orders%rowtype;
+  v_late    boolean;
+  v_soldout boolean := false;
+  r         record;
+  h         record;
+  i         record;
+  k         integer;
+begin
+  select * into v_order from public.orders where id = p_order_id for update;
+  if not found then
+    raise exception 'order_not_found' using errcode = 'P0001';
+  end if;
+  if v_order.stripe_checkout_session_id is distinct from p_session_id then
+    raise exception 'session_mismatch' using errcode = 'P0001';
+  end if;
+  if v_order.status in ('paid', 'needs_refund', 'partially_refunded', 'refunded') then
+    return 'already_done';
+  end if;
+  v_late := v_order.status in ('expired', 'failed', 'cancelled');
+
+  -- Posti: si convertono le riserve ancora aperte; dove la riserva non c'è più si riprenota.
+  -- Il blocco BEGIN/EXCEPTION è una sottotransazione: se un pool è esaurito, tutto ciò che il ciclo
+  -- ha fatto viene annullato e nessun posto resta contato a metà.
+  begin
+    for r in select * from public.order_pool_needs(p_order_id) loop
+      select * into h from public.capacity_holds
+       where order_id = p_order_id and pool_id = r.pool_id
+         and status in ('active', 'awaiting_payment')
+       for update;
+      if found then
+        update public.capacity_pools
+           set held = held - h.quantity, confirmed = confirmed + h.quantity
+         where id = r.pool_id;
+        update public.capacity_holds set status = 'converted', expires_at = null where id = h.id;
+      else
+        update public.capacity_pools
+           set confirmed = confirmed + r.qty
+         where id = r.pool_id and held + confirmed + r.qty <= capacity;
+        if not found then
+          raise exception 'sold_out_late' using errcode = 'P0001';
+        end if;
+        update public.capacity_holds
+           set status = 'converted', expires_at = null,
+               release_reason = coalesce(release_reason || '; ', '') || 'riprenotata al pagamento tardivo'
+         where order_id = p_order_id and pool_id = r.pool_id;
+        if not found then
+          insert into public.capacity_holds (order_id, pool_id, quantity, status)
+          values (p_order_id, r.pool_id, r.qty, 'converted');
+        end if;
+      end if;
+    end loop;
+  exception when sqlstate 'P0001' then
+    if sqlerrm <> 'sold_out_late' then
+      raise;
+    end if;
+    v_soldout := true;
+  end;
+
+  if v_soldout then
+    -- Nessun posto contato, nessun biglietto. Le riserve ancora aperte (caso raro) si liberano.
+    perform public.release_order_reservations(p_order_id, 'pagato senza posti: rimborso');
+    update public.orders
+       set status = 'needs_refund',
+           stripe_payment_intent_id = p_payment_intent_id,
+           stripe_amount_total_cents = p_amount_total_cents
+     where id = p_order_id;
+    insert into public.jobs (kind, payload, dedupe_key)
+    values ('stripe.refund_full', jsonb_build_object('order_id', p_order_id, 'payment_intent', p_payment_intent_id),
+            'auto-refund:' || p_order_id),
+           ('admin.alert', jsonb_build_object('order_id', p_order_id, 'reason', 'paid_without_capacity'),
+            'alert-soldout:' || p_order_id),
+           ('email.order_refunded_soldout', jsonb_build_object('order_id', p_order_id),
+            'email-soldout:' || p_order_id)
+    on conflict (dedupe_key) do nothing;
+    insert into public.audit_log (actor_type, action, entity_type, entity_id, data)
+    values ('system', 'order.paid_without_capacity', 'order', p_order_id::text,
+            jsonb_build_object('previous_status', v_order.status));
+    return 'needs_refund';
+  end if;
+
+  -- Codice sconto: se l'utilizzo era stato restituito alla scadenza, si riconta (pagamento già incassato).
+  if v_order.discount_code_id is not null and not v_order.discount_reserved then
+    update public.discount_codes set redeemed_count = redeemed_count + 1 where id = v_order.discount_code_id;
+  end if;
+
+  update public.orders
+     set status = 'paid',
+         paid_at = now(),
+         discount_reserved = (v_order.discount_code_id is not null),
+         stripe_payment_intent_id = p_payment_intent_id,
+         stripe_amount_total_cents = p_amount_total_cents
+   where id = p_order_id;
+
+  -- Un biglietto per unità, con il nominativo raccolto nel carrello.
+  for i in select * from public.order_items where order_id = p_order_id order by id loop
+    for k in 1 .. i.quantity loop
+      insert into public.tickets (event_id, order_id, order_item_id, seq, ticket_type_id, price_role,
+                                  attendee_name, attendee_email, qr_key_id, short_code)
+      values (v_order.event_id, p_order_id, i.id, k, i.ticket_type_id, i.price_role,
+              i.attendees -> (k - 1) ->> 'name', i.attendees -> (k - 1) ->> 'email',
+              p_qr_key_id, public.new_short_code())
+      on conflict (order_item_id, seq) do nothing;
+    end loop;
+  end loop;
+
+  insert into public.jobs (kind, payload, dedupe_key)
+  values ('email.order_confirmed', jsonb_build_object('order_id', p_order_id), 'order-confirmed:' || p_order_id)
+  on conflict (dedupe_key) do nothing;
+
+  if p_amount_total_cents is distinct from v_order.total_cents then
+    insert into public.jobs (kind, payload, dedupe_key)
+    values ('admin.alert', jsonb_build_object('order_id', p_order_id, 'reason', 'amount_mismatch',
+                                              'expected', v_order.total_cents, 'stripe', p_amount_total_cents),
+            'alert-amount:' || p_order_id)
+    on conflict (dedupe_key) do nothing;
+  end if;
+
+  if v_late then
+    insert into public.jobs (kind, payload, dedupe_key)
+    values ('admin.alert', jsonb_build_object('order_id', p_order_id, 'reason', 'late_payment_rebooked'),
+            'alert-late:' || p_order_id)
+    on conflict (dedupe_key) do nothing;
+    insert into public.audit_log (actor_type, action, entity_type, entity_id, data)
+    values ('system', 'order.late_payment_rebooked', 'order', p_order_id::text,
+            jsonb_build_object('previous_status', v_order.status));
+    return 'paid_late';
+  end if;
+  return 'paid';
+end;
+$$;
+
+-- Ordini 'pending' con riserva scaduta, per il job (Node) che ogni minuto:
+--   1. se stripe_checkout_session_id è null (sessione mai salvata) chiude l'ordine: se la sessione esisteva
+--      davvero e viene pagata, mark_order_paid passa dal ramo del pagamento tardivo;
+--   2. altrimenti legge la sessione da Stripe: 'complete' -> mark_order_paid; 'expired' -> close_unpaid_order;
+--      'open' -> chiama expire e poi close_unpaid_order.
+-- Niente rilascio dei posti senza la conferma di Stripe (il vecchio rilascio cieco da pg_cron è stato tolto).
+create function public.stale_pending_orders(p_limit integer default 50)
+returns table (order_id uuid, stripe_checkout_session_id text)
+language sql stable security definer
+set search_path = ''
+as $$
+  select o.id, o.stripe_checkout_session_id
+  from public.orders o
+  where o.status = 'pending'
+    and exists (select 1 from public.capacity_holds h
+                where h.order_id = o.id and h.status = 'active' and h.expires_at < now())
+  order by o.checkout_expires_at
+  limit p_limit;
 $$;
 
 -- Prenotazione gratuita di una sessione con posti limitati. La chiama il server dopo aver verificato
@@ -959,20 +1216,26 @@ begin
 end;
 $$;
 
--- Le funzioni che spostano posti le esegue solo il server (service_role). In Postgres EXECUTE è di PUBLIC
--- per default: va tolto esplicitamente.
-revoke execute on function public.hold_order_capacity(uuid, timestamptz) from public;
-revoke execute on function public.confirm_order_capacity(uuid) from public;
-revoke execute on function public.release_order_capacity(uuid, text) from public;
-revoke execute on function public.release_expired_holds() from public;
+-- Le funzioni che spostano posti, soldi o biglietti le esegue solo il server (service_role).
+-- In Postgres EXECUTE è di PUBLIC per default: va tolto esplicitamente.
+revoke execute on function public.new_short_code() from public;
+revoke execute on function public.order_pool_needs(uuid) from public;
+revoke execute on function public.reserve_order(uuid, timestamptz) from public;
+revoke execute on function public.release_order_reservations(uuid, text) from public;
+revoke execute on function public.close_unpaid_order(uuid, public.order_status, text) from public;
+revoke execute on function public.mark_order_processing(uuid, text) from public;
+revoke execute on function public.mark_order_paid(uuid, text, text, integer, text) from public;
+revoke execute on function public.stale_pending_orders(integer) from public;
 revoke execute on function public.book_session(uuid, uuid) from public;
 revoke execute on function public.price_roles_for(uuid, timestamptz) from public;
-grant execute on function public.hold_order_capacity(uuid, timestamptz) to service_role;
-grant execute on function public.confirm_order_capacity(uuid) to service_role;
-grant execute on function public.release_order_capacity(uuid, text) to service_role;
-grant execute on function public.release_expired_holds() to service_role;
+grant execute on function public.reserve_order(uuid, timestamptz) to service_role;
+grant execute on function public.close_unpaid_order(uuid, public.order_status, text) to service_role;
+grant execute on function public.mark_order_processing(uuid, text) to service_role;
+grant execute on function public.mark_order_paid(uuid, text, text, integer, text) to service_role;
+grant execute on function public.stale_pending_orders(integer) to service_role;
 grant execute on function public.book_session(uuid, uuid) to service_role;
 grant execute on function public.price_roles_for(uuid, timestamptz) to service_role;
+-- release_order_reservations, order_pool_needs e new_short_code sono di uso interno: nessun grant.
 
 -- ---------------------------------------------------------------------------------------------------------
 -- Row Level Security
@@ -1087,8 +1350,8 @@ create policy session_speakers_admin_write on public.session_speakers for all to
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
 create policy university_domains_admin_all on public.university_domains for all to authenticated
   using (public.is_admin_mfa()) with check (public.is_admin_mfa());
--- Pool, tipi di biglietto, prezzi e codici sconto toccano Stripe: li scrive il server (service_role) dopo aver
--- verificato sessione admin e MFA, così Prodotti e Promotion Code restano allineati. L'admin li può leggere.
+-- Pool e codici sconto toccano capienza e incassi: li scrive il server (service_role) dopo aver verificato
+-- sessione admin e MFA, con controlli e registro audit. L'admin li può leggere.
 create policy capacity_pools_admin_read on public.capacity_pools for select to authenticated
   using (public.is_admin());
 create policy ticket_type_pools_admin_read on public.ticket_type_pools for select to authenticated
