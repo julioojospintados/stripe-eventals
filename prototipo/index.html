@@ -1,0 +1,131 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Convegno 2027 · 14-16 ottobre 2027, Milano</title>
+  <meta name="description" content="Convegno 2027 (nome segnaposto): tre giorni di sessioni, workshop e incontri. Prototipo con dati inventati.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="badge badge--ruolo">Vista: <span data-ruolo-label>Visitatore</span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="hero" aria-labelledby="titolo-evento">
+    <div class="wrap hero__corpo">
+      <div class="hero__sopra">
+        <h1 class="t-display" id="titolo-evento">Convegno 2027</h1>
+        <p class="hero__luogo">14–16 ottobre 2027 · Centro Congressi dei Navigli (segnaposto), Milano</p>
+        <ol class="hero__giorni" aria-label="I tre giorni">
+          <li><b>14</b><span>Giovedì · plenaria di apertura, panel sugli archivi, primo workshop</span></li>
+          <li><b>15</b><span>Venerdì · lavoro culturale, editoria, intelligenza artificiale e diritto</span></li>
+          <li><b>16</b><span>Sabato · camminate in città, lingue minoritarie, chiusura</span></li>
+        </ol>
+      </div>
+      <div class="stack" style="--stack: var(--s-4)">
+        <div class="hero__prezzi">
+          <h2 class="t-small" style="font-weight:700;margin-bottom:var(--s-2)">Pass intero, tre giorni</h2>
+          <div data-prezzo="180,120,60"></div>
+        </div>
+        <div class="btn-gruppo">
+          <a class="btn btn--on-hero" href="biglietti.html">Compra i biglietti</a>
+          <a class="btn" href="agenda.html">Sfoglia il programma</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sezione" aria-labelledby="titolo-highlights">
+    <div class="wrap">
+      <h2 class="t-1" id="titolo-highlights">Da non perdere</h2>
+      <p class="t-muted misura">Quattro appuntamenti per farsi un’idea. Il programma completo ha sedici sessioni su tre giorni.</p>
+      <div id="highlights"></div>
+      <p><a class="btn btn--secondary" href="agenda.html">Tutto il programma <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
+    </div>
+  </section>
+
+  <section class="sezione bande" aria-labelledby="titolo-speaker">
+    <div class="wrap">
+      <h2 class="t-1" id="titolo-speaker">Speaker in evidenza</h2>
+      <div class="griglia-speaker" id="speaker-evidenza"></div>
+      <p><a class="btn btn--secondary" href="speaker.html">Tutti gli speaker <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
+    </div>
+  </section>
+
+  <section class="sezione" aria-labelledby="titolo-accesso">
+    <div class="wrap">
+      <h2 class="t-1" id="titolo-accesso">Come si partecipa</h2>
+      <div class="grid-3">
+        <div class="colonna-testo">
+          <h3 class="t-3">Pass intero</h3>
+          <p class="t-muted">Tutte le sessioni incluse dei tre giorni.</p>
+          <div data-prezzo="180,120,60" data-var="inline"></div>
+        </div>
+        <div class="colonna-testo">
+          <h3 class="t-3">Pass giornaliero</h3>
+          <p class="t-muted">Le sessioni incluse di un solo giorno, a scelta.</p>
+          <div data-prezzo="80,55,30" data-var="inline"></div>
+        </div>
+        <div class="colonna-testo">
+          <h3 class="t-3">Workshop e masterclass</h3>
+          <p class="t-muted">Si pagano a parte, sessione per sessione. Il prezzo è indicato nel programma.</p>
+          <p><a href="agenda.html">Vedi le sessioni a pagamento</a></p>
+        </div>
+      </div>
+      <p class="misura">Prezzi ridotti per chi è membro e per chi è studente verificato. <a href="biglietti.html#prezzi-ridotti">Come ottenerli</a>.</p>
+    </div>
+  </section>
+
+  <section class="sezione bande" aria-labelledby="titolo-info">
+    <div class="wrap">
+      <h2 class="t-1" id="titolo-info">Informazioni pratiche</h2>
+      <dl class="meta-lista misura">
+        <div><dt>Date</dt><dd>14, 15 e 16 ottobre 2027</dd></div>
+        <div><dt>Luogo</dt><dd>Centro Congressi dei Navigli (segnaposto), Milano</dd></div>
+        <div><dt>Orari porte</dt><dd>Da definire</dd></div>
+        <div><dt>Accessibilità</dt><dd>Informazioni sulla sede da confermare</dd></div>
+        <div><dt>Contatti</dt><dd>Da definire</dd></div>
+      </dl>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA;
+    function disegna() {
+      CV.qs('#highlights').innerHTML = ['s01', 's11', 's07', 's15'].map(function (id) {
+        return CV.sessioneRiga(CV.sessione(id), { giorno: true });
+      }).join('');
+      CV.qs('#speaker-evidenza').innerHTML = ['sp1', 'sp4', 'sp6', 'sp9', 'sp2', 'sp3'].map(function (id) {
+        return CV.speakerCard(CV.persona(id));
+      }).join('');
+    }
+    disegna();
+    document.addEventListener('cv:stato', disegna);
+  });
+</script>
+</body>
+</html>

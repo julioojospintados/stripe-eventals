@@ -1,0 +1,459 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Biglietti · Convegno 2027</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="badge badge--ruolo">Vista: <span data-ruolo-label>Visitatore</span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="sezione" aria-labelledby="t-prezzi">
+    <div class="wrap">
+      <h1 class="t-1">Biglietti</h1>
+      <p class="t-lead misura">Il prezzo dipende dal tuo account: pubblico, membro o studente verificato.</p>
+
+      <!-- Avviso sul ruolo corrente: uno solo visibile alla volta -->
+      <div class="avviso avviso--info" data-ruoli="visitatore" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div><b>Stai guardando come visitatore.</b> Qui sotto vedi tutti i prezzi. Se sei membro o studente, accedi: il tuo prezzo comparirà in evidenza. Senza accesso si paga il prezzo pubblico.</div>
+      </div>
+      <div class="avviso avviso--info" data-ruoli="studente-attesa" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg>
+        <div><b>Verifica studente in attesa.</b> Finché non è approvata paghi il prezzo pubblico. Puoi comprare adesso o aspettare l’esito.</div>
+      </div>
+      <div class="avviso avviso--warn" data-ruoli="membro-scaduto" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
+        <div><b>La tua membership è scaduta.</b> Paghi il prezzo pubblico. <a href="membership.html">Rinnova la membership</a> per riavere il prezzo membro.</div>
+      </div>
+      <div class="avviso avviso--ok" data-ruoli="membro,studente,pubblico" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
+        <div><b>Vedi il tuo prezzo.</b> La colonna con «Tu» è quella che ti spetta.</div>
+      </div>
+
+      <table class="tabella tabella--stack" id="tab-prezzi">
+        <caption id="t-prezzi">Prezzi per ruolo</caption>
+        <thead>
+          <tr>
+            <th scope="col">Cosa</th>
+            <th scope="col" data-colonna-tua="pub">Pubblico <span class="badge badge--ruolo" data-ruoli="pubblico,studente-attesa,membro-scaduto">Tu</span></th>
+            <th scope="col" data-colonna-tua="mem">Membro <span class="badge badge--ruolo" data-ruoli="membro">Tu</span></th>
+            <th scope="col" data-colonna-tua="stu">Studente <span class="badge badge--ruolo" data-ruoli="studente">Tu</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Pass intero, tre giorni</th>
+            <td class="num" data-label="Pubblico" data-colonna-tua="pub"><span data-euro="intero.pub"></span></td>
+            <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="intero.mem"></span></td>
+            <td class="num" data-label="Studente" data-colonna-tua="stu"><span data-euro="intero.stu"></span></td>
+          </tr>
+          <tr>
+            <th scope="row">Pass giornaliero, un giorno</th>
+            <td class="num" data-label="Pubblico" data-colonna-tua="pub"><span data-euro="giornaliero.pub"></span></td>
+            <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="giornaliero.mem"></span></td>
+            <td class="num" data-label="Studente" data-colonna-tua="stu"><span data-euro="giornaliero.stu"></span></td>
+          </tr>
+          <tr>
+            <th scope="row">Workshop e masterclass, a sessione, da</th>
+            <td class="num" data-label="Pubblico" data-colonna-tua="pub" id="da-pub"></td>
+            <td class="num" data-label="Membro" data-colonna-tua="mem" id="da-mem"></td>
+            <td class="num" data-label="Studente" data-colonna-tua="stu" id="da-stu"></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="t-small t-muted misura">Le sessioni incluse nel pass non costano altro. Il prezzo esatto di ogni workshop è nella sua pagina.</p>
+    </div>
+  </section>
+
+  <section class="sezione bande" aria-labelledby="t-ordine">
+    <div class="wrap">
+      <h2 class="t-1" id="t-ordine" style="margin-bottom:var(--s-5)">Prepara il tuo ordine</h2>
+
+      <div id="avviso-modo"></div>
+      <div class="avviso avviso--info" data-solo-pass="si" style="margin-bottom:var(--s-4)" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div><b>Hai già un pass.</b> Per un workshop o una masterclass scegli «Solo sessioni a pagamento»: si aggiungono al tuo pass.</div>
+      </div>
+
+      <div id="errori" hidden class="riepilogo-errori" role="alert" style="margin-bottom:var(--s-5)"></div>
+
+      <form id="ordine" class="layout-2" novalidate>
+        <div class="stack" style="--stack:var(--s-6)">
+
+          <fieldset class="campo">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">1. Che cosa compri</legend>
+            <div class="stack" style="--stack:var(--s-3)">
+              <label class="opzione"><input type="radio" name="tipo" value="intero" checked>
+                <span class="opzione__corpo"><span class="opzione__titolo">Pass intero</span><span class="t-small">Tre giorni, tutte le sessioni incluse.</span><span data-prezzo="180,120,60" data-var="inline"></span></span></label>
+              <label class="opzione"><input type="radio" name="tipo" value="giornaliero">
+                <span class="opzione__corpo"><span class="opzione__titolo">Pass giornaliero</span><span class="t-small">Un giorno a scelta, con le sessioni incluse di quel giorno.</span><span data-prezzo="80,55,30" data-var="inline"></span></span></label>
+              <label class="opzione"><input type="radio" name="tipo" value="sessioni">
+                <span class="opzione__corpo"><span class="opzione__titolo">Solo sessioni a pagamento</span><span class="t-small">Workshop e masterclass scelti qui sotto, senza pass. Prezzo per sessione.</span></span></label>
+            </div>
+            <div class="campo" id="campo-giorno" hidden style="margin-top:var(--s-3)">
+              <label for="giorno">Quale giorno</label>
+              <select class="select" id="giorno"></select>
+            </div>
+          </fieldset>
+
+          <fieldset class="campo" id="blocco-persone">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">2. Per chi</legend>
+            <div id="campo-qta" class="stack" style="--stack:var(--s-2)">
+              <span class="etichetta" id="l-qta">Quante persone</span>
+              <div class="qta" role="group" aria-labelledby="l-qta">
+                <button type="button" id="meno" aria-label="Una persona in meno">−</button>
+                <output id="qta" aria-live="polite">1</output>
+                <button type="button" id="piu" aria-label="Una persona in più">+</button>
+              </div>
+              <p class="campo__aiuto">Fino a 6 persone per ordine. Ogni biglietto è nominativo.</p>
+            </div>
+            <div id="partecipanti" class="stack" style="margin-top:var(--s-4)"></div>
+            <div id="nota-persone" class="avviso avviso--info" hidden style="margin-top:var(--s-3)" role="note">
+              <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+              <div>Il prezzo ridotto spetta all’account di chi lo ha, quindi vale per il Partecipante 1 (tu). Gli altri partecipanti pagano il prezzo pubblico. Una persona membro o studente può comprare con il suo account.</div>
+            </div>
+          </fieldset>
+
+          <fieldset class="campo" id="elenco-sessioni" tabindex="-1">
+            <legend class="t-2" style="margin-bottom:var(--s-2)">3. Sessioni a pagamento</legend>
+            <p class="campo__aiuto" style="margin-bottom:var(--s-3)">Facoltative con il pass. Le sessioni vanno al Partecipante 1.</p>
+            <div id="sessioni" class="stack" style="--stack:var(--s-3)"></div>
+            <div id="conflitti" role="status" style="margin-top:var(--s-3)"></div>
+          </fieldset>
+
+          <fieldset class="campo">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">4. Codice sconto</legend>
+            <div class="campo">
+              <label for="codice">Hai un codice?</label>
+              <div class="codice">
+                <input class="input" id="codice" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="aiuto-codice msg-codice">
+                <button type="button" class="btn btn--secondary" id="applica">Applica</button>
+              </div>
+              <p class="campo__aiuto" id="aiuto-codice">Il codice si somma ai prezzi per ruolo. Nel prototipo: BENVENUTO10 funziona, SCADUTO24 è scaduto.</p>
+              <div id="msg-codice" role="status"></div>
+            </div>
+          </fieldset>
+
+          <div class="campo">
+            <label class="scelta"><input type="checkbox" id="termini" aria-describedby="aiuto-termini"><span>Ho letto le condizioni di vendita e l’informativa privacy.</span></label>
+            <p class="campo__aiuto" id="aiuto-termini">Le due pagine sono in preparazione.</p>
+          </div>
+        </div>
+
+        <aside class="layout-2__lato" aria-label="Riepilogo dell’ordine">
+          <div class="stack">
+            <div class="riepilogo">
+              <h3 class="t-3" id="h-riep">Riepilogo</h3>
+              <div id="righe"></div>
+              <div class="riepilogo__totale"><span>Totale</span><span id="totale">0 €</span></div>
+            </div>
+            <div id="nota-membro" role="note"></div>
+            <button type="submit" class="btn btn--primary btn--block" id="paga">Vai al pagamento su Stripe</button>
+            <p class="t-small t-muted">Pagherai su una pagina di Stripe: da noi non passano i dati della carta.</p>
+            <p class="t-small t-muted" data-ruoli="visitatore">Prima del pagamento ti chiediamo di accedere o registrarti, così ritrovi i biglietti.</p>
+          </div>
+        </aside>
+      </form>
+    </div>
+    <div class="barra-azione barra-azione--mobile" role="region" aria-label="Totale e pagamento">
+      <div class="barra-azione__totale"><small>Totale</small><b id="totale-barra">0 €</b></div>
+      <button type="submit" form="ordine" class="btn btn--primary">Paga</button>
+    </div>
+  </section>
+
+  <section class="sezione" id="prezzi-ridotti" aria-labelledby="t-ridotti">
+    <div class="wrap">
+      <h2 class="t-1" id="t-ridotti">Prezzi ridotti: come ottenerli</h2>
+      <div class="grid-2">
+        <div class="colonna-testo">
+          <h3 class="t-2">Membro</h3>
+          <p>La membership annuale costa <b data-membership></b> e dà il prezzo membro su pass e sessioni a pagamento.</p>
+          <div class="avviso avviso--ok" data-ruoli="membro"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>Sei già membro.</div></div>
+          <div class="avviso avviso--warn" data-ruoli="membro-scaduto"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div>La tua membership è scaduta: rinnovala per riavere il prezzo membro.</div></div>
+          <p><a class="btn btn--secondary" href="membership.html">Vedi la membership</a></p>
+        </div>
+
+        <div class="colonna-testo">
+          <h3 class="t-2">Studente</h3>
+          <ol class="passi">
+            <li><span><b>Accedi o registrati.</b> La verifica è legata al tuo account.</span></li>
+            <li><span><b>Scegli come verificarti:</b> con l’email universitaria (ti mandiamo un link) o caricando un documento, che l’organizzazione controlla a mano. Tempi di approvazione: da definire.</span></li>
+            <li><span><b>Compra al prezzo studente</b> appena la verifica è approvata. Fino ad allora paghi il prezzo pubblico.</span></li>
+          </ol>
+
+          <div class="avviso avviso--info" data-ruoli="visitatore">
+            <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <div><p>Per chiedere la verifica devi prima accedere.</p><p><button type="button" class="btn btn--secondary" id="accedi-sim">Accedi (simulato)</button></p></div>
+          </div>
+          <div class="avviso avviso--ok" data-ruoli="studente">
+            <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
+            <div><b>Sei verificato come studente.</b> Validità: da definire (per esempio un anno accademico).</div>
+          </div>
+          <div class="avviso avviso--info" data-ruoli="studente-attesa" role="status">
+            <svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg>
+            <div><b>Richiesta in attesa.</b> Ti scriviamo appena è controllata. Puoi comprare intanto al prezzo pubblico.</div>
+          </div>
+
+          <details class="acc" id="verifica-studente" data-ruoli="pubblico,membro,membro-scaduto">
+            <summary>Chiedi la verifica studente<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+            <form class="acc__corpo stack" id="form-verifica" novalidate>
+              <fieldset class="campo">
+                <legend>Come vuoi verificarti</legend>
+                <label class="scelta"><input type="radio" name="metodo" value="email" checked><span>Email universitaria</span></label>
+                <label class="scelta"><input type="radio" name="metodo" value="documento"><span>Documento</span></label>
+              </fieldset>
+              <div class="campo" id="c-email">
+                <label for="v-email">Email universitaria</label>
+                <input class="input" id="v-email" type="email" autocomplete="email" placeholder="nome.cognome@universita.example">
+                <p class="campo__aiuto">Ti mandiamo un link di conferma. Non salviamo altro.</p>
+              </div>
+              <div class="campo" id="c-doc" hidden>
+                <label for="v-doc">Documento che prova l’iscrizione</label>
+                <input class="input" id="v-doc" type="file" accept="image/*,.pdf">
+                <p class="campo__aiuto">Libretto o certificato di iscrizione. Lo controlla una persona e poi lo cancelliamo (regola da confermare con la consulenza privacy).</p>
+              </div>
+              <p class="campo__errore" id="v-err" role="alert" hidden></p>
+              <button type="submit" class="btn btn--primary">Invia la richiesta</button>
+            </form>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
+    var S = { tipo: 'intero', giorno: 'g1', n: 1, sessioni: [], codice: null, nomi: [], email: [] };
+    var pagamento = D.sessioni.filter(function (s) { return s.pagamento; });
+
+    /* riga "da" della tabella e quota membership */
+    ['pub', 'mem', 'stu'].forEach(function (k) {
+      $('#da-' + k).textContent = CV.euro(Math.min.apply(null, pagamento.map(function (s) { return s.pagamento[k]; })));
+    });
+    $$('[data-membership]').forEach(function (e) { e.textContent = CV.euro(D.prezzi.membership) + ' all’anno'; });
+
+    $('#giorno').innerHTML = D.giorni.map(function (g) { return '<option value="' + g.id + '">' + g.lungo + '</option>'; }).join('');
+
+    /* arrivo da una pagina sessione */
+    var pre = CV.sessione(CV.param('sessione')), modo = CV.param('modo');
+    if (pre && pre.pagamento && pre.posti.res !== 0) {
+      S.sessioni.push(pre.id);
+      if (modo === 'aggiunta' || modo === 'solo') {
+        S.tipo = 'sessioni';
+        $('input[name="tipo"][value="sessioni"]').checked = true;
+        $('#avviso-modo').innerHTML = '<div class="avviso avviso--info" role="status" style="margin-bottom:var(--s-4)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>' +
+          (modo === 'aggiunta' ? 'Stai aggiungendo «' + pre.titolo + '» al tuo pass: non ti serve un altro pass.' : 'Stai acquistando solo «' + pre.titolo + '», senza pass.') + '</div></div>';
+      }
+    }
+
+    /* ---- disegno dei blocchi ---- */
+    function partecipanti() {
+      var h = '';
+      for (var i = 0; i < S.n; i++) {
+        h += '<fieldset class="campo scheda"><legend class="etichetta">Partecipante ' + (i + 1) + (i === 0 ? ' (tu)' : '') + '</legend>' +
+          '<div class="campo"><label for="nome-' + i + '">Nome e cognome</label><input class="input" id="nome-' + i + '" autocomplete="' + (i === 0 ? 'name' : 'off') + '" value="' + (S.nomi[i] || '') + '"></div>' +
+          '<div class="campo"><label for="email-' + i + '">Email</label><input class="input" id="email-' + i + '" type="email" autocomplete="' + (i === 0 ? 'email' : 'off') + '" value="' + (S.email[i] || '') + '"></div></fieldset>';
+      }
+      $('#partecipanti').innerHTML = h;
+      $$('#partecipanti input').forEach(function (inp) {
+        inp.addEventListener('input', function () {
+          var m = inp.id.split('-'); (m[0] === 'nome' ? S.nomi : S.email)[+m[1]] = inp.value;
+        });
+      });
+      $('#nota-persone').hidden = !(S.n > 1 && CV.stato.ruolo !== 'visitatore' && CV.stato.ruolo !== 'pubblico');
+    }
+
+    function elencoSessioni() {
+      $('#sessioni').innerHTML = pagamento.map(function (s) {
+        var esaurita = s.posti.res === 0, on = S.sessioni.indexOf(s.id) > -1;
+        return '<label class="opzione" for="sx-' + s.id + '"><input type="checkbox" id="sx-' + s.id + '" value="' + s.id + '"' + (on ? ' checked' : '') + (esaurita ? ' disabled' : '') + '>' +
+          '<span class="opzione__corpo"><span class="opzione__titolo">' + s.titolo + '</span>' +
+          '<span class="t-small">' + CV.giorno(s.g).breve + ' · ' + s.da + '–' + s.a + ' · ' + CV.sala(s.sala).nome + ' · ' + D.tipi[s.tipo] + '</span>' +
+          '<span>' + CV.prezzoHTML(s.pagamento, { inline: true }) + '</span><span>' + CV.postiHTML(s) + '</span></span></label>';
+      }).join('');
+      $$('#sessioni input').forEach(function (c) {
+        c.addEventListener('change', function () {
+          S.sessioni = $$('#sessioni input:checked').map(function (x) { return x.value; });
+          riepilogo();
+        });
+      });
+    }
+
+    function calcola() {
+      var righe = [], sub = 0, risp = 0, p, mio, tipo = S.tipo, n = tipo === 'sessioni' ? 1 : S.n;
+      if (tipo !== 'sessioni') {
+        p = D.prezzi[tipo];
+        var nome = tipo === 'intero' ? 'Pass intero' : 'Pass giornaliero · ' + CV.giorno(S.giorno).lungo;
+        mio = CV.prezzoMio(p);
+        righe.push({ t: nome + ' · Partecipante 1', v: mio });
+        sub += mio; risp += p.pub - p.mem;
+        if (n > 1) { righe.push({ t: nome + ' × ' + (n - 1) + ' · prezzo pubblico', v: p.pub * (n - 1) }); sub += p.pub * (n - 1); }
+      }
+      S.sessioni.forEach(function (id) {
+        var s = CV.sessione(id); mio = CV.prezzoMio(s.pagamento);
+        righe.push({ t: s.titolo, v: mio }); sub += mio; risp += s.pagamento.pub - s.pagamento.mem;
+      });
+      var sc = S.codice ? Math.round(sub * S.codice.pc / 100) : 0;
+      return { righe: righe, sub: sub, sconto: sc, totale: sub - sc, risp: risp };
+    }
+
+    function riepilogo() {
+      var c = calcola(), h = '';
+      if (!c.righe.length) h = '<p class="t-muted">Nessuna voce scelta.</p>';
+      c.righe.forEach(function (r) { h += '<div class="riepilogo__riga"><span>' + r.t + '</span><span>' + CV.euro(r.v) + '</span></div>'; });
+      if (c.sconto) h += '<div class="riepilogo__riga riepilogo__sconto"><span>Codice ' + S.codice.nome + ' (−' + S.codice.pc + '%)</span><span>−' + CV.euro(c.sconto) + '</span></div>';
+      $('#righe').innerHTML = h;
+      $('#totale').textContent = CV.euro(c.totale);
+      $('#totale-barra').textContent = CV.euro(c.totale);
+
+      /* la membership conviene? Solo per chi non e' gia' membro */
+      var r = CV.stato.ruolo, nota = '';
+      if ((r === 'visitatore' || r === 'pubblico' || r === 'studente-attesa' || r === 'membro-scaduto') && c.risp > 0) {
+        var netto = c.risp - D.prezzi.membership;
+        nota = netto > 0
+          ? '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Con la membership (' + CV.euro(D.prezzi.membership) + ' all’anno) questo ordine costerebbe ' + CV.euro(c.risp) + ' in meno: risparmio netto ' + CV.euro(netto) + '. <a href="membership.html">Come funziona</a></div></div>'
+          : '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Per questo solo ordine la membership non conviene: risparmieresti ' + CV.euro(c.risp) + ' contro ' + CV.euro(D.prezzi.membership) + ' di quota.</div></div>';
+      }
+      $('#nota-membro').innerHTML = nota;
+
+      /* conflitti di orario tra le sessioni scelte: avviso, non blocco */
+      var ss = S.sessioni.map(CV.sessione), cf = [];
+      for (var i = 0; i < ss.length; i++) for (var j = i + 1; j < ss.length; j++) if (CV.sovrapposte(ss[i], ss[j])) cf.push('«' + ss[i].titolo + '» e «' + ss[j].titolo + '»');
+      $('#conflitti').innerHTML = cf.length ? '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Orari sovrapposti:</b> ' + cf.join('; ') + '. Puoi comprare entrambe, ma non potrai seguirle tutte e due.</div></div>' : '';
+    }
+
+    function aggiornaTipo() {
+      S.tipo = $('input[name="tipo"]:checked').value;
+      $('#campo-giorno').hidden = S.tipo !== 'giornaliero';
+      $('#campo-qta').hidden = S.tipo === 'sessioni';
+      if (S.tipo === 'sessioni') S.n = 1;
+      $('#qta').textContent = S.n;
+      partecipanti(); riepilogo();
+    }
+
+    /* ---- eventi ---- */
+    $$('input[name="tipo"]').forEach(function (r) { r.addEventListener('change', aggiornaTipo); });
+    $('#giorno').addEventListener('change', function (e) { S.giorno = e.target.value; riepilogo(); });
+    function qta(d) {
+      S.n = Math.max(1, Math.min(6, S.n + d));
+      $('#qta').textContent = S.n; $('#meno').disabled = S.n === 1; $('#piu').disabled = S.n === 6;
+      partecipanti(); riepilogo();
+    }
+    $('#meno').addEventListener('click', function () { qta(-1); });
+    $('#piu').addEventListener('click', function () { qta(1); });
+
+    function codice() {
+      var v = $('#codice').value.trim().toUpperCase(), m = $('#msg-codice'), ok = '<svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>';
+      if (!v) { m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Scrivi un codice, poi premi Applica.</p>'; return; }
+      if (v === 'BENVENUTO10') {
+        S.codice = { nome: v, pc: 10 };
+        m.innerHTML = '<div class="avviso avviso--ok">' + ok + '<div><b>Codice applicato:</b> 10% di sconto sul totale. <button type="button" class="btn btn--quiet" id="togli">Togli il codice</button></div></div>';
+        $('#togli').addEventListener('click', function () { S.codice = null; $('#codice').value = ''; m.innerHTML = ''; riepilogo(); $('#codice').focus(); });
+      } else if (v === 'SCADUTO24') {
+        S.codice = null;
+        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Il codice SCADUTO24 è scaduto il 31/12/2026. Prova un altro codice.</p>';
+      } else {
+        S.codice = null;
+        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Codice non riconosciuto. Controlla di averlo scritto giusto: lettere e numeri, senza spazi.</p>';
+      }
+      riepilogo();
+    }
+    $('#applica').addEventListener('click', codice);
+    $('#codice').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); codice(); } });
+
+    /* ---- invio: controlli e passaggio a Stripe (simulato) ---- */
+    $('#ordine').addEventListener('submit', function (e) {
+      e.preventDefault();
+      $$('.campo--errore').forEach(function (c) { c.classList.remove('campo--errore'); });
+      $$('[data-err]').forEach(function (x) { x.remove(); });
+      $$('[aria-invalid]').forEach(function (x) { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby'); });
+      var er = [], n = S.tipo === 'sessioni' ? 1 : S.n, i;
+      for (i = 0; i < n; i++) {
+        if (!($('#nome-' + i).value.trim())) er.push({ id: 'nome-' + i, m: 'Scrivi nome e cognome del Partecipante ' + (i + 1) + '.' });
+        if (!/^\S+@\S+\.\S+$/.test($('#email-' + i).value.trim())) er.push({ id: 'email-' + i, m: 'Controlla l’email del Partecipante ' + (i + 1) + ': manca la chiocciola o il dominio.' });
+      }
+      if (S.tipo === 'sessioni' && !S.sessioni.length) er.push({ id: 'elenco-sessioni', m: 'Scegli almeno una sessione a pagamento.' });
+      if (!$('#termini').checked) er.push({ id: 'termini', m: 'Per proseguire conferma di aver letto condizioni e privacy.' });
+      var box = $('#errori');
+      if (er.length) {
+        box.hidden = false;
+        box.innerHTML = '<h3 class="t-3" tabindex="-1" id="h-err">Controlla ' + er.length + (er.length === 1 ? ' campo' : ' campi') + '</h3><ul>' +
+          er.map(function (x) { return '<li><a href="#' + x.id + '">' + x.m + '</a></li>'; }).join('') + '</ul>';
+        er.forEach(function (x) {
+          var el = $('#' + x.id), w = el.closest('.campo');
+          if (w) w.classList.add('campo--errore');
+          var p = document.createElement('p'); p.className = 'campo__errore'; p.id = 'err-' + x.id; p.setAttribute('data-err', '1');
+          p.innerHTML = CV.ic('alert') + '<span>' + x.m + '</span>';
+          (w || el.parentNode).appendChild(p);
+          el.setAttribute('aria-invalid', 'true'); el.setAttribute('aria-describedby', 'err-' + x.id);
+        });
+        $('#h-err').focus();
+        return;
+      }
+      box.hidden = true;
+      var c = calcola();
+      try {
+        sessionStorage.setItem('cv-ordine', JSON.stringify({ righe: c.righe.map(function (r) { return { t: r.t, v: r.v }; }), sconto: c.sconto, codice: S.codice && S.codice.nome, totale: c.totale }));
+      } catch (x) { /* senza storage la pagina successiva mostra un riepilogo vuoto */ }
+      var b = $('#paga'); b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true');
+      setTimeout(function () { location.href = 'checkout-esito.html'; }, 400);
+    });
+
+    /* ---- verifica studente (simulata) ---- */
+    $$('input[name="metodo"]').forEach(function (r) {
+      r.addEventListener('change', function () {
+        $('#c-email').hidden = r.value !== 'email' || !r.checked;
+        $('#c-doc').hidden = r.value !== 'documento' || !r.checked;
+      });
+    });
+    $('#form-verifica').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var m = $('input[name="metodo"]:checked').value, ok = true;
+      if (m === 'email' && !/^\S+@\S+\.\S+$/.test($('#v-email').value.trim())) ok = false;
+      if (m === 'documento' && !$('#v-doc').files.length) ok = false;
+      var ve = $('#v-err');
+      if (!ok) {
+        ve.hidden = false;
+        ve.innerHTML = CV.ic('alert') + '<span>' + (m === 'email' ? 'Scrivi un’email universitaria valida, per esempio nome.cognome@universita.example.' : 'Scegli il file del documento da caricare.') + '</span>';
+        return;
+      }
+      ve.hidden = true;
+      CV.setStato({ ruolo: 'studente-attesa' });
+    });
+    $('#accedi-sim').addEventListener('click', function () { CV.setStato({ ruolo: 'pubblico' }); });
+
+    document.addEventListener('cv:stato', function () { elencoSessioni(); partecipanti(); riepilogo(); });
+    if (location.hash === '#prezzi-ridotti') { var v = $('#verifica-studente'); if (v) v.open = false; }
+
+    elencoSessioni(); aggiornaTipo(); qta(0);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Programma · Convegno 2027</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="badge badge--ruolo">Vista: <span data-ruolo-label>Visitatore</span></span>
+  </div>
+</header>
+
+<main id="contenuto" class="agenda" data-vista="griglia">
+  <section class="sezione">
+    <div class="wrap">
+      <h1 class="t-1">Programma</h1>
+      <p class="t-muted misura">Tre giorni, quattro sale, quattro tracce. Le sessioni <b>incluse</b> valgono con il pass; workshop e masterclass sono <b>a pagamento</b> e si acquistano a parte.</p>
+
+      <div class="tabs" role="tablist" aria-label="Giorni del convegno">
+        <button class="tab" role="tab" id="tab-g1" aria-controls="pannello" aria-selected="true" data-giorno="g1">Gio 14<small>ottobre</small></button>
+        <button class="tab" role="tab" id="tab-g2" aria-controls="pannello" aria-selected="false" tabindex="-1" data-giorno="g2">Ven 15<small>ottobre</small></button>
+        <button class="tab" role="tab" id="tab-g3" aria-controls="pannello" aria-selected="false" tabindex="-1" data-giorno="g3">Sab 16<small>ottobre</small></button>
+      </div>
+
+      <details class="filtri" id="filtri">
+        <summary><span>Filtri <span id="filtri-n"></span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <div class="filtri__corpo">
+          <fieldset>
+            <legend>Traccia</legend>
+            <div class="gruppo-chip" id="f-tracce"></div>
+          </fieldset>
+          <div class="campo">
+            <label for="f-tipo">Tipo di sessione</label>
+            <select class="select" id="f-tipo"></select>
+          </div>
+          <fieldset>
+            <legend>Accesso</legend>
+            <div class="gruppo-chip">
+              <label class="chip-radio"><input type="radio" name="acc" value="" checked><span>Tutte</span></label>
+              <label class="chip-radio"><input type="radio" name="acc" value="incluse"><span>Incluse nel pass</span></label>
+              <label class="chip-radio"><input type="radio" name="acc" value="pagamento"><span>Solo a pagamento</span></label>
+            </div>
+          </fieldset>
+          <div class="filtri__azioni"><button type="button" class="btn btn--secondary" id="f-reset">Azzera i filtri</button></div>
+        </div>
+      </details>
+
+      <div class="vista-scelta" role="group" aria-label="Modo di visualizzazione">
+        <button type="button" class="chip" id="v-griglia" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Griglia per sala</button>
+        <button type="button" class="chip" id="v-lista" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Elenco</button>
+      </div>
+
+      <p id="esito" role="status" aria-live="polite" class="t-small t-muted"></p>
+
+      <div id="pannello" role="tabpanel" tabindex="0" aria-labelledby="tab-g1" class="tabpanel">
+        <h2 class="t-2" id="titolo-giorno">Giovedì 14 ottobre</h2>
+        <div id="vuoto" hidden>
+          <div class="avviso avviso--info" role="note">
+            <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+            <div><b>Nessuna sessione con questi filtri.</b><p>Prova a togliere un filtro o a guardare un altro giorno.</p></div>
+          </div>
+        </div>
+        <div class="griglia" id="griglia" style="--cols:4" role="group" aria-label="Griglia delle sessioni per sala. L’elenco è un’alternativa equivalente."></div>
+        <div class="lista" id="lista"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, giorno = 'g1';
+    var f = { t: [], tipo: '', acc: '' };
+
+    /* filtri: costruiti dai dati */
+    $('#f-tracce').innerHTML = D.tracce.map(function (t) {
+      return '<button type="button" class="chip" aria-pressed="false" data-t="' + t.id + '" data-id="' + t.id + '"><span class="marker" aria-hidden="true"></span>' + t.nome + CV.ic('check') + '</button>';
+    }).join('');
+    $('#f-tipo').innerHTML = '<option value="">Tutti i tipi</option>' + Object.keys(D.tipi).map(function (k) {
+      return '<option value="' + k + '">' + D.tipi[k] + '</option>';
+    }).join('');
+    if (window.matchMedia('(min-width: 64rem)').matches) $('#filtri').open = true;
+
+    function filtra() {
+      return D.sessioni.filter(function (s) {
+        return s.g === giorno &&
+          (!f.t.length || f.t.indexOf(s.t) > -1) &&
+          (!f.tipo || s.tipo === f.tipo) &&
+          (!f.acc || (f.acc === 'pagamento') === !!s.pagamento);
+      }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da) || a.sala.localeCompare(b.sala); });
+    }
+
+    function griglia(l) {
+      var h = '<div class="griglia__sala" style="grid-column:1"><span class="sr-only">Ora</span></div>';
+      D.sale.forEach(function (s, i) {
+        h += '<div class="griglia__sala" style="grid-column:' + (2 + i) + '">' + s.nome + '<small>' + s.nota + '</small></div>';
+      });
+      for (var o = 9; o <= 17; o++) {
+        h += '<div class="griglia__riga" style="grid-row:' + (2 + (o - 9) * 2) + ' / span 2"><span class="griglia__ora">' + (o < 10 ? '0' : '') + o + ':00</span></div>';
+      }
+      l.forEach(function (s) {
+        var idx = D.sale.map(function (x) { return x.id; }).indexOf(s.sala);
+        var r0 = 2 + (CV.min(s.da) - 540) / 30, span = (CV.min(s.a) - CV.min(s.da)) / 30;
+        h += '<a class="cella" data-t="' + s.t + '" href="sessione.html?id=' + s.id + '" style="grid-column:' + (2 + idx) + ';grid-row:' + r0 + ' / span ' + span + '">' +
+          '<b>' + s.titolo + '</b><small>' + s.da + '–' + s.a + ' · ' + D.tipi[s.tipo] + '</small>' +
+          CV.badgeAccesso(s) + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
+      });
+      return h;
+    }
+
+    function lista(l) {
+      var gruppi = {}, h = '';
+      l.forEach(function (s) { (gruppi[s.da] = gruppi[s.da] || []).push(s); });
+      Object.keys(gruppi).sort().forEach(function (ora) {
+        h += '<section class="sessione-gruppo" aria-labelledby="ora-' + ora.replace(':', '') + '"><h3 class="sessione-gruppo__titolo t-num" id="ora-' + ora.replace(':', '') + '">' + ora + '</h3>' +
+          gruppi[ora].map(function (s) { return CV.sessioneRiga(s, { h: 'h4' }); }).join('') + '</section>';
+      });
+      return h;
+    }
+
+    function disegna() {
+      var tutte = D.sessioni.filter(function (s) { return s.g === giorno; }), l = filtra();
+      var attivi = f.t.length + (f.tipo ? 1 : 0) + (f.acc ? 1 : 0);
+      $('#filtri-n').textContent = attivi ? '(' + attivi + (attivi === 1 ? ' attivo)' : ' attivi)') : '';
+      $('#titolo-giorno').textContent = CV.giorno(giorno).lungo;
+      $('#esito').textContent = l.length ? l.length + ' sessioni su ' + tutte.length + ' in questo giorno' : 'Nessuna sessione con questi filtri.';
+      $('#vuoto').hidden = l.length > 0;
+      $('#griglia').innerHTML = l.length ? griglia(l) : '';
+      $('#lista').innerHTML = lista(l);
+    }
+
+    /* schede dei giorni (modello ARIA: frecce, Home, Fine) */
+    var tabs = CV.qa('.tab');
+    function scegli(t, sposta) {
+      tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); x.tabIndex = x === t ? 0 : -1; });
+      giorno = t.getAttribute('data-giorno');
+      $('#pannello').setAttribute('aria-labelledby', t.id);
+      if (sposta) t.focus();
+      disegna();
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { scegli(t, false); });
+      t.addEventListener('keydown', function (e) {
+        var n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (n === undefined) return;
+        e.preventDefault();
+        scegli(tabs[(n + tabs.length) % tabs.length], true);
+      });
+    });
+
+    /* filtri */
+    CV.qa('#f-tracce .chip').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.getAttribute('data-id'), on = b.getAttribute('aria-pressed') !== 'true';
+        b.setAttribute('aria-pressed', on);
+        f.t = on ? f.t.concat(id) : f.t.filter(function (x) { return x !== id; });
+        disegna();
+      });
+    });
+    $('#f-tipo').addEventListener('change', function (e) { f.tipo = e.target.value; disegna(); });
+    CV.qa('input[name="acc"]').forEach(function (r) { r.addEventListener('change', function () { f.acc = r.value === 'incluse' ? 'incluse' : r.value; disegna(); }); });
+    $('#f-reset').addEventListener('click', function () {
+      f = { t: [], tipo: '', acc: '' };
+      CV.qa('#f-tracce .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      $('#f-tipo').value = '';
+      CV.qs('input[name="acc"][value=""]').checked = true;
+      disegna();
+    });
+
+    /* griglia / elenco (la griglia esiste solo da 64rem) */
+    function vista(v) {
+      CV.qs('.agenda').setAttribute('data-vista', v);
+      $('#v-griglia').setAttribute('aria-pressed', v === 'griglia');
+      $('#v-lista').setAttribute('aria-pressed', v === 'lista');
+    }
+    $('#v-griglia').addEventListener('click', function () { vista('griglia'); });
+    $('#v-lista').addEventListener('click', function () { vista('lista'); });
+
+    document.addEventListener('cv:stato', disegna);
+    disegna();
+  });
+</script>
+</body>
+</html>
