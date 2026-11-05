@@ -7,6 +7,7 @@
   <meta name="color-scheme" content="light dark">
   <title>Convegno 2027 · 14-16 ottobre 2027, Milano</title>
   <meta name="description" content="Convegno 2027 (nome segnaposto): tre giorni di sessioni, workshop e incontri. Prototipo con dati inventati.">
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,7 +21,7 @@
       <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
       <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
     </nav>
-    <span class="badge badge--ruolo">Vista: <span data-ruolo-label>Visitatore</span></span>
+    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
   </div>
 </header>
 
@@ -37,13 +38,13 @@
         </ol>
       </div>
       <div class="stack" style="--stack: var(--s-4)">
-        <div class="hero__prezzi">
-          <h2 class="t-small" style="font-weight:700;margin-bottom:var(--s-2)">Pass intero, tre giorni</h2>
-          <div data-prezzo="180,120,60"></div>
-        </div>
         <div class="btn-gruppo">
           <a class="btn btn--on-hero" href="biglietti.html">Compra i biglietti</a>
           <a class="btn" href="agenda.html">Sfoglia il programma</a>
+        </div>
+        <div class="hero__prezzi">
+          <h2 class="t-small" style="font-weight:700;margin-bottom:var(--s-2)">Pass intero, tre giorni</h2>
+          <div data-prezzo="180,120,60"></div>
         </div>
       </div>
     </div>

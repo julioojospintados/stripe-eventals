@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Programma · Convegno 2027</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,7 +20,7 @@
       <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
       <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
     </nav>
-    <span class="badge badge--ruolo">Vista: <span data-ruolo-label>Visitatore</span></span>
+    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
   </div>
 </header>
 
@@ -124,7 +125,7 @@
         var r0 = 2 + (CV.min(s.da) - 540) / 30, span = (CV.min(s.a) - CV.min(s.da)) / 30;
         h += '<a class="cella" data-t="' + s.t + '" href="sessione.html?id=' + s.id + '" style="grid-column:' + (2 + idx) + ';grid-row:' + r0 + ' / span ' + span + '">' +
           '<b>' + s.titolo + '</b><small>' + s.da + '–' + s.a + ' · ' + D.tipi[s.tipo] + '</small>' +
-          CV.badgeAccesso(s) + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
+          CV.badgeAccesso(s) + (s.pagamento ? '<small><b>' + (CV.stato.ruolo === 'visitatore' ? 'da ' + CV.euro(s.pagamento.stu) : 'Tuo prezzo ' + CV.euro(CV.prezzoMio(s.pagamento))) + '</b></small>' : '') + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
       });
       return h;
     }

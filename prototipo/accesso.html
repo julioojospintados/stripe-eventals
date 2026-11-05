@@ -1,0 +1,152 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Accedi · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="site-header__destra"><a class="header-link" href="account.html" aria-current="page">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap layout-2">
+      <div class="stack" style="--stack:var(--s-5)">
+        <!-- Passo 1: email -->
+        <div id="passo-email" class="stack">
+          <h1 class="t-1" tabindex="-1" id="h-email">Accedi o crea l’account</h1>
+          <p class="t-lead misura">Niente password: ti mandiamo un codice via email. Al primo accesso l’account si crea da solo.</p>
+          <form id="f-email" class="stack" novalidate style="max-width:30rem">
+            <div class="campo">
+              <label for="email">Email</label>
+              <input class="input" id="email" type="email" inputmode="email" autocomplete="email" aria-describedby="aiuto-email">
+              <p class="campo__aiuto" id="aiuto-email">Usa l’indirizzo a cui vuoi ricevere i biglietti.</p>
+              <p class="campo__errore" id="err-email" hidden></p>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Mandami il codice</button>
+            <p class="t-small t-muted">Continuando accetti l’informativa privacy (pagina in preparazione).</p>
+          </form>
+
+          <div class="stack" style="max-width:30rem;--stack:var(--s-2)">
+            <p class="etichetta">Oppure</p>
+            <button type="button" class="btn btn--block" aria-disabled="true" aria-describedby="nota-google">Continua con Google</button>
+            <p class="t-small t-muted" id="nota-google">Non ancora attivo: l’architettura prevede solo il codice via email. Da decidere.</p>
+          </div>
+        </div>
+
+        <!-- Passo 2: codice -->
+        <div id="passo-codice" class="stack" hidden>
+          <h1 class="t-1" tabindex="-1" id="h-codice">Scrivi il codice</h1>
+          <p class="t-lead misura">Abbiamo mandato un codice a <b id="dove"></b>. Vale per poco tempo.</p>
+          <form id="f-codice" class="stack" novalidate style="max-width:30rem">
+            <div class="campo">
+              <label for="codice">Codice di 6 cifre</label>
+              <input class="input t-num" id="codice" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="aiuto-codice err-codice" style="letter-spacing:0.3em;font-size:1.5rem">
+              <p class="campo__aiuto" id="aiuto-codice">Nel prototipo il codice è 123456. Puoi incollarlo.</p>
+              <p class="campo__errore" id="err-codice" hidden></p>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Entra</button>
+          </form>
+          <div class="azioni-riga">
+            <button type="button" class="btn btn--secondary" id="rinvia" aria-disabled="true">Rinvia il codice</button>
+            <span class="t-small t-muted" id="attesa"></span>
+            <button type="button" class="btn btn--quiet" id="cambia">Cambia email</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="layout-2__lato stack" aria-label="Informazioni sull’accesso">
+        <div class="scheda">
+          <h2 class="t-3">Continuare senza account?</h2>
+          <p class="t-small"><b>Per comprare serve un account.</b> Serve a due cose: applicare il prezzo giusto (membro o studente) e ritrovare i biglietti sul telefono il giorno dell’evento.</p>
+          <p class="t-small">Programma, speaker e prezzi si guardano senza accedere.</p>
+          <p><a class="btn btn--secondary" href="agenda.html">Guarda il programma</a></p>
+        </div>
+        <div class="scheda">
+          <h2 class="t-3">Sei dello staff?</h2>
+          <p class="t-small">Chi amministra il sito ha un secondo passaggio con un’app di autenticazione, subito dopo il codice. Lo staff del check-in accede qui e poi apre la schermata dedicata.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, tentativi = 5, timer = null;
+    var consentite = ['account.html', 'biglietti.html', 'membership.html', 'agenda.html', 'index.html'];
+    var next = CV.param('next'); if (consentite.indexOf(next) < 0) next = 'account.html';
+
+    function errore(id, testo) {
+      var e = $('#' + id); e.hidden = !testo;
+      e.innerHTML = testo ? CV.ic('alert') + '<span>' + testo + '</span>' : '';
+      var campo = e.closest('.campo'); campo.classList.toggle('campo--errore', !!testo);
+      var inp = campo.querySelector('input'); if (testo) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid');
+    }
+    function passo(quale) {
+      $('#passo-email').hidden = quale !== 'email'; $('#passo-codice').hidden = quale !== 'codice';
+      $(quale === 'email' ? '#h-email' : '#h-codice').focus();
+    }
+    function conto(s) {
+      var b = $('#rinvia'); clearInterval(timer);
+      function tick() {
+        if (s <= 0) { clearInterval(timer); b.removeAttribute('aria-disabled'); $('#attesa').textContent = ''; return; }
+        b.setAttribute('aria-disabled', 'true'); $('#attesa').textContent = 'Puoi chiederne un altro tra ' + s + ' secondi.'; s--;
+      }
+      tick(); timer = setInterval(tick, 1000);
+    }
+
+    $('#f-email').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = $('#email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(v)) { errore('err-email', 'Controlla l’email: manca la chiocciola o il dominio, per esempio nome@esempio.it.'); $('#email').focus(); return; }
+      errore('err-email', ''); tentativi = 5;
+      $('#dove').textContent = v; passo('codice'); conto(30);
+    });
+    $('#f-codice').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var c = $('#codice').value.replace(/\s/g, '');
+      if (tentativi <= 0) { errore('err-codice', 'Troppi tentativi. Chiedi un nuovo codice con «Rinvia il codice».'); return; }
+      if (!/^\d{6}$/.test(c)) { errore('err-codice', 'Il codice ha 6 cifre. Controlla di averle scritte tutte.'); $('#codice').focus(); return; }
+      if (c !== '123456') {
+        tentativi--;
+        errore('err-codice', tentativi > 0 ? 'Il codice non è quello giusto. Hai ancora ' + tentativi + (tentativi === 1 ? ' tentativo.' : ' tentativi.') : 'Troppi tentativi. Chiedi un nuovo codice con «Rinvia il codice».');
+        $('#codice').focus(); return;
+      }
+      var mail = $('#email').value.toLowerCase();
+      CV.setStato({ ruolo: mail.indexOf('membro') > -1 ? 'membro' : (mail.indexOf('studente') > -1 ? 'studente' : 'pubblico') });
+      location.href = next;
+    });
+    $('#rinvia').addEventListener('click', function () {
+      if (this.getAttribute('aria-disabled') === 'true') return;
+      tentativi = 5; errore('err-codice', ''); $('#aiuto-codice').textContent = 'Nuovo codice mandato. Nel prototipo è sempre 123456.'; conto(30);
+    });
+    $('#cambia').addEventListener('click', function () { clearInterval(timer); passo('email'); });
+  });
+</script>
+</body>
+</html>

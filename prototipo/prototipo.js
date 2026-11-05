@@ -33,7 +33,7 @@
     prezzi: {
       intero: { pub: 180, mem: 120, stu: 60 },
       giornaliero: { pub: 80, mem: 55, stu: 30 },
-      workshop: { pub: 45, mem: 35, stu: 20 },   // solo come esempio nel confronto della membership
+      workshop: { pub: 0, mem: 0, stu: 0 },      // "da": calcolato dai dati subito sotto
       membership: 40
     },
     speakers: [
@@ -122,6 +122,17 @@
         posti: { libero: true }, subs: [] }
     ]
   };
+
+  // "da" dei workshop: il minimo reale tra le sessioni a pagamento, mai un numero scritto a mano
+  ['pub', 'mem', 'stu'].forEach(function (k) {
+    DATA.prezzi.workshop[k] = Math.min.apply(null, DATA.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { return s.pagamento[k]; }));
+  });
+
+  // percorso della cartella che contiene prototipo.js ('' nelle pagine pubbliche, '../' in admin/)
+  var BASE = (function () {
+    var s = d.querySelector('script[src$="prototipo.js"]');
+    return (s ? s.getAttribute('src') : 'prototipo.js').replace('prototipo.js', '');
+  }());
 
   /* ------------------------------------------------------------------ stato "vedi come" */
   var ETICHETTA = {
@@ -262,21 +273,62 @@
     '<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.500" width="14" height="9.500" rx="1.500"/><path d="M8 10.500V8a4 4 0 0 1 8 0v2.500"/></symbol>' +
     '<symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></symbol>' +
     '<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>' +
+    '<symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/></symbol>' +
+    '<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>' +
+    '<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>' +
+    '<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></symbol>' +
+    '<symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3.500" y="6" width="17" height="13" rx="1.500"/><path d="M3.500 10h17M16 14.500h.01"/></symbol>' +
+    '<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.500-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.500"/></symbol>' +
+    '<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.500"/><path d="M16 16l4.500 4.500"/></symbol>' +
+    '<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.200-5.100M19 5v4.500h-4.500"/></symbol>' +
+    '<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></symbol>' +
+    '<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>' +
     '</defs></svg>';
 
+  // QR SEGNAPOSTO: modello deterministico dal testo, NON e' leggibile da un lettore. Sempre nero su bianco.
+  function qrSvg(seme, etichetta) {
+    var n = 25, x = 0, i, j, h = 2166136261;
+    for (i = 0; i < seme.length; i++) { h ^= seme.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    function rnd() { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; }
+    function riservata(a, b) { return (a < 8 && b < 8) || (a > n - 9 && b < 8) || (a < 8 && b > n - 9); }
+    function finder(a, b) { // 7x7: bordo nero, anello bianco, centro nero
+      var oa = a > n - 9 ? a - (n - 7) : a, ob = b > n - 9 ? b - (n - 7) : b;
+      if (oa > 6 || ob > 6) return false;
+      var m = Math.max(Math.abs(oa - 3), Math.abs(ob - 3));
+      return m === 3 || m <= 1;
+    }
+    var p = '';
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) {
+      var nero = riservata(i, j) ? finder(i, j) : rnd() > 0.52;
+      if (nero) p += 'M' + (j + 2) + ' ' + (i + 2) + 'h1v1h-1z';
+    }
+    return '<svg viewBox="0 0 ' + (n + 4) + ' ' + (n + 4) + '" role="img" aria-label="' + etichetta + '"><rect width="' + (n + 4) + '" height="' + (n + 4) + '" fill="#fff"/><path d="' + p + '" fill="#000"/></svg>';
+  }
+
+  // Scrive un avviso in un contenitore con aria-live (stato o errore) senza spostare il fuoco.
+  function msg(el, tipo, testo) {
+    el.setAttribute('aria-live', tipo === 'err' ? 'assertive' : 'polite');
+    el.innerHTML = '<div class="avviso avviso--' + tipo + '">' + ic(tipo === 'ok' ? 'check' : (tipo === 'info' ? 'info' : 'alert')) + '<div>' + testo + '</div></div>';
+  }
+
   function barra() {
+    var area = d.body.getAttribute('data-area');   // 'admin' e 'checkin': niente selettore del ruolo
     var opz = Object.keys(ETICHETTA).map(function (k) { return '<option value="' + k + '">' + ETICHETTA[k] + '</option>'; }).join('');
-    var h = SPRITE + '<div class="proto-bar" role="region" aria-label="Controlli del prototipo">' +
-      '<p>Prototipo: persone, luoghi, prezzi e date sono inventati.</p>' +
-      '<div class="proto-bar__controlli"><label for="proto-ruolo">Vedi come</label>' +
+    var ruolo = area ? '' : '<div class="proto-bar__controlli"><label for="proto-ruolo">Vedi come</label>' +
       '<select id="proto-ruolo" class="select">' + opz + '</select>' +
-      '<label class="scelta scelta--inline"><input type="checkbox" id="proto-pass"> <span>Ho già un pass</span></label></div></div>';
+      '<label class="scelta scelta--inline"><input type="checkbox" id="proto-pass"> <span>Ho già un pass</span></label></div>';
+    var h = SPRITE + '<details class="proto-bar"><summary>Prototipo' + (area ? '' : ' · Vedi come: <b data-ruolo-label>Visitatore</b>') +
+      '<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary><div class="proto-bar__corpo">' +
+      '<p>Persone, luoghi, prezzi e date sono inventati.</p>' + ruolo +
+      '<nav class="proto-bar__nav" aria-label="Aree del prototipo"><a href="' + BASE + 'index.html">Sito pubblico</a><a href="' + BASE + 'accesso.html">Accesso</a><a href="' + BASE + 'account.html">Area personale</a><a href="' + BASE + 'admin/index.html">Admin</a><a href="' + BASE + 'checkin.html">Check-in</a></nav></div></details>';
     var skip = qs('.skip-link');
     if (skip) skip.insertAdjacentHTML('afterend', h); else d.body.insertAdjacentHTML('afterbegin', h);
-    qs('#proto-ruolo').value = stato.ruolo;
-    qs('#proto-pass').checked = stato.pass;
-    qs('#proto-ruolo').addEventListener('change', function (e) { setStato({ ruolo: e.target.value }); });
-    qs('#proto-pass').addEventListener('change', function (e) { setStato({ pass: e.target.checked }); });
+    if (!area) {
+      qs('#proto-ruolo').value = stato.ruolo;
+      qs('#proto-pass').checked = stato.pass;
+      qs('#proto-ruolo').addEventListener('change', function (e) { setStato({ ruolo: e.target.value }); });
+      qs('#proto-pass').addEventListener('change', function (e) { setStato({ pass: e.target.checked }); });
+    }
   }
 
   // Mostra/nasconde gli elementi con data-ruoli / data-pass e riempie i segnaposto di testo e prezzo.
@@ -314,7 +366,7 @@
     giorno: giorno, sala: sala, traccia: traccia, persona: persona, sessione: sessione,
     nomiSpeaker: nomiSpeaker, iniziali: iniziali, min: min, sovrapposte: sovrapposte, prezzoMio: prezzoMio,
     prezzoHTML: prezzoHTML, badgeAccesso: badgeAccesso, chipTraccia: chipTraccia, postiHTML: postiHTML,
-    sessioneRiga: sessioneRiga, speakerCard: speakerCard
+    sessioneRiga: sessioneRiga, speakerCard: speakerCard, qrSvg: qrSvg, msg: msg, BASE: BASE, BREVE: BREVE
   };
 
   ready(function () { barra(); applica(); });

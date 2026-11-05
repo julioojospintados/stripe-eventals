@@ -764,3 +764,29 @@ body.senza-nav { --nav-h: 0rem; }
 .esito--err { background: var(--c-err-bg); color: var(--c-err-fg); }
 .esito--info { background: var(--c-info-bg); color: var(--c-info-fg); }
 .esito--attesa { background: var(--c-surface); color: var(--c-ink-2); border-style: dashed; }
+
+/* ---------- Correzioni dalla revisione ux-reviewer ---------- */
+/* bottone bianco nella fascia: la specificita' di ".hero a" non deve vincere */
+.hero .btn--on-hero { background: #fff; border-color: #fff; color: #14181f; }
+.hero .btn--on-hero:hover { background: transparent; color: #fff; }
+.hero__prezzi a:not(.btn) { color: #fff; }
+/* prima schermata: nessuna altezza minima, CTA subito dopo le date; da 64rem due colonne */
+.hero__corpo { min-height: 0; justify-content: flex-start; gap: var(--s-5); padding-block: var(--s-5); }
+@media (min-width: 64rem) {
+  .hero__corpo { display: grid; grid-template-columns: minmax(0, 1fr) 26rem; align-items: end; gap: var(--s-7); padding-block: var(--s-7); min-height: 0; }
+}
+/* barra del prototipo: una sola riga, i controlli si aprono a richiesta */
+details.proto-bar { display: block; padding: 0; }
+details.proto-bar > summary { min-height: 2.75rem; padding: 0 var(--gutter); display: flex; align-items: center; gap: var(--s-3); cursor: pointer; font-weight: 700; list-style: none; }
+details.proto-bar > summary::-webkit-details-marker { display: none; }
+details.proto-bar > summary .ic { margin-left: auto; width: 1.1em; height: 1.1em; }
+details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
+.proto-bar__corpo { padding: var(--s-2) var(--gutter) var(--s-3); display: grid; gap: var(--s-2); }
+.proto-bar__nav { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); }
+.proto-bar__nav a { color: var(--c-bg); display: inline-flex; align-items: center; min-height: 2.75rem; }
+.prezzi--inline .sep { color: var(--c-ink-2); }
+.sessione__titolo a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.avviso a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.qta button[disabled] { opacity: 1; background: var(--c-surface-2); color: var(--c-ink-2); border: 1px dashed var(--c-line-strong); }
+body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+@media (min-width: 64rem) { body { padding-bottom: 0; } }
