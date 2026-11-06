@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Speakers · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="speaker">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap">
+      <h1 class="t-1">Speakers</h1>
+      <p class="t-muted misura">In alphabetical order by surname. Names, portraits and biographies are placeholders: the real speakers and photos will come from the organiser.</p>
+      <p class="t-small t-muted" id="conteggio" role="status"></p>
+      <div class="griglia-speaker" id="elenco"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var l = CV.DATA.speakers.slice().sort(function (a, b) { return a.cognome.localeCompare(b.cognome, 'en'); });
+    CV.qs('#conteggio').textContent = l.length + ' speakers';
+    CV.qs('#elenco').innerHTML = l.map(CV.speakerCard).join('');
+  });
+</script>
+</body>
+</html>

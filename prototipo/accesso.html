@@ -1,0 +1,138 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Log in · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="accesso">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap layout-2">
+      <div class="stack" style="--stack:var(--s-5)">
+        <!-- Passo 1: email -->
+        <div id="passo-email" class="stack">
+          <h1 class="t-1" tabindex="-1" id="h-email">Log in or create your account</h1>
+          <p class="t-lead misura">No password: we email you a code. The first time, your account is created automatically.</p>
+          <form id="f-email" class="stack" novalidate style="max-width:30rem">
+            <div class="campo">
+              <label for="email">Email</label>
+              <input class="input" id="email" type="email" inputmode="email" autocomplete="email" aria-describedby="aiuto-email">
+              <p class="campo__aiuto" id="aiuto-email">Use the address where you want to receive your tickets. In the prototype, an address containing «member» logs you in as a member.</p>
+              <p class="campo__errore" id="err-email" hidden></p>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Send me the code</button>
+            <p class="t-small t-muted">By continuing you accept the privacy notice (page in preparation).</p>
+          </form>
+
+          <div class="stack" style="max-width:30rem;--stack:var(--s-2)">
+            <p class="etichetta">Or</p>
+            <button type="button" class="btn btn--block" aria-disabled="true" aria-describedby="nota-google">Continue with Google</button>
+            <p class="t-small t-muted" id="nota-google">Not active yet: the architecture only has the email code. To be decided.</p>
+          </div>
+        </div>
+
+        <!-- Passo 2: codice -->
+        <div id="passo-codice" class="stack" hidden>
+          <h1 class="t-1" tabindex="-1" id="h-codice">Enter the code</h1>
+          <p class="t-lead misura">We sent a code to <b id="dove"></b>. It is valid for a short time.</p>
+          <form id="f-codice" class="stack" novalidate style="max-width:30rem">
+            <div class="campo">
+              <label for="codice">6-digit code</label>
+              <input class="input t-num" id="codice" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="aiuto-codice err-codice" style="letter-spacing:0.3em;font-size:1.5rem">
+              <p class="campo__aiuto" id="aiuto-codice">In the prototype the code is 123456. You can paste it.</p>
+              <p class="campo__errore" id="err-codice" hidden></p>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Log in</button>
+          </form>
+          <div class="azioni-riga">
+            <button type="button" class="btn btn--secondary" id="rinvia" aria-disabled="true">Send the code again</button>
+            <span class="t-small t-muted" id="attesa"></span>
+            <button type="button" class="btn btn--quiet" id="cambia">Use another email</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="layout-2__lato stack" aria-label="About logging in">
+        <div class="scheda">
+          <h2 class="t-3">Continue without an account?</h2>
+          <p class="t-small"><b>You need an account to buy.</b> It does two things: applies the right price (public or member) and keeps your tickets on your phone for the day of the event.</p>
+          <p class="t-small">You can browse the programme, speakers and prices without logging in.</p>
+          <p><a class="btn btn--secondary" href="agenda.html">See the programme</a></p>
+        </div>
+        <div class="scheda">
+          <h2 class="t-3">Speaker or staff?</h2>
+          <p class="t-small">Your complimentary ticket is issued by the organiser and sent to your email: log in with that address to see it. Site administrators have a second step with an authenticator app, right after the code.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, tentativi = 5, timer = null;
+    var consentite = ['account.html', 'biglietti.html', 'membership.html', 'agenda.html', 'index.html'];
+    var next = CV.param('next'); if (consentite.indexOf(next) < 0) next = 'account.html';
+
+    function errore(id, testo) {
+      var e = $('#' + id); e.hidden = !testo;
+      e.innerHTML = testo ? CV.ic('alert') + '<span>' + testo + '</span>' : '';
+      var campo = e.closest('.campo'); campo.classList.toggle('campo--errore', !!testo);
+      var inp = campo.querySelector('input'); if (testo) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid');
+    }
+    function passo(quale) {
+      $('#passo-email').hidden = quale !== 'email'; $('#passo-codice').hidden = quale !== 'codice';
+      $(quale === 'email' ? '#h-email' : '#h-codice').focus();
+    }
+    function conto(s) {
+      var b = $('#rinvia'); clearInterval(timer);
+      function tick() {
+        if (s <= 0) { clearInterval(timer); b.removeAttribute('aria-disabled'); $('#attesa').textContent = ''; return; }
+        b.setAttribute('aria-disabled', 'true'); $('#attesa').textContent = 'You can ask for a new one in ' + s + ' seconds.'; s--;
+      }
+      tick(); timer = setInterval(tick, 1000);
+    }
+
+    $('#f-email').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = $('#email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(v)) { errore('err-email', 'Check the email: the @ or the domain is missing, for example name@example.com.'); $('#email').focus(); return; }
+      errore('err-email', ''); tentativi = 5;
+      $('#dove').textContent = v; passo('codice'); conto(30);
+    });
+    $('#f-codice').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var c = $('#codice').value.replace(/\s/g, '');
+      if (tentativi <= 0) { errore('err-codice', 'Too many attempts. Ask for a new code with «Send the code again».'); return; }
+      if (!/^\d{6}$/.test(c)) { errore('err-codice', 'The code has 6 digits. Check you typed them all.'); $('#codice').focus(); return; }
+      if (c !== '123456') {
+        tentativi--;
+        errore('err-codice', tentativi > 0 ? 'That is not the right code. You have ' + tentativi + (tentativi === 1 ? ' attempt left.' : ' attempts left.') : 'Too many attempts. Ask for a new code with «Send the code again».');
+        $('#codice').focus(); return;
+      }
+      var mail = $('#email').value.toLowerCase();
+      CV.setStato({ ruolo: mail.indexOf('member') > -1 || mail.indexOf('membro') > -1 ? 'membro' : 'pubblico' });
+      location.href = next;
+    });
+    $('#rinvia').addEventListener('click', function () {
+      if (this.getAttribute('aria-disabled') === 'true') return;
+      tentativi = 5; errore('err-codice', ''); $('#aiuto-codice').textContent = 'New code sent. In the prototype it is always 123456.'; conto(30);
+    });
+    $('#cambia').addEventListener('click', function () { clearInterval(timer); passo('email'); });
+  });
+</script>
+</body>
+</html>

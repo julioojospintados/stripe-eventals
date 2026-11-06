@@ -1,0 +1,57 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Speaker · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="speaker">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap" id="scheda">
+      <p>Loading… <a href="speaker.html">Back to speakers</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, p = CV.persona(CV.param('id')), box = CV.qs('#scheda');
+    if (!p) {
+      box.innerHTML = '<h1 class="t-1">Speaker not found</h1><p><a class="btn btn--primary" href="speaker.html">Back to speakers</a></p>';
+      return;
+    }
+    document.title = p.nome + ' · EAS8 Lisbon';
+    var sess = D.sessioni.filter(function (s) { return s.sp.indexOf(p.id) > -1 && CV.giorno(s.g); })
+      .sort(function (a, b) { return a.g.localeCompare(b.g) || CV.min(a.da) - CV.min(b.da); });
+    function sessioni() {
+      CV.qs('#sessioni-speaker').innerHTML = sess.map(function (s) { return CV.sessioneRiga(s, { giorno: true }); }).join('');
+    }
+    box.innerHTML =
+      '<nav class="breadcrumb" aria-label="Breadcrumb"><a href="speaker.html">Speakers</a></nav>' +
+      '<div class="layout-2 layout-2--lato-primo" style="margin-top:var(--s-3)">' +
+      '<div class="layout-2__lato"><div class="ritratto ritratto--grande" data-tono="' + p.tono + '" role="img" aria-label="Placeholder portrait of ' + p.nome + ': photo to be added">' + CV.iniziali(p.nome) + '</div>' +
+      '<p class="t-small t-muted" style="margin-top:var(--s-2)">Photo to be added.</p></div>' +
+      '<div class="stack" style="--stack:var(--s-4)"><h1 class="t-1">' + p.nome + '</h1>' +
+      '<p class="t-lead">' + p.ruolo + ', ' + p.ente + '</p>' +
+      p.bio.map(function (t) { return '<p class="misura">' + t + '</p>'; }).join('') +
+      '</div></div>' +
+      '<section aria-labelledby="h-int" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-int">Speaking in ' + sess.length + (sess.length === 1 ? ' session' : ' sessions') + '</h2><div id="sessioni-speaker"></div></section>';
+    sessioni();
+    document.addEventListener('cv:stato', sessioni);
+  });
+</script>
+</body>
+</html>

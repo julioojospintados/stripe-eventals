@@ -1,0 +1,79 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Members · Admin · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head"><h1 class="t-1">Members</h1></div>
+    <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+      <div>The membership is <b>active right after payment</b>. Its status here is a copy of the one on Stripe, updated by Stripe’s notifications. You look here; to change something you use Stripe.</div></div>
+
+    <section aria-labelledby="h-elenco">
+      <h2 class="t-2 sr-only" id="h-elenco">List</h2>
+      <form class="grid-2" role="search" onsubmit="return false" style="align-items:end">
+        <div class="campo"><label for="q">Search by name or email</label><input class="input" id="q" type="search" autocomplete="off"></div>
+        <div class="campo"><label for="stato">Status</label><select class="select" id="stato"></select></div>
+      </form>
+      <p class="t-small t-muted" id="conto" role="status" aria-live="polite" style="margin-block:var(--s-3)"></p>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Members</caption>
+        <thead><tr><th scope="col">Who</th><th scope="col">Status</th><th scope="col">Period ends</th><th scope="col">Renewal</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+      <div id="vuoto" class="vuoto" hidden>No members match the search.</div>
+    </section>
+
+    <section id="dett" aria-labelledby="h-dett" hidden></section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, M = AD.membri, S = AD.STATO_MEM;
+    $('#stato').innerHTML = '<option value="">All statuses</option>' + Object.keys(S).map(function (k) { return '<option value="' + k + '">' + S[k][2] + '</option>'; }).join('');
+    var badge = function (k) { return '<span class="badge badge--' + S[k][0] + '">' + AD.icona(S[k][1]) + S[k][2] + '</span>'; };
+    function elenco() {
+      var q = $('#q').value.trim().toLowerCase(), s = $('#stato').value;
+      var l = M.filter(function (m) { return (!s || m.stato === s) && (!q || (m.nome + ' ' + m.email).toLowerCase().indexOf(q) > -1); });
+      $('#righe').innerHTML = l.map(function (m) {
+        return '<tr><th scope="row">' + m.nome + '<br><span class="t-small t-muted">' + m.email + '</span></th><td data-label="Status">' + badge(m.stato) + '</td><td data-label="Period ends">' + m.fine + '</td><td data-label="Renewal">' + m.rinnovo + '</td>' +
+          '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-id="' + m.id + '">Details<span class="sr-only"> of ' + m.nome + '</span></button></td></tr>';
+      }).join('');
+      $('#vuoto').hidden = l.length > 0; $('#conto').textContent = l.length + (l.length === 1 ? ' member' : ' members');
+    }
+    $('#q').addEventListener('input', elenco); $('#stato').addEventListener('change', elenco);
+    $('#righe').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-id]'); if (!b) return;
+      var m = M.filter(function (x) { return x.id === b.getAttribute('data-id'); })[0], p = $('#dett'); p.hidden = false;
+      var vale = m.stato === 'active' || m.stato === 'canceling';
+      p.innerHTML = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">' + m.nome + '</h2>' + badge(m.stato) + '</div>' +
+        '<dl class="meta-lista misura"><div><dt>Email</dt><dd>' + m.email + '</dd></div><div><dt>Period ends</dt><dd>' + m.fine + '</dd></div><div><dt>Renewal</dt><dd>' + m.rinnovo + '</dd></div>' +
+        '<div><dt>Price today</dt><dd>' + (vale ? 'Member, including early bird (on the buyer’s own ticket only)' : 'Public (does not count as a member)') + '</dd></div>' +
+        '<div><dt>Last Stripe notice</dt><dd>' + (m.stato === 'past_due' ? 'invoice.payment_failed, 03/11/2026' : 'invoice.paid, ' + (m.stato === 'expired' ? '30/09/2025' : '05/11/2026')) + '</dd></div></dl>' +
+        '<div class="azioni-riga" style="margin-top:var(--s-4)"><button type="button" class="btn btn--secondary" data-az="stripe">' + AD.icona('external') + 'Open the customer on Stripe</button>' +
+        (m.stato === 'past_due' ? '<button type="button" class="btn btn--primary" data-az="mail">Resend the email to update the card</button>' : '') + '</div><div id="st" role="status" aria-live="polite" style="margin-top:var(--s-3)"></div>';
+      $('#h-dett').focus();
+    });
+    $('#dett').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-az]'); if (!b) return;
+      CV.msg($('#st'), b.getAttribute('data-az') === 'stripe' ? 'info' : 'ok', b.getAttribute('data-az') === 'stripe' ? 'On the real site the Stripe Dashboard opens on the customer, in a new tab.' : 'Email sent (simulated) with the link to the customer portal. Written to the audit log.');
+    });
+    elenco();
+  });
+</script>
+</body>
+</html>

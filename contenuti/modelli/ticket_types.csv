@@ -1,0 +1,5 @@
+﻿code,kind,channel,name_en,name_it,description_en,description_it,max_per_order,max_per_host,sales_start,sales_end,active,position,notes
+full_pass,full_pass,public,Full congress pass,Pass intero del congresso,,,4,,,,yes,1,Description to write / Descrizione da scrivere: what the pass includes / cosa include
+companion,companion,public,Accompanying person,Accompagnatore,,,1,1,,,no,2,"To decide: price, what it includes, how many per pass (proposal 1) / Da decidere"
+exhibitor,exhibitor,invite,Exhibitor pass,Pass espositore,,,,,,,no,3,Sold only with an invitation code per company / Solo con codice d'invito per azienda. To decide / Da decidere
+staff_pass,staff_pass,panel,Complimentary pass (speakers and staff),Pass omaggio (speaker e staff),,,1,,,,yes,4,"Issued from the admin panel only, never sold / Solo dal pannello, mai in vendita"

@@ -1,0 +1,312 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>My account · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="account">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap">
+      <!-- Non connesso -->
+      <div data-ruoli="visitatore" class="stack">
+        <h1 class="t-1">My account</h1>
+        <div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+          <div><p>Log in to see your tickets, agenda, membership, videos and orders.</p><p><a class="btn btn--primary" href="accesso.html?next=account.html">Log in with an email code</a></p></div></div>
+      </div>
+
+      <!-- Connesso -->
+      <div id="area" hidden data-ruoli="pubblico,membro,membro-scaduto" class="stack" style="--stack:var(--s-5)">
+        <div class="admin-head" style="margin-bottom:0">
+          <div>
+            <h1 class="t-1">My account</h1>
+            <p class="t-muted">Alessia Demo · alessia.demo@example.test (invented data)</p>
+          </div>
+          <button type="button" class="btn btn--secondary" id="esci">Log out</button>
+        </div>
+
+        <div class="tabs tabs--wrap" role="tablist" aria-label="Account sections" id="tabs">
+          <button class="tab" role="tab" id="tab-biglietti" aria-controls="p-biglietti" aria-selected="true" data-p="biglietti">My tickets</button>
+          <button class="tab" role="tab" id="tab-agenda" aria-controls="p-agenda" aria-selected="false" tabindex="-1" data-p="agenda">My agenda</button>
+          <button class="tab" role="tab" id="tab-membership" aria-controls="p-membership" aria-selected="false" tabindex="-1" data-p="membership">Membership</button>
+          <button class="tab" role="tab" id="tab-video" aria-controls="p-video" aria-selected="false" tabindex="-1" data-p="video">Videos</button>
+          <button class="tab" role="tab" id="tab-ordini" aria-controls="p-ordini" aria-selected="false" tabindex="-1" data-p="ordini">Orders and receipts</button>
+        </div>
+
+        <!-- I miei biglietti -->
+        <section role="tabpanel" id="p-biglietti" aria-labelledby="tab-biglietti" tabindex="0" class="tabpanel stack">
+          <h2 class="t-2">My tickets</h2>
+          <p class="t-muted misura">One ticket per person. Show the QR code at the entrance with the screen brightness up: the QR does not contain the attendee’s name.</p>
+          <div class="avviso avviso--info misura" role="note"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <div><b>Names are final.</b> The name on a ticket cannot be changed and tickets cannot be passed on. If you spot a typo, write to the organiser before the event.</div></div>
+          <div id="lista-biglietti" class="stack" style="--stack:var(--s-4)"></div>
+        </section>
+
+        <!-- La mia agenda -->
+        <section role="tabpanel" id="p-agenda" aria-labelledby="tab-agenda" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">My agenda</h2>
+          <p class="t-muted misura">Sessions you booked and workshops you bought. Free-entry sessions do not appear: your pass is enough.</p>
+          <div id="conflitti-agenda" role="status" aria-live="polite"></div>
+          <div id="st-agenda" role="status" aria-live="polite"></div>
+          <div id="lista-agenda"></div>
+          <p><a class="btn btn--secondary" href="agenda.html">Book more sessions</a></p>
+        </section>
+
+        <!-- Membership -->
+        <section role="tabpanel" id="p-membership" aria-labelledby="tab-membership" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Membership</h2>
+          <div class="campo" style="max-width:24rem">
+            <label for="sim-mem">Prototype: simulate the membership status</label>
+            <select class="select" id="sim-mem">
+              <option value="nessuna">No membership</option>
+              <option value="attiva">Active, automatic renewal</option>
+              <option value="fine">Active, ends at the end of the period</option>
+              <option value="fallito">Renewal payment failed</option>
+              <option value="scaduta">Expired</option>
+            </select>
+          </div>
+          <div id="stato-mem" class="stack"></div>
+          <div id="portale" hidden>
+            <div class="stripe-box">
+              <div class="stripe-box__testa">Customer portal hosted by Stripe · simulation</div>
+              <div class="stripe-box__corpo">
+                <p><b>Here, on Stripe, you can:</b></p>
+                <ul class="elenco-pulito" style="color:#1a1f36">
+                  <li>change the card</li>
+                  <li>see and download invoices</li>
+                  <li>stop the renewal at the end of the period</li>
+                </ul>
+                <button type="button" class="btn btn--primary btn--block" id="chiudi-portale">Back to my account</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Video (Wistia o Vimeo): ognuno visibile ai ruoli scelti dall'admin -->
+        <section role="tabpanel" id="p-video" aria-labelledby="tab-video" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Videos</h2>
+          <div id="stato-video" class="stack"></div>
+          <div id="st-video" role="status" aria-live="polite"></div>
+          <div id="lista-video"></div>
+        </section>
+
+        <!-- Ordini -->
+        <section role="tabpanel" id="p-ordini" aria-labelledby="tab-ordini" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Orders and receipts</h2>
+          <div id="st-ordini" role="status" aria-live="polite"></div>
+          <table class="tabella tabella--stack">
+            <caption class="sr-only">Your orders</caption>
+            <thead><tr><th scope="col">Order</th><th scope="col">Date</th><th scope="col">Contents</th><th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+            <tbody id="righe-ordini"></tbody>
+          </table>
+          <p class="t-small t-muted misura">Tickets are non-refundable and names cannot be changed. We refund automatically, without you asking, only if the event is cancelled or if your payment arrives after seats have sold out.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, E = CV.euro;
+
+    /* ---------------- schede ---------------- */
+    var tabs = $$('.tab');
+    function scegli(t, sposta) {
+      tabs.forEach(function (x) {
+        var on = x === t;
+        x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1;
+        $('#' + x.getAttribute('aria-controls')).hidden = !on;
+      });
+      if (sposta) t.focus();
+      if (history.replaceState) history.replaceState(null, '', '#' + t.getAttribute('data-p'));
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { scegli(t, false); });
+      t.addEventListener('keydown', function (e) {
+        var n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (n === undefined) return; e.preventDefault(); scegli(tabs[(n + tabs.length) % tabs.length], true);
+      });
+    });
+    var h0 = tabs.filter(function (t) { return '#' + t.getAttribute('data-p') === location.hash; })[0];
+    if (h0) scegli(h0, false);
+    $('#esci').addEventListener('click', function () { CV.setStato({ ruolo: 'visitatore' }); });
+
+    /* ---------------- biglietti (nessun cambio di nome) ---------------- */
+    var W = CV.sessione('w01'), G = D.evento.date;
+    var T = [
+      { id: 't1', tipo: 'Full pass', nome: 'Alessia Demo', tu: true, giorni: 'All three days (' + G + ')', code: 'K7M2QX4P', prezzo: 'pass', stato: 'valido', comp: 't5' },
+      { id: 't2', tipo: 'Full pass', nome: 'Marco Prova', giorni: 'All three days (' + G + ')', code: 'R3T9WB6N', prezzo: 'pub', stato: 'valido' },
+      { id: 't3', tipo: 'Workshop · ' + W.titolo, nome: 'Alessia Demo', tu: true, giorni: CV.giorno(W.g).lungo + ', ' + W.da + '–' + W.a + ', ' + CV.sala(W.sala).nome, code: 'D5H8LC2Y', v: 100, stato: 'valido' },
+      { id: 't5', tipo: 'Companion', nome: 'Sara Guest', giorni: 'With the full pass of Alessia Demo · what it includes: to be defined', code: 'C8P4NM2T', v: D.prezzi.companion.pub, stato: 'valido', segnaposto: true },
+      { id: 't4', tipo: 'Full pass', nome: 'Nora Esempio', giorni: 'All three days (' + G + ')', code: 'W2Y6PV9A', prezzo: 'pub', stato: 'rimborsato', rimborso: '€695 on 4 Nov 2026 (event-side error)' }
+    ];
+    function pagato(t) {
+      if (t.v !== undefined) return { v: t.v, nome: 'same price for everyone' + (t.segnaposto ? ', placeholder' : '') };
+      var p = D.prezzi.intero, k = CV.CHIAVE[CV.stato.ruolo];
+      if (t.prezzo === 'pass' && k === 'mem') return { v: p.mem || 276.5, nome: 'member price' };
+      return { v: p.pub || 695, nome: 'public price' };
+    }
+    function biglietti() {
+      $('#lista-biglietti').innerHTML = T.map(function (t) {
+        var pg = pagato(t), rev = t.stato !== 'valido';
+        var compLibero = t.tipo === 'Full pass' && !rev && !t.comp;
+        return '<article class="biglietto' + (rev ? ' biglietto--revocato' : '') + '" aria-labelledby="bt-' + t.id + '">' +
+          (rev ? '<div class="biglietto__qr">QR revoked: ticket refunded</div>'
+               : '<div class="biglietto__qr">' + CV.qrSvg(t.id + t.code, 'Placeholder QR code of the ' + t.tipo + ' ticket for ' + t.nome) + '</div>') +
+          '<div class="biglietto__corpo"><h3 class="t-3" id="bt-' + t.id + '" tabindex="-1">' + t.tipo + '</h3>' +
+          '<p><b>' + t.nome + '</b>' + (t.tu ? ' (you)' : '') + ' <span class="badge badge--pagamento">' + CV.ic('lock') + 'Name final</span></p>' +
+          '<p class="t-small t-muted">' + t.giorni + '</p>' +
+          '<p><span class="biglietto__codice" aria-label="Short code ' + t.code.split('').join(' ') + '">' + t.code + '</span> <span class="t-small t-muted">short code</span></p>' +
+          '<p>' + (rev ? '<span class="badge badge--err">' + CV.ic('x') + 'Refunded</span> <span class="t-small">' + t.rimborso + '. The QR is no longer valid.</span>'
+                       : '<span class="badge badge--ok">' + CV.ic('check') + 'Valid</span> <span class="t-small">Paid ' + E(pg.v) + ' (' + pg.nome + ')</span>') + '</p>' +
+          (rev ? '' : '<div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-az="pdf" data-id="' + t.id + '">' + CV.ic('download') + 'Download PDF</button>' +
+            '<button type="button" class="btn btn--secondary btn--piccolo" data-az="wallet" data-id="' + t.id + '">' + CV.ic('wallet') + 'Add to wallet</button>' +
+            (compLibero ? '<a class="btn btn--secondary btn--piccolo" href="biglietti.html?tipo=companion" data-comp>' + CV.ic('plus') + 'Add a companion</a>' : '') + '</div>') +
+          '<div id="st-' + t.id + '" role="status" aria-live="polite"></div></div></article>';
+      }).join('');
+    }
+    $('#lista-biglietti').addEventListener('click', function (e) {
+      if (e.target.closest('[data-comp]')) { CV.setStato({ pass: true }); return; }   // l'accompagnatore si compra dopo un pass
+      var b = e.target.closest('[data-az]'); if (!b) return;
+      var st = $('#st-' + b.getAttribute('data-id'));
+      if (b.getAttribute('data-az') === 'pdf') CV.msg(st, 'ok', 'PDF ready (simulated). On the real site the download starts and the PDF also arrives by email.');
+      else CV.msg(st, 'info', 'Simulated: adding to Apple or Google Wallet is a possible extension, not planned for the first version.');
+    });
+
+    /* ---------------- agenda ---------------- */
+    var PA = CV.trova('g1', '09:00', 'ha'), PB = CV.trova('g2', '11:00', 'hb');
+    var AG = [{ s: PA.id, t: 'prenotata' }, { s: 'w01', t: 'pagata' }, { s: PB.id, t: 'prenotata' }];
+    function agenda(testo) {
+      var list = AG.map(function (a) { return { a: a, s: CV.sessione(a.s) }; }).filter(function (x) { return x.s && CV.giorno(x.s.g); })
+        .sort(function (x, y) { return x.s.g.localeCompare(y.s.g) || CV.min(x.s.da) - CV.min(y.s.da); });
+      var cf = [];
+      for (var i = 0; i < list.length; i++) for (var j = i + 1; j < list.length; j++) if (CV.sovrapposte(list[i].s, list[j].s)) cf.push([list[i], list[j]]);
+      $('#conflitti-agenda').innerHTML = cf.map(function (c) {
+        var annullabile = c[0].a.t === 'prenotata' ? c[0] : (c[1].a.t === 'prenotata' ? c[1] : null);
+        return '<div class="avviso avviso--warn" style="margin-bottom:var(--s-3)">' + CV.ic('alert') + '<div><b>Overlapping times.</b><p>«' + c[0].s.titolo + '» (' + c[0].s.da + '–' + c[0].s.a + ', ' + CV.sala(c[0].s.sala).nome + ') and «' + c[1].s.titolo + '» (' + c[1].s.da + '–' + c[1].s.a + ', ' + CV.sala(c[1].s.sala).nome + ') overlap.</p>' +
+          (annullabile ? '<p><button type="button" class="btn btn--secondary btn--piccolo" data-annulla="' + annullabile.a.s + '">Cancel the booking for «' + annullabile.s.titolo + '»</button></p>' : '<p>Both are paid workshops: choose which one to attend. Workshops are non-refundable.</p>') + '</div></div>';
+      }).join('');
+      if (testo) CV.msg($('#st-agenda'), 'ok', testo);
+      if (!list.length) { $('#lista-agenda').innerHTML = '<p class="vuoto">No sessions booked or bought. When you book one, it appears here.</p>'; return; }
+      var h = '', g = '';
+      list.forEach(function (x) {
+        if (x.s.g !== g) { g = x.s.g; h += (h ? '</ul>' : '') + '<h3 class="t-3" style="margin-top:var(--s-5)">' + CV.giorno(g).lungo + '</h3><ul class="elenco-pulito">'; }
+        h += '<li><p class="t-num"><b>' + x.s.da + '–' + x.s.a + '</b> · ' + CV.sala(x.s.sala).nome + '</p>' +
+          '<p><a href="sessione.html?id=' + x.s.id + '">' + x.s.titolo + '</a></p>' +
+          '<p class="azioni-riga">' + (x.a.t === 'prenotata'
+            ? '<span class="badge badge--inclusa">' + CV.ic('check') + 'Booked</span><button type="button" class="btn btn--quiet btn--piccolo" data-annulla="' + x.a.s + '">Cancel booking</button>'
+            : '<span class="badge badge--pagamento">' + CV.ic('ticket') + 'Paid</span><span class="t-small t-muted">The ticket is in «My tickets».</span>') + '</p></li>';
+      });
+      $('#lista-agenda').innerHTML = h + '</ul>';
+    }
+    $('#p-agenda').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-annulla]'); if (!b) return;
+      var id = b.getAttribute('data-annulla'), s = CV.sessione(id);
+      AG = AG.filter(function (a) { return a.s !== id; });
+      agenda('Booking cancelled: «' + s.titolo + '». The seat is available again.');
+    });
+
+    /* ---------------- membership ---------------- */
+    var memDaRuolo = { membro: 'attiva', 'membro-scaduto': 'scaduta' };
+    function membership() {
+      var s = $('#sim-mem').value, h = '';
+      var riga = function (k, v) { return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; };
+      if (s === 'nessuna') h = '<div class="avviso avviso--info">' + CV.ic('info') + '<div><p>You are not a member. The yearly membership costs ' + E(D.prezzi.membership) + ', is active right after payment and gives the member price, including the early bird price.</p><p><a class="btn btn--primary" href="membership.html">See membership</a></p></div></div>';
+      else {
+        var badge = { attiva: '<span class="badge badge--ok">' + CV.ic('check') + 'Active</span>', fine: '<span class="badge badge--warn">' + CV.ic('clock') + 'Active, will not renew</span>', fallito: '<span class="badge badge--err">' + CV.ic('alert') + 'Payment failed</span>', scaduta: '<span class="badge badge--err">' + CV.ic('x') + 'Expired</span>' }[s];
+        h = '<dl class="meta-lista misura">' + riga('Status', badge) +
+          riga(s === 'scaduta' ? 'Expired on' : (s === 'fine' ? 'Valid until' : 'Next renewal'), '30 Sep 2027 (example date)') +
+          (s === 'scaduta' ? '' : riga('Payment', 'Card •••• 4242 (example)')) + '</dl>';
+        if (s === 'fine') h += '<div class="avviso avviso--info">' + CV.ic('info') + '<div>You stopped the renewal: the member price applies until the date above. To restart it, open the customer portal.</div></div>';
+        if (s === 'fallito') h += '<div class="avviso avviso--err" role="alert">' + CV.ic('alert') + '<div><b>The renewal payment failed.</b> Until you fix it you do not count as a member for new purchases (proposed rule, to be confirmed). Update your card on the portal.</div></div>';
+        if (s === 'scaduta') h += '<div class="avviso avviso--warn">' + CV.ic('alert') + '<div><b>Your membership has expired.</b> You pay the public price until you renew. Renewal is active right after payment.</div></div><p><a class="btn btn--primary" href="membership.html">Renew membership</a></p>';
+        else h += '<p><button type="button" class="btn ' + (s === 'fallito' ? 'btn--primary' : 'btn--secondary') + '" id="apri-portale">' + CV.ic('external') + (s === 'fallito' ? 'Update your card on Stripe' : 'Manage on Stripe (customer portal)') + '</button></p>';
+      }
+      $('#stato-mem').innerHTML = h; $('#portale').hidden = true; $('#stato-mem').hidden = false;
+    }
+    $('#sim-mem').addEventListener('change', function () { membership(); });
+    $('#stato-mem').addEventListener('click', function (e) {
+      if (!e.target.closest('#apri-portale')) return;
+      $('#portale').hidden = false; $('#stato-mem').hidden = true; $('#chiudi-portale').focus();
+    });
+    $('#chiudi-portale').addEventListener('click', function () { $('#portale').hidden = true; $('#stato-mem').hidden = false; var b = $('#apri-portale'); if (b) b.focus(); });
+
+    /* ---------------- ordini ---------------- */
+    var ORD = [
+      { id: 'CV-1050', d: '06 Nov 2026', c: 'Companion ticket (Sara Guest)', v: 150, s: 'paid' },
+      { id: 'CV-1042', d: '05 Nov 2026', c: 'Full pass and one workshop', v: 376.5, s: 'paid' },
+      { id: 'CV-1043', d: '05 Nov 2026', c: 'Two full passes', v: 1390, s: 'pending' },
+      { id: 'CV-1031', d: '03 Nov 2026', c: 'Full pass', v: 695, s: 'failed' },
+      { id: 'CV-1020', d: '02 Nov 2026', c: 'One workshop', v: 100, s: 'expired' },
+      { id: 'CV-1011', d: '01 Nov 2026', c: 'Full pass (Nora Esempio)', v: 695, s: 'refunded' }
+    ];
+    var STATO = {
+      paid: ['ok', 'check', 'Paid'], pending: ['info', 'clock', 'Waiting for payment'], failed: ['err', 'alert', 'Failed'],
+      expired: ['warn', 'clock', 'Expired'], refunded: ['err', 'x', 'Refunded']
+    };
+    var NOTA = { pending: 'The Stripe payment page is still open. Do not pay twice.', failed: 'Nothing charged. You can try again.', expired: 'The payment session expired: nothing charged.', refunded: '€695 refunded on 4 Nov 2026.' };
+    function ordini() {
+      $('#righe-ordini').innerHTML = ORD.map(function (o) {
+        var s = STATO[o.s];
+        return '<tr><th scope="row">' + o.id + '</th><td data-label="Date">' + o.d + '</td><td data-label="Contents">' + o.c + (NOTA[o.s] ? '<br><span class="t-small t-muted">' + NOTA[o.s] + '</span>' : '') + '</td>' +
+          '<td class="num" data-label="Amount">' + E(o.v) + '</td>' +
+          '<td data-label="Status"><span class="badge badge--' + s[0] + '">' + CV.ic(s[1]) + s[2] + '</span></td>' +
+          '<td data-label="Actions">' + (o.s === 'paid' || o.s === 'refunded' ? '<button type="button" class="btn btn--secondary btn--piccolo" data-ric="' + o.id + '">' + CV.ic('download') + 'Receipt<span class="sr-only"> ' + o.id + '</span></button>' : (o.s === 'failed' || o.s === 'expired' ? '<a class="btn btn--secondary btn--piccolo" href="biglietti.html">Try again</a>' : '')) + '</td></tr>';
+      }).join('');
+    }
+    $('#righe-ordini').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ric]'); if (!b) return;
+      CV.msg($('#st-ordini'), 'ok', 'Receipt for order ' + b.getAttribute('data-ric') + ' ready (simulated). On the real site it is the Stripe receipt; the invoice is to be defined.');
+    });
+
+    /* ---------------- video (Wistia / Vimeo, visibili per ruolo) ---------------- */
+    function puo(v) {
+      var r = CV.stato.ruolo;
+      return v.ruoli.some(function (x) { return x === 'utente' || (x === 'membro' && r === 'membro') || (x === 'pass' && CV.stato.pass); });
+    }
+    function video() {
+      var r = CV.stato.ruolo, n = D.video.filter(puo).length;
+      $('#stato-video').innerHTML = '<p class="t-muted misura">Videos hosted on Vimeo or Wistia. Each video is open to some roles only: you can watch <b>' + n + ' of ' + D.video.length + '</b>. Titles and lengths are placeholders.</p>' +
+        (r !== 'membro' ? '<div class="avviso avviso--info">' + CV.ic('lock') + '<div><p><b>Most videos are for members.</b> The membership costs ' + E(D.prezzi.membership) + ' per year and is active right after payment.' +
+          (r === 'membro-scaduto' ? ' Your membership has expired: renew it to unlock them.' : '') + '</p>' +
+          '<p><a class="btn btn--primary" href="membership.html">' + (r === 'membro-scaduto' ? 'Renew membership' : 'Become a member') + '</a></p></div></div>' : '');
+      $('#lista-video').innerHTML = D.video.map(function (v) {
+        var ok = puo(v), chi = v.ruoli.map(function (x) { return D.videoRuoli[x]; }).join(', ');
+        return '<article class="video-riga" aria-labelledby="vt-' + v.id + '"><div class="video-riga__anteprima" aria-hidden="true">' + CV.ic(ok ? 'play' : 'lock') + '</div>' +
+          '<div class="video-riga__corpo"><h3 class="t-3" id="vt-' + v.id + '">' + v.titolo + '</h3><p class="t-small t-muted">' + v.edizione + ' · ' + v.durata + ' · on ' + D.provider[v.provider] + '</p>' +
+          '<p class="t-small">Who can watch: ' + chi + '</p><p>' +
+          (ok ? '<button type="button" class="btn btn--secondary btn--piccolo" data-video="' + v.id + '">' + CV.ic('play') + 'Watch<span class="sr-only"> ' + v.titolo + '</span></button>'
+              : '<span class="badge badge--warn">' + CV.ic('lock') + 'Locked · ' + chi.toLowerCase() + ' only</span>') + '</p></div></article>';
+      }).join('');
+    }
+    $('#lista-video').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-video]'); if (!b) return;
+      var v = D.video.filter(function (x) { return x.id === b.getAttribute('data-video'); })[0];
+      CV.msg($('#st-video'), 'info', 'Simulated: here the ' + D.provider[v.provider] + ' player opens (video ID ' + v.vid + '). It starts only when you press play, with no autoplay sound, with captions, and loads no video data until you start it.');
+    });
+
+    /* ---------------- avvio e cambi di ruolo ---------------- */
+    function inizia() {
+      $('#sim-mem').value = memDaRuolo[CV.stato.ruolo] || 'nessuna';
+      biglietti(); agenda(); membership(); video(); ordini();
+    }
+    inizia();
+    document.addEventListener('cv:stato', inizia);
+  });
+</script>
+</body>
+</html>

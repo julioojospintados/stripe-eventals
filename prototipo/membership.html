@@ -1,0 +1,116 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Membership · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="membership">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap stack" style="--stack:var(--s-5)">
+      <h1 class="t-1">Yearly membership</h1>
+      <div class="layout-2 layout-2--lato-primo">
+        <aside class="layout-2__lato" aria-label="Price and sign-up">
+          <div class="scheda">
+            <p class="t-small t-muted">Yearly fee</p>
+            <p><span class="prezzo-valore prezzo-valore--grande" data-euro="membership"></span> <span class="t-muted">per year</span></p>
+
+            <div class="avviso avviso--ok" data-ruoli="membro" role="status">
+              <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
+              <div><b>You are already a member.</b> Valid until 30 Sep 2027 (example date).</div>
+            </div>
+            <div class="avviso avviso--warn" data-ruoli="membro-scaduto" role="status">
+              <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
+              <div><b>Your membership expired on 30 Sep 2026.</b> Renew it to get the member price back.</div>
+            </div>
+            <div class="avviso avviso--info" data-ruoli="visitatore">
+              <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+              <div>To join we ask you to log in or create an account: the membership is linked to your account.</div>
+            </div>
+
+            <button type="button" class="btn btn--primary btn--block" id="abbonati" data-ruoli="visitatore,pubblico,membro-scaduto">
+              <span data-ruoli="membro-scaduto">Renew membership</span><span data-ruoli="visitatore,pubblico">Become a member</span>
+            </button>
+            <a class="btn btn--secondary btn--block" href="account.html#membership" data-ruoli="membro">Manage membership</a>
+            <p class="t-small t-muted"><b>Active right after payment:</b> you can buy your pass at the member price straight away. Lasts 12 months and renews automatically on Stripe; you can stop the renewal at any time from your account. Card only.</p>
+          </div>
+        </aside>
+
+        <div class="stack" style="--stack:var(--s-6)">
+          <section class="stack" aria-labelledby="t-vantaggi">
+            <h2 class="t-2" id="t-vantaggi">What you get</h2>
+            <ul class="elenco-spunte misura">
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span><b>Member price</b> on the full pass.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span><b>Early bird price (−30%)</b>: only members get it, while the early bird tier is open.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span><b>Member area</b> with videos of past congresses.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span><b>Workshops</b>, companion and exhibitor tickets cost the same for everyone: no member price.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>The member price applies <b>only to your own ticket</b>: people coming with you pay the public price.</span></li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><span>Other member benefits: <b>to be defined</b> with the organiser. Only confirmed benefits are listed here.</span></li>
+            </ul>
+          </section>
+
+          <section class="stack" aria-labelledby="t-confronto">
+            <table class="tabella tabella--stack">
+              <caption id="t-confronto">Full pass with and without membership</caption>
+              <thead>
+                <tr><th scope="col">Tier</th><th scope="col" class="num">Without (public)</th><th scope="col" class="num">With membership</th><th scope="col" class="num">You save</th></tr>
+              </thead>
+              <tbody id="righe-confronto"></tbody>
+            </table>
+            <div class="avviso avviso--info misura">
+              <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+              <div>
+                <b>Is it worth it?</b>
+                <p id="conviene"></p>
+                <p>The saving applies only to your own ticket, not to the people coming with you.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, E = CV.euro;
+    function disegna() {
+      var a = CV.fasciaAttiva();
+      CV.qs('#righe-confronto').innerHTML = D.fasce.map(function (f) {
+        var p = CV.valore('intero', f.id, 'pub'), m = CV.valore('intero', f.id, 'mem'), ora = a && a.id === f.id;
+        var r = p.v !== null && m.v !== null ? p.v - m.v : null;
+        return '<tr' + (ora ? ' class="riga-ora"' : '') + '><th scope="row">' + f.nome + (ora ? ' <span class="badge badge--info">' + CV.ic('clock') + 'Now</span>' : '') + '</th>' +
+          '<td class="num" data-label="Without">' + (p.tba ? 'TBA' : E(p.v)) + '</td><td class="num" data-label="With">' + (m.tba ? 'TBA' : E(m.v)) + '</td>' +
+          '<td class="num" data-label="You save">' + (r === null ? 'TBA' : E(r)) + '</td></tr>';
+      }).join('');
+      var pr = D.prezzi.intero, risp = pr.pub !== null && pr.mem !== null ? pr.pub - pr.mem : null;
+      CV.qs('#conviene').textContent = risp === null
+        ? 'The price for the current tier has not been announced yet.'
+        : 'Today (' + (a ? a.nome : '') + ') your own pass costs ' + E(pr.mem) + ' instead of ' + E(pr.pub) + ': you save ' + E(risp) + ' against a ' + E(D.prezzi.membership) + ' fee' + (risp > D.prezzi.membership ? ', so the membership pays for itself.' : '.');
+    }
+    disegna();
+    document.addEventListener('cv:stato', disegna);
+    CV.qs('#abbonati').addEventListener('click', function () {
+      try {
+        sessionStorage.setItem('cv-ordine', JSON.stringify({ righe: [{ t: 'Yearly membership, automatic renewal', v: D.prezzi.membership }], sconto: 0, codice: null, totale: D.prezzi.membership, membership: true }));
+      } catch (e) { /* ignora */ }
+      location.href = CV.stato.ruolo === 'visitatore' ? 'accesso.html?next=membership.html' : 'checkout-esito.html';
+    });
+  });
+</script>
+</body>
+</html>

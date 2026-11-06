@@ -1,0 +1,109 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Payment · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="biglietti">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap" id="esito">
+      <p>Loading… <a href="biglietti.html">Back to tickets</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  /* Pagina di ritorno da Stripe Checkout. Stati: riuscito, elaborazione (conferma della banca), annullato, fallito.
+     Senza ?stato= mostra la simulazione della pagina ospitata da Stripe (nel sito vero e' una pagina di Stripe). Solo carta, wallet inclusi. */
+  CV.ready(function () {
+    var $ = CV.qs, box = $('#esito'), E = CV.euro;
+    var stato = CV.param('stato');
+    var ord = null;
+    try { ord = JSON.parse(sessionStorage.getItem('cv-ordine')); } catch (e) { ord = null; }
+    var esempio = false;
+    if (!ord) { var p0 = CV.DATA.prezzi.intero.pub || 695; ord = { righe: [{ t: 'Full pass · Attendee 1 · public price', v: p0 }], sconto: 0, totale: p0 }; esempio = true; }
+
+    function avviso(tipo, icona, html, ruolo) {
+      return '<div class="avviso avviso--' + tipo + '" role="' + ruolo + '"><svg class="ic" aria-hidden="true"><use href="#i-' + icona + '"></use></svg><div>' + html + '</div></div>';
+    }
+    function riepilogo() {
+      var h = '<div class="riepilogo"><h2 class="t-3">Order</h2>';
+      ord.righe.forEach(function (r) { h += '<div class="riepilogo__riga"><span>' + r.t + '</span><span>' + E(r.v) + '</span></div>'; });
+      if (ord.sconto) h += '<div class="riepilogo__riga riepilogo__sconto"><span>Code ' + ord.codice + '</span><span>−' + E(ord.sconto) + '</span></div>';
+      h += '<div class="riepilogo__totale"><span>Total</span><span>' + E(ord.totale) + '</span></div></div>';
+      if (esempio) h += '<p class="t-small t-muted">Example order: you have not built an order yet.</p>';
+      return h;
+    }
+    function titolo(t) { return '<h1 class="t-1" tabindex="-1" id="h-esito">' + t + '</h1>'; }
+
+    var h = '', titoloPagina = 'Payment';
+    if (stato === 'riuscito') {
+      titoloPagina = 'Payment successful';
+      if (ord.membership) CV.setStato({ ruolo: 'membro' });
+      else if (!esempio && CV.stato.ruolo !== 'visitatore' && ord.righe.some(function (r) { return r.t.indexOf('Full pass') === 0; })) CV.setStato({ pass: true });
+      h = '<div class="layout-2"><div class="stack">' + titolo('Payment successful') +
+        avviso('ok', 'check', '<b>Thank you, all done.</b> ' + (ord.membership ? '<b>Your membership is active now.</b> From this moment you see member prices, including the early bird price when it is open.' : 'We have emailed you the confirmation with the personal tickets and the entry code.'), 'status') +
+        (ord.membership ? '' : '<p class="misura t-small">The names on the tickets are final and cannot be changed.' + (ord.newsletter ? ' You asked for the newsletter: Mailchimp will email you to confirm.' : '') + '</p>') +
+        '<h2 class="t-2">What to do now</h2><ol class="passi">' +
+        (ord.membership
+          ? '<li><span><b>Buy your pass</b> at the member price, right away.</span></li><li><span><b>Watch the videos</b> of past congresses in the member area.</span></li>'
+          : '<li><span><b>Check the confirmation email</b> and keep your entry code.</span></li><li><span><b>Book the included sessions</b> with limited seats: seats are not held automatically.</span></li><li><span><b>On the day</b> show your code at the entrance: the check-in partner scans it.</span></li>') +
+        '</ol><div class="btn-gruppo">' +
+        (ord.membership ? '<a class="btn btn--primary" href="biglietti.html">Buy a pass at the member price</a><a class="btn btn--secondary" href="account.html#video">Member area</a>' : '<a class="btn btn--primary" href="account.html">My tickets</a><a class="btn btn--secondary" href="agenda.html">Book sessions</a>') +
+        '</div></div><div class="layout-2__lato stack">' + riepilogo() + '<p class="t-small t-muted">Receipt from Stripe; invoice details still to be defined.</p></div></div>';
+    } else if (stato === 'elaborazione') {
+      titoloPagina = 'Waiting for your bank';
+      h = '<div class="layout-2"><div class="stack">' + titolo('Waiting for your bank') +
+        avviso('info', 'clock', '<b>Your bank is still confirming the card payment</b> (for example with 3D Secure). It usually takes a few seconds.', 'status') +
+        '<p class="misura"><b>Do not pay again.</b> You can close this page: as soon as the payment is confirmed we email you and the tickets appear in your account.</p>' +
+        '<div class="btn-gruppo"><a class="btn btn--primary" href="?stato=riuscito">Check again (simulate: confirmed)</a><a class="btn btn--secondary" href="agenda.html">Browse the programme</a></div>' +
+        '</div><div class="layout-2__lato">' + riepilogo() + '</div></div>';
+    } else if (stato === 'annullato') {
+      titoloPagina = 'Payment cancelled';
+      h = '<div class="layout-2"><div class="stack">' + titolo('You cancelled the payment') +
+        avviso('warn', 'alert', '<b>Nothing was charged.</b> Your order is still here, you can pick it up again.', 'status') +
+        '<p class="misura t-muted">Workshop seats are held only for a short time while the order is open: duration to be defined.</p>' +
+        '<div class="btn-gruppo"><a class="btn btn--primary" href="biglietti.html">Back to the order</a><a class="btn btn--secondary" href="index.html">Home</a></div>' +
+        '</div><div class="layout-2__lato">' + riepilogo() + '</div></div>';
+    } else if (stato === 'fallito') {
+      titoloPagina = 'Payment failed';
+      h = '<div class="layout-2"><div class="stack">' + titolo('The payment did not go through') +
+        avviso('err', 'alert', '<b>The card was declined.</b> Nothing was charged. Check the card details or the limit, or try another card or wallet.', 'alert') +
+        '<div class="btn-gruppo"><a class="btn btn--primary" href="checkout-esito.html">Try the payment again</a><a class="btn btn--secondary" href="biglietti.html">Back to the order</a></div>' +
+        '</div><div class="layout-2__lato">' + riepilogo() + '</div></div>';
+    } else {
+      titoloPagina = 'Payment on Stripe (simulated)';
+      h = titolo('Payment on Stripe') +
+        '<p class="t-muted misura" style="margin:var(--s-3) 0 var(--s-5)">On the real site this opens Stripe Checkout, a page hosted by Stripe where you enter your card or use Apple Pay or Google Pay. Card only: no bank transfer. The box below simulates it: choose how it should go.</p>' +
+        '<div class="stripe-box"><div class="stripe-box__testa">Page hosted by Stripe · simulation, no real payment</div><div class="stripe-box__corpo">' +
+        '<div><p class="t-small" style="color:#4a5068">Pay EAS8 Lisbon</p><p style="font:800 2rem/1.1 var(--font-display)">' + E(ord.totale) + '</p></div>' +
+        ord.righe.map(function (r) { return '<div class="riepilogo__riga"><span>' + r.t + '</span><span>' + E(r.v) + '</span></div>'; }).join('') +
+        (ord.sconto ? '<div class="riepilogo__riga"><span>Code ' + ord.codice + '</span><span>−' + E(ord.sconto) + '</span></div>' : '') +
+        '<p class="t-small" style="color:#4a5068">Here Stripe asks for card or wallet, email and billing details. The prototype has no payment fields.</p>' +
+        '<a class="btn btn--primary btn--block" href="?stato=riuscito">Simulate: payment successful</a>' +
+        '<a class="btn btn--block" href="?stato=elaborazione">Simulate: waiting for the bank</a>' +
+        '<a class="btn btn--block" href="?stato=fallito">Simulate: card declined</a>' +
+        '<a class="btn btn--quiet btn--block" href="?stato=annullato">Back to the site without paying</a>' +
+        '</div></div>';
+    }
+    document.title = titoloPagina + ' · EAS8 Lisbon';
+    box.innerHTML = h;
+    var t = $('#h-esito'); if (t) t.focus();
+  });
+</script>
+</body>
+</html>

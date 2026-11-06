@@ -1,0 +1,147 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Discount codes · Admin · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head"><h1 class="t-1">Discount codes</h1></div>
+    <p class="t-muted misura" style="margin-bottom:var(--s-5)">Both the Commercial and the Organizer role can create and edit codes (client decision). Each change records who made it.</p>
+
+    <section aria-labelledby="h-elenco">
+      <h2 class="t-2" id="h-elenco">Existing codes</h2>
+      <div id="st-elenco" role="status" aria-live="polite"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Discount and invitation codes</caption>
+        <thead><tr><th scope="col">Code</th><th scope="col">Discount</th><th scope="col">For whom and what</th><th scope="col">Valid</th><th scope="col">Uses</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="h-nuovo">
+      <h2 class="t-2" id="h-nuovo" tabindex="-1">New code</h2>
+      <div class="avviso avviso--info misura" style="margin-bottom:var(--s-4)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div><b>How it combines with role prices.</b> Normally the lower of «role price» and «public price minus the code» applies: never both, and if the role wins the code is not used up. Tick «Stackable» only for special codes (partners): then the discount applies on top of the role price. One code per order. An <b>exhibitor invitation</b> has no discount: it links the exhibitor pass to a stand.</div></div>
+      <form id="f" class="stack" novalidate style="max-width:40rem">
+        <div class="campo"><label for="genere">Kind</label><select class="select" id="genere"><option value="sconto">Discount code</option><option value="invito">Exhibitor invitation</option></select></div>
+        <div class="campo"><label for="codice">Code</label><input class="input" id="codice" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-describedby="a-codice" style="text-transform:uppercase"><p class="campo__aiuto" id="a-codice">At least 6 letters and numbers, no spaces. Short codes are easy to guess.</p></div>
+        <div class="grid-2" id="blocco-valore">
+          <div class="campo"><label for="tipo">Discount type</label><select class="select" id="tipo"><option value="%">Percentage</option><option value="€">Fixed amount in euros</option></select></div>
+          <div class="campo"><label for="valore">Value</label><input class="input input--num" id="valore" type="number" min="1" step="1"></div>
+        </div>
+        <fieldset class="campo" id="ruoli" tabindex="-1"><legend class="etichetta">Who can use it</legend>
+          <label class="scelta"><input type="checkbox" name="ruolo" value="Public" checked><span>Public</span></label>
+          <label class="scelta"><input type="checkbox" name="ruolo" value="Member" checked><span>Member</span></label></fieldset>
+        <fieldset class="campo" id="bigl" tabindex="-1"><legend class="etichetta">What it applies to</legend>
+          <label class="scelta"><input type="checkbox" name="bigl" value="Full pass" checked><span>Full pass</span></label>
+          <label class="scelta"><input type="checkbox" name="bigl" value="Workshops"><span>Workshops</span></label>
+          <label class="scelta"><input type="checkbox" name="bigl" value="Companion"><span>Companion</span></label>
+          <label class="scelta"><input type="checkbox" name="bigl" value="Exhibitor / Sponsor pass"><span>Exhibitor / Sponsor pass</span></label>
+        </fieldset>
+        <div class="grid-2">
+          <div class="campo"><label for="dal">Valid from</label><input class="input" id="dal" type="date"></div>
+          <div class="campo"><label for="al">Valid until</label><input class="input" id="al" type="date"></div>
+        </div>
+        <div class="grid-2">
+          <div class="campo"><label for="lim">Total uses</label><input class="input input--num" id="lim" type="number" min="1" step="1"></div>
+          <div class="campo"><label for="limp">Uses per person</label><input class="input input--num" id="limp" type="number" min="1" step="1" value="1"></div>
+        </div>
+        <label class="scelta"><input type="checkbox" id="cumul"><span>Stackable with the role price</span></label>
+        <div id="er" role="alert" aria-live="assertive"></div>
+        <div class="azioni-riga"><button type="submit" class="btn btn--primary" id="invia">Create the code</button><button type="button" class="btn btn--quiet" id="annulla-mod" hidden>Cancel editing</button></div>
+        <div id="st" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, $$ = CV.qa, C = JSON.parse(JSON.stringify(AD.sconti)), modifica = null;
+    var BADGE = { attivo: ['ok', 'check', 'Active'], esaurito: ['warn', 'alert', 'Used up'], scaduto: ['warn', 'clock', 'Expired'], disattivato: ['info', 'x', 'Off'] };
+    var iso = function (it) { var p = it.split('/'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : it; };
+    var it = function (s) { var p = s.split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : s; };
+    function elenco() {
+      $('#righe').innerHTML = C.map(function (c) {
+        var b = BADGE[c.stato];
+        return '<tr><th scope="row"><span class="t-num">' + c.codice + '</span><br><span class="t-small t-muted">' + (c.genere === 'invito' ? 'Exhibitor invitation' : 'Discount') + ' · by ' + c.da + '</span></th>' +
+          '<td data-label="Discount">' + (c.genere === 'invito' ? 'none' : (c.tipo === '%' ? c.valore + '%' : '€' + c.valore)) + (c.cumulabile ? '<br><span class="t-small t-muted">stackable</span>' : '') + '</td>' +
+          '<td data-label="For whom and what">' + c.ruoli + '<br><span class="t-small t-muted">' + c.biglietti + '</span></td><td data-label="Valid">' + c.dal + ' – ' + c.al + '</td>' +
+          '<td data-label="Uses" class="num">' + c.usi + ' of ' + c.limite + '</td><td data-label="Status"><span class="badge badge--' + b[0] + '">' + AD.icona(b[1]) + b[2] + '</span></td>' +
+          '<td data-label=""><div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-mod="' + c.codice + '">Edit<span class="sr-only"> ' + c.codice + '</span></button>' +
+          (c.stato === 'attivo' ? '<button type="button" class="btn btn--quiet btn--piccolo" data-off="' + c.codice + '">Turn off<span class="sr-only"> ' + c.codice + '</span></button>' : (c.stato === 'disattivato' ? '<button type="button" class="btn btn--quiet btn--piccolo" data-on="' + c.codice + '">Turn on<span class="sr-only"> ' + c.codice + '</span></button>' : '')) + '</div></td></tr>';
+      }).join('');
+    }
+    function genere() { var inv = $('#genere').value === 'invito'; $('#blocco-valore').hidden = inv; $('#cumul').closest('.scelta').hidden = inv; }
+    $('#genere').addEventListener('change', genere);
+    $('#righe').addEventListener('click', function (e) {
+      var m = e.target.closest('[data-mod]');
+      if (m) {
+        var c = C.filter(function (x) { return x.codice === m.getAttribute('data-mod'); })[0]; modifica = c;
+        $('#h-nuovo').textContent = 'Edit code ' + c.codice; $('#invia').textContent = 'Save changes'; $('#annulla-mod').hidden = false;
+        $('#genere').value = c.genere; $('#codice').value = c.codice; $('#codice').readOnly = true; $('#tipo').value = c.tipo; $('#valore').value = c.valore || '';
+        $$('input[name="ruolo"]').forEach(function (x) { x.checked = c.ruoli === 'All' || c.ruoli.indexOf(x.value) > -1; });
+        $$('input[name="bigl"]').forEach(function (x) { x.checked = c.biglietti === 'All' || c.biglietti.indexOf(x.value) > -1; });
+        $('#dal').value = iso(c.dal); $('#al').value = iso(c.al); $('#lim').value = c.limite; $('#limp').value = 1; $('#cumul').checked = c.cumulabile;
+        genere(); $('#h-nuovo').focus(); return;
+      }
+      var o = e.target.closest('[data-off],[data-on]'); if (!o) return;
+      var cod = o.getAttribute('data-off') || o.getAttribute('data-on'), cc = C.filter(function (x) { return x.codice === cod; })[0];
+      cc.stato = o.hasAttribute('data-off') ? 'disattivato' : 'attivo'; elenco();
+      CV.msg($('#st-elenco'), 'ok', 'The code <b>' + cod + '</b> is now ' + (cc.stato === 'attivo' ? 'on' : 'off') + ' (simulated). Written to the audit log.');
+    });
+    function chiudiModifica() { modifica = null; $('#h-nuovo').textContent = 'New code'; $('#invia').textContent = 'Create the code'; $('#annulla-mod').hidden = true; $('#codice').readOnly = false; $('#f').reset(); genere(); }
+    $('#annulla-mod').addEventListener('click', chiudiModifica);
+    $('#f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var er = [], cod = $('#codice').value.trim().toUpperCase(), v = $('#valore').value, tipo = $('#tipo').value, inv = $('#genere').value === 'invito';
+      var ruoli = $$('input[name="ruolo"]:checked').map(function (x) { return x.value; }), bigl = $$('input[name="bigl"]:checked').map(function (x) { return x.value; });
+      var dal = $('#dal').value, al = $('#al').value, lim = parseInt($('#lim').value, 10), limp = parseInt($('#limp').value, 10);
+      $$('[aria-invalid]', $('#f')).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      function err(id, m) { er.push([id, m]); }
+      if (!/^[A-Z0-9]{6,}$/.test(cod)) err('codice', 'The code needs at least 6 characters, letters and numbers only, no spaces.');
+      else if (!modifica && C.some(function (c) { return c.codice === cod; })) err('codice', 'The code ' + cod + ' already exists. Choose another one.');
+      if (!inv) {
+        if (v === '' || +v < 1) err('valore', 'Write the discount value, 1 or more.');
+        else if (tipo === '%' && +v > 100) err('valore', 'A percentage cannot be more than 100.');
+      }
+      if (!ruoli.length) err('ruoli', 'Choose at least one role.');
+      if (!bigl.length) err('bigl', 'Choose at least one ticket type.');
+      if (inv && bigl.join() !== 'Exhibitor / Sponsor pass') err('bigl', 'An exhibitor invitation applies only to the Exhibitor / Sponsor pass.');
+      if (!dal || !al) err(!dal ? 'dal' : 'al', 'Write the start and end dates.');
+      else if (al < dal) err('al', 'The end is before the start.');
+      if (isNaN(lim) || lim < 1) err('lim', 'Write how many times it can be used in total.');
+      if (isNaN(limp) || limp < 1) err('limp', 'Write how many times per person (at least 1).');
+      else if (!isNaN(lim) && limp > lim) err('limp', 'Uses per person cannot be more than total uses.');
+      if (modifica && !isNaN(lim) && lim < modifica.usi) err('lim', 'It has already been used ' + modifica.usi + ' times: total uses cannot go below that.');
+      var box = $('#er');
+      if (er.length) {
+        box.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' + er.map(function (x) { return '<li><a href="#' + x[0] + '">' + x[1] + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { var el = $('#' + x[0]); if (el) el.setAttribute('aria-invalid', 'true'); }); $('#he').focus(); return;
+      }
+      box.innerHTML = '';
+      var chi = AD.RUOLI[AD.ruolo()].nome, dati = { codice: cod, genere: inv ? 'invito' : 'sconto', tipo: tipo, valore: inv ? 0 : +v, ruoli: ruoli.join(', '), biglietti: bigl.join(', '), dal: it(dal), al: it(al), limite: lim, cumulabile: !inv && $('#cumul').checked, da: chi };
+      if (modifica) { Object.keys(dati).forEach(function (k) { modifica[k] = dati[k]; }); }
+      else { dati.usi = 0; dati.stato = 'attivo'; C.push(dati); }
+      var era = !!modifica;
+      elenco(); chiudiModifica();
+      CV.msg($('#st'), 'ok', '<b>Code ' + cod + (era ? ' updated' : ' created') + '</b> by ' + chi + ' (simulated). The server ' + (era ? 'updates' : 'creates') + ' the matching Coupon and Promotion Code in Stripe with the same text and usage limit. Written to the audit log.');
+    });
+    genere(); elenco();
+  });
+</script>
+</body>
+</html>

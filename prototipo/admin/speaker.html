@@ -1,0 +1,124 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Speakers · Admin · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head">
+      <h1 class="t-1">Speakers</h1>
+      <div class="azioni-riga"><a class="btn btn--secondary" href="agenda.html#h-import">Import from CSV/Excel</a><button type="button" class="btn btn--primary" id="nuovo">Add a speaker</button></div>
+    </div>
+
+    <section aria-labelledby="h-elenco">
+      <h2 class="t-2" id="h-elenco">List</h2>
+      <p class="t-small t-muted" id="conto"></p>
+      <div id="st-elenco" role="status" aria-live="polite"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Speakers</caption>
+        <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Sessions</th><th scope="col">Photo</th><th scope="col">Complimentary</th><th scope="col">Actions</th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="h-form" id="pannello-form" hidden>
+      <h2 class="t-2" id="h-form" tabindex="-1">Edit speaker</h2>
+      <form id="f" class="stack" novalidate style="max-width:40rem">
+        <div class="campo"><label for="nome">Full name</label><input class="input" id="nome" autocomplete="off"></div>
+        <div class="campo"><label for="ruolo">Role or profession</label><input class="input" id="ruolo" autocomplete="off"></div>
+        <div class="campo"><label for="ente">Organisation</label><input class="input" id="ente" autocomplete="off"></div>
+        <div class="campo"><label for="bio">Biography</label><textarea class="textarea" id="bio" aria-describedby="a-bio"></textarea><p class="campo__aiuto" id="a-bio">A few lines, in the third person.</p></div>
+        <div class="campo">
+          <label for="foto">Photo</label>
+          <input class="input" id="foto" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="a-foto">
+          <p class="campo__aiuto" id="a-foto">JPEG, PNG or WebP, at most 2 MB (example limit). Speaker photos are public: do not upload anything else.</p>
+        </div>
+        <div class="campo"><label for="alt">Photo alt text</label><input class="input" id="alt" aria-describedby="a-alt" autocomplete="off"><p class="campo__aiuto" id="a-alt">Required if there is a photo. Describe who is in it, for example «Portrait of Marta Valsecchi in a library».</p></div>
+        <fieldset class="campo"><legend class="etichetta">Sessions where they speak</legend><p class="campo__aiuto" id="n-sess"></p><div id="sessioni" class="stack lista-scorri" style="--stack:0" tabindex="0" role="group" aria-label="Sessions, scrollable list"></div></fieldset>
+        <label class="scelta"><input type="checkbox" id="pub" checked><span>Visible on the public site</span></label>
+        <div id="er" role="alert" aria-live="assertive"></div>
+        <div class="azioni-riga"><button type="submit" class="btn btn--primary">Save the speaker</button><button type="button" class="btn btn--quiet" id="annulla">Close without saving</button></div>
+        <div id="st" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, SP = JSON.parse(JSON.stringify(D.speakers)), corrente = null, nuovi = 0;
+    var sessioniDi = function (id) { return D.sessioni.filter(function (s) { return s.sp.indexOf(id) > -1; }); };
+    var omaggio = function (n) { return AD.omaggi.some(function (o) { return o.nome === n && o.stato !== 'revocato'; }); };
+
+    function elenco() {
+      $('#conto').textContent = SP.length + ' speakers (placeholders).';
+      $('#righe').innerHTML = SP.map(function (p) {
+        var n = sessioniDi(p.id).length;
+        return '<tr><th scope="row">' + p.nome + '</th><td data-label="Role">' + p.ruolo + '</td><td data-label="Sessions">' + n + '</td>' +
+          '<td data-label="Photo">' + (p.foto ? '<span class="badge badge--ok">' + AD.icona('check') + 'Uploaded</span>' : '<span class="badge badge--warn">' + AD.icona('alert') + 'Missing</span>') + '</td>' +
+          '<td data-label="Complimentary">' + (omaggio(p.nome) ? '<span class="badge badge--ok">' + AD.icona('check') + 'Sent</span>' : '<a class="btn btn--quiet btn--piccolo" href="omaggi.html#h-nuovo">Issue<span class="sr-only"> for ' + p.nome + '</span></a>') + '</td>' +
+          '<td data-label="Actions"><div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-mod="' + p.id + '">Edit<span class="sr-only"> ' + p.nome + '</span></button>' +
+          '<button type="button" class="btn btn--quiet btn--piccolo" data-del="' + p.id + '">Delete<span class="sr-only"> ' + p.nome + '</span></button></div></td></tr>';
+      }).join('');
+    }
+    function apri(p) {
+      corrente = p;
+      $('#pannello-form').hidden = false; $('#er').innerHTML = ''; $('#st').innerHTML = '';
+      $('#h-form').textContent = p.nuovo ? 'New speaker' : 'Edit: ' + p.nome;
+      $('#nome').value = p.nome; $('#ruolo').value = p.ruolo; $('#ente').value = p.ente; $('#bio').value = (p.bio || []).join('\n\n'); $('#alt').value = p.alt || ''; $('#foto').value = '';
+      var mie = D.sessioni.filter(function (s) { return s.sp.indexOf(p.id) > -1; });
+      $('#n-sess').textContent = mie.length + ' selected of ' + D.sessioni.length + '. Selected sessions are listed first.';
+      $('#sessioni').innerHTML = mie.concat(D.sessioni.filter(function (s) { return s.sp.indexOf(p.id) < 0; })).map(function (s) {
+        return '<label class="scelta"><input type="checkbox" value="' + s.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + '><span>' + (CV.giorno(s.g) ? CV.giorno(s.g).breve : '') + ' ' + s.da + ' · ' + CV.sala(s.sala).nome + ' · ' + s.titolo + '</span></label>';
+      }).join('');
+      $('#h-form').focus();
+    }
+    $('#righe').addEventListener('click', function (e) {
+      var m = e.target.closest('[data-mod]'), x = e.target.closest('[data-del]');
+      if (m) apri(SP.filter(function (p) { return p.id === m.getAttribute('data-mod'); })[0]);
+      if (x) {
+        var p = SP.filter(function (q) { return q.id === x.getAttribute('data-del'); })[0], n = sessioniDi(p.id).length;
+        if (n) { CV.msg($('#st-elenco'), 'err', 'Cannot delete ' + p.nome + ': they speak in ' + n + (n === 1 ? ' session' : ' sessions') + '. Remove them from the sessions first.'); return; }
+        if (!x.getAttribute('data-c')) { x.setAttribute('data-c', '1'); x.textContent = 'Confirm deletion'; CV.msg($('#st-elenco'), 'warn', 'Press «Confirm deletion» again to delete ' + p.nome + '.'); return; }
+        SP = SP.filter(function (q) { return q.id !== p.id; }); elenco(); CV.msg($('#st-elenco'), 'ok', p.nome + ' deleted (simulated). Written to the audit log.');
+      }
+    });
+    $('#nuovo').addEventListener('click', function () { apri({ id: 'spn' + (++nuovi), nome: '', ruolo: '', ente: '', bio: [], nuovo: true }); });
+    $('#annulla').addEventListener('click', function () { $('#pannello-form').hidden = true; });
+    $('#f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var er = [], f = $('#foto').files[0];
+      $$('[aria-invalid]', $('#f')).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      if (!$('#nome').value.trim()) er.push(['nome', 'Write the full name.']);
+      if (!$('#ruolo').value.trim()) er.push(['ruolo', 'Write the role or profession.']);
+      if (f && !/\.(jpe?g|png|webp)$/i.test(f.name)) er.push(['foto', 'The photo must be JPEG, PNG or WebP.']);
+      else if (f && f.size > 2 * 1024 * 1024) er.push(['foto', 'The photo is larger than 2 MB: make it smaller before uploading.']);
+      if ((f || corrente.foto) && !$('#alt').value.trim()) er.push(['alt', 'Write the photo alt text: it helps people who cannot see it.']);
+      if (er.length) {
+        $('#er').innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' + er.map(function (x) { return '<li><a href="#' + x[0] + '">' + x[1] + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { $('#' + x[0]).setAttribute('aria-invalid', 'true'); }); $('#he').focus(); return;
+      }
+      $('#er').innerHTML = '';
+      corrente.nome = $('#nome').value.trim(); corrente.ruolo = $('#ruolo').value.trim(); corrente.ente = $('#ente').value.trim();
+      corrente.bio = $('#bio').value.split(/\n\s*\n/).filter(Boolean); corrente.alt = $('#alt').value.trim(); if (f) corrente.foto = true;
+      if (corrente.nuovo) { delete corrente.nuovo; corrente.cognome = corrente.nome.split(' ').pop(); corrente.tono = 1; SP.push(corrente); }
+      elenco(); CV.msg($('#st'), 'ok', '<b>Speaker saved</b> (simulated). Written to the audit log.');
+    });
+    elenco();
+  });
+</script>
+</body>
+</html>

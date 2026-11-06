@@ -1,0 +1,508 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Tickets · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-pagina="biglietti">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+
+<main id="contenuto">
+  <section class="sezione" aria-labelledby="t-titolo">
+    <div class="wrap">
+      <h1 class="t-1" id="t-titolo">Tickets</h1>
+      <p class="t-lead misura">Two prices: public and member. Pay by card on Stripe (Apple Pay and Google Pay included). Every ticket is personal: <b>the name cannot be changed after purchase</b>.</p>
+
+      <!-- Avviso sul ruolo corrente: uno solo visibile alla volta -->
+      <div class="avviso avviso--info" data-ruoli="visitatore" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div><b>You are browsing as a visitor.</b> Below you see both prices. If you are a member, log in and your price will be highlighted. Without logging in you pay the public price.</div>
+      </div>
+      <div class="avviso avviso--warn" data-ruoli="membro-scaduto" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
+        <div><b>Your membership has expired.</b> You pay the public price. <a href="membership.html">Renew your membership</a> to get the member price back.</div>
+      </div>
+      <div class="avviso avviso--ok" data-ruoli="membro,pubblico" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>
+        <div><b>You see your price.</b> The column marked «You» is the one that applies to you.</div>
+      </div>
+
+      <!-- fasce di prezzo: quella attiva si vede subito, con la data di fine -->
+      <section aria-labelledby="t-fasce" class="stack" style="--stack:var(--s-3)">
+        <h2 class="t-2" id="t-fasce">Price tiers</h2>
+        <ol class="fasce" id="fasce"></ol>
+        <p class="t-small t-muted misura">Tier end dates are examples until the organiser confirms them. Sales are open from <span id="vendite-dal"></span>.</p>
+      </section>
+
+      <table class="tabella tabella--stack" id="tab-prezzi">
+        <caption>Full pass, three days: price by tier and role</caption>
+        <thead>
+          <tr>
+            <th scope="col">Tier</th>
+            <th scope="col" data-colonna-tua="pub">Public <span class="badge badge--ruolo" data-ruoli="pubblico,membro-scaduto">You</span></th>
+            <th scope="col" data-colonna-tua="mem">Member <span class="badge badge--ruolo" data-ruoli="membro">You</span></th>
+          </tr>
+        </thead>
+        <tbody id="righe-prezzi"></tbody>
+      </table>
+
+      <section aria-labelledby="t-tipi" id="tipi" class="stack" style="--stack:var(--s-3)">
+        <h2 class="t-2" id="t-tipi">Other tickets</h2>
+        <table class="tabella tabella--stack">
+          <caption class="sr-only">Other ticket types</caption>
+          <thead><tr><th scope="col">Ticket</th><th scope="col">Who it is for</th><th scope="col" class="num">Price</th></tr></thead>
+          <tbody id="righe-tipi"></tbody>
+        </table>
+      </section>
+    </div>
+  </section>
+
+  <section class="sezione bande" aria-labelledby="t-ordine">
+    <div class="wrap">
+      <h2 class="t-1" id="t-ordine" style="margin-bottom:var(--s-5)">Build your order</h2>
+
+      <div id="avviso-modo"></div>
+      <div class="avviso avviso--info" data-solo-pass="si" style="margin-bottom:var(--s-4)" role="note">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div><b>You already have a pass.</b> Choose «Workshops only» to add workshops, or «Companion only» to bring someone with you.</div>
+      </div>
+
+      <div id="errori" hidden class="riepilogo-errori" role="alert" style="margin-bottom:var(--s-5)"></div>
+
+      <form id="ordine" class="layout-2" novalidate>
+        <div class="stack" style="--stack:var(--s-6)">
+
+          <fieldset class="campo">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">1. What you are buying</legend>
+            <div class="stack" style="--stack:var(--s-3)">
+              <label class="opzione"><input type="radio" name="tipo" value="intero" id="tipo-intero" checked>
+                <span class="opzione__corpo"><span class="opzione__titolo">Full pass</span><span class="t-small">Three days, all included sessions.</span><span data-prezzo-tipo="intero" data-var="inline"></span><span data-fascia></span><span id="nota-tba" class="t-small" hidden></span></span></label>
+              <label class="opzione"><input type="radio" name="tipo" value="sessioni">
+                <span class="opzione__corpo"><span class="opzione__titolo">Workshops only</span><span class="t-small">Workshops chosen below, without a pass. Price per workshop.</span></span></label>
+              <label class="opzione" data-solo-pass="si"><input type="radio" name="tipo" value="companion">
+                <span class="opzione__corpo"><span class="opzione__titolo">Companion only</span><span class="t-small">For someone coming with you. You already have a pass.</span><span data-prezzo-tipo="companion" data-var="inline"></span></span></label>
+              <label class="opzione"><input type="radio" name="tipo" value="espositore">
+                <span class="opzione__corpo"><span class="opzione__titolo">Exhibitor / Sponsor pass</span><span class="t-small">For exhibiting companies and sponsors. Invitation code optional.</span><span data-prezzo-tipo="espositore" data-var="inline"></span></span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="campo" id="blocco-persone">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">2. Who the tickets are for</legend>
+            <div id="campo-qta" class="stack" style="--stack:var(--s-2)">
+              <span class="etichetta" id="l-qta">How many people</span>
+              <div class="qta" role="group" aria-labelledby="l-qta">
+                <button type="button" id="meno" aria-label="One person less">−</button>
+                <output id="qta" aria-live="polite">1</output>
+                <button type="button" id="piu" aria-label="One person more">+</button>
+              </div>
+              <p class="campo__aiuto">Up to 6 people per order.</p>
+            </div>
+            <div class="avviso avviso--warn" role="note" style="margin-top:var(--s-4)">
+              <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
+              <div><b>Names cannot be changed later.</b> Write each name exactly as on an ID document: it is printed on the ticket and checked at the entrance.</div>
+            </div>
+            <div id="blocco-espositore" class="stack" hidden style="margin-top:var(--s-4)">
+              <div class="campo"><label for="azienda">Company or sponsor name</label><input class="input" id="azienda" autocomplete="organization"></div>
+              <div class="campo"><label for="invito">Invitation code <span class="t-muted">(optional)</span></label>
+                <div class="codice"><input class="input" id="invito" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="aiuto-invito msg-invito"><button type="button" class="btn btn--secondary" id="applica-invito">Check</button></div>
+                <p class="campo__aiuto" id="aiuto-invito">If the organiser sent you an invitation, it links the pass to your stand. In the prototype: EXPO2027 works.</p>
+                <div id="msg-invito" role="status"></div></div>
+            </div>
+            <div id="partecipanti" class="stack" style="margin-top:var(--s-4)"></div>
+            <div id="nota-persone" class="avviso avviso--info" hidden style="margin-top:var(--s-3)" role="note">
+              <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+              <div id="testo-nota-persone"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="campo" id="blocco-comp" tabindex="-1">
+            <legend class="t-2" style="margin-bottom:var(--s-2)">3. Companions</legend>
+            <div id="comp-corpo" class="stack" style="--stack:var(--s-3)"></div>
+          </fieldset>
+
+          <fieldset class="campo" id="elenco-sessioni" tabindex="-1">
+            <legend class="t-2" style="margin-bottom:var(--s-2)">4. Workshops</legend>
+            <p class="campo__aiuto" style="margin-bottom:var(--s-3)">10 hands-on workshops, 20 seats each. Optional with a pass. Workshops go to Attendee 1.</p>
+            <div id="sessioni" class="stack" style="--stack:var(--s-3)"></div>
+            <div id="conflitti" role="status" style="margin-top:var(--s-3)"></div>
+          </fieldset>
+
+          <fieldset class="campo">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">5. Discount code</legend>
+            <div class="campo">
+              <label for="codice">Do you have a code?</label>
+              <div class="codice">
+                <input class="input" id="codice" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="aiuto-codice msg-codice">
+                <button type="button" class="btn btn--secondary" id="applica">Apply</button>
+              </div>
+              <p class="campo__aiuto" id="aiuto-codice">In the prototype: WELCOME10 works, EXPIRED24 has expired.</p>
+              <div id="msg-codice" role="status"></div>
+            </div>
+          </fieldset>
+
+          <fieldset class="campo" id="blocco-conferma">
+            <legend class="t-2" style="margin-bottom:var(--s-3)">6. Check and confirm</legend>
+            <div class="stack" style="--stack:var(--s-3)">
+              <div class="scheda">
+                <h3 class="t-3" id="h-nomi">Names on the tickets</h3>
+                <ul class="elenco-pulito" id="nomi-biglietti" aria-labelledby="h-nomi"></ul>
+              </div>
+              <div class="campo">
+                <label class="scelta scelta--forte"><input type="checkbox" id="conferma-nomi" aria-describedby="aiuto-nomi"><span><b>I have checked the names.</b> I understand that the name on a ticket cannot be changed after payment.</span></label>
+                <p class="campo__aiuto" id="aiuto-nomi">Required. Tickets are non-refundable; we refund automatically only if the event is cancelled.</p>
+              </div>
+              <div class="campo">
+                <label class="scelta"><input type="checkbox" id="termini" aria-describedby="aiuto-termini"><span>I have read the terms of sale and the privacy notice.</span></label>
+                <p class="campo__aiuto" id="aiuto-termini">Required. Both pages are in preparation.</p>
+              </div>
+              <div class="campo">
+                <label class="scelta"><input type="checkbox" id="newsletter" aria-describedby="aiuto-news"><span>Send me the EAS newsletter.</span></label>
+                <p class="campo__aiuto" id="aiuto-news">Optional. Sent with Mailchimp; you can unsubscribe from any email. Not needed to buy.</p>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <aside class="layout-2__lato" aria-label="Order summary">
+          <div class="stack">
+            <div class="riepilogo">
+              <h3 class="t-3" id="h-riep">Summary</h3>
+              <div id="righe"></div>
+              <div class="riepilogo__totale"><span>Total</span><span id="totale">€0</span></div>
+            </div>
+            <div id="nota-membro" role="note"></div>
+            <button type="submit" class="btn btn--primary btn--block" id="paga">Pay by card on Stripe</button>
+            <p class="t-small t-muted">Card only, including Apple Pay and Google Pay. You pay on a Stripe page: your card details never reach us. No bank transfer.</p>
+            <p class="t-small t-muted" data-ruoli="visitatore">Before paying we ask you to log in or create an account, so you find your tickets again.</p>
+          </div>
+        </aside>
+      </form>
+    </div>
+    <div class="barra-azione barra-azione--mobile" role="region" aria-label="Total and payment">
+      <div class="barra-azione__totale"><small>Total</small><b id="totale-barra">€0</b></div>
+      <button type="submit" form="ordine" class="btn btn--primary">Go to payment</button>
+    </div>
+  </section>
+
+  <section class="sezione" id="prezzi-ridotti" aria-labelledby="t-ridotti">
+    <div class="wrap">
+      <h2 class="t-1" id="t-ridotti">The member price: how to get it</h2>
+      <div class="grid-2">
+        <div class="colonna-testo">
+          <h3 class="t-2">Members</h3>
+          <p>The yearly membership costs <b data-membership></b> and is <b>active right after payment</b>. It gives the member price on the full pass, the <b>early bird price (members only)</b> and the member area with videos of past congresses. Workshops, companion and exhibitor tickets cost the same for everyone.</p>
+          <p>The member price applies <b>only to the member’s own ticket</b>. If you also buy for other people, they pay the public price.</p>
+          <div class="avviso avviso--ok" data-ruoli="membro"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>You are already a member.</div></div>
+          <div class="avviso avviso--warn" data-ruoli="membro-scaduto"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div>Your membership has expired: renew it to get the member price back.</div></div>
+          <p><a class="btn btn--secondary" href="membership.html">See membership</a></p>
+        </div>
+
+        <div class="colonna-testo">
+          <h3 class="t-2">Buying for others</h3>
+          <p>In an order the <b>first ticket</b> is in the buyer’s name, and only that one gets the member price. The other tickets carry their own names and cost the public price. The member price applies once per event (one full pass), even across orders.</p>
+          <p><b>Names are final:</b> no ticket can be passed on to someone else, at any price. A member friend who wants the member price buys with their own account.</p>
+          <div class="avviso avviso--info" data-ruoli="visitatore">
+            <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <div><p>To buy at the member price, log in first.</p><p><a class="btn btn--secondary" href="accesso.html?next=biglietti.html">Log in</a></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, E = CV.euro;
+    var S = { tipo: 'intero', n: 1, comp: 0, sessioni: [], codice: null, nomi: [], email: [], cnomi: [], invito: null };
+    var pagamento = D.sessioni.filter(function (s) { return s.pagamento; });
+    var ME = { nome: 'Alessia Demo', email: 'alessia.demo@example.test' };   // account d'esempio (inventato)
+    $$('[data-membership]').forEach(function (e) { e.textContent = E(D.prezzi.membership) + ' per year'; });
+    $('#vendite-dal').textContent = CV.dataEn(D.fasce[0].dal, true);
+
+    /* ---- fasce e tabelle dei prezzi ---- */
+    function fasce() {
+      var a = CV.fasciaAttiva(), o = CV.oggi();
+      $('#fasce').innerHTML = D.fasce.map(function (f) {
+        var ora = a && a.id === f.id, fatta = f.al < o;
+        var stato = ora ? '<span class="badge badge--info">' + CV.ic('clock') + 'Now · ends ' + CV.dataEn(f.al) + '</span>'
+          : (fatta ? '<span class="badge badge--pagamento">' + CV.ic('check') + 'Ended</span>' : '<span class="badge badge--pagamento">' + CV.ic('calendar') + 'From ' + CV.dataEn(f.dal) + '</span>');
+        var pm = CV.valore('intero', f.id, 'mem'), pp = CV.valore('intero', f.id, 'pub');
+        var regola = f.id === 'early' ? 'Members only, −30%. The public pays the Regular price.' : (pp.tba && pm.tba ? 'Price not decided yet.' : 'Public and member price.');
+        return '<li class="fascia' + (ora ? ' fascia--ora' : '') + (fatta ? ' fascia--finita' : '') + '"' + (ora ? ' aria-current="true"' : '') + '>' +
+          '<p class="fascia__nome">' + f.nome + '</p><p class="t-small t-num">' + CV.dataEn(f.dal) + ' – ' + CV.dataEn(f.al) + '</p>' +
+          '<p class="t-small">' + regola + '</p><p class="t-small"><b>' + (pp.tba && pm.tba ? 'Price to be announced' : 'Member ' + E(pm.v) + ' · public ' + E(pp.v)) + '</b></p><p>' + stato + '</p></li>';
+      }).join('');
+      $('#righe-prezzi').innerHTML = D.fasce.map(function (f) {
+        var ora = a && a.id === f.id;
+        return '<tr' + (ora ? ' class="riga-ora"' : '') + '><th scope="row">' + f.nome + (ora ? ' <span class="badge badge--info">' + CV.ic('clock') + 'Now</span>' : '') + '<br><span class="t-small t-muted">' + CV.dataEn(f.dal) + ' – ' + CV.dataEn(f.al) + '</span></th>' +
+          ['pub', 'mem'].map(function (k) {
+            var v = CV.valore('intero', f.id, k);
+            return '<td class="num" data-label="' + (k === 'pub' ? 'Public' : 'Member') + '" data-colonna-tua="' + k + '">' + (v.tba ? 'To be announced' : E(v.v)) +
+              (v.reg ? '<br><span class="t-small t-muted">Regular price: no early bird for the public</span>' : '') + '</td>';
+          }).join('') + '</tr>';
+      }).join('');
+      var pc = D.prezzi.companion, pe = D.prezzi.espositore;
+      $('#righe-tipi').innerHTML =
+        '<tr><th scope="row">Workshop</th><td data-label="Who it is for">Anyone, with or without a pass. 10 workshops, 20 seats each.</td><td class="num" data-label="Price">' + E(100) + '<br><span class="t-small t-muted">same for everyone</span></td></tr>' +
+        '<tr><th scope="row">Companion</th><td data-label="Who it is for">Someone coming with a full pass holder. Only together with a pass or after you have one. What it includes: to be defined.</td><td class="num" data-label="Price">' + E(pc.pub) + '<br><span class="badge badge--warn">' + CV.ic('alert') + 'Placeholder price</span></td></tr>' +
+        '<tr><th scope="row">Exhibitor / Sponsor pass</th><td data-label="Who it is for">Staff of exhibiting companies and sponsors. Optional invitation code from the organiser.</td><td class="num" data-label="Price">' + E(pe.pub) + '<br><span class="badge badge--warn">' + CV.ic('alert') + 'Placeholder price</span></td></tr>' +
+        '<tr><th scope="row">Complimentary</th><td data-label="Who it is for">Speakers and staff. Not for sale: the organiser issues it and you receive it by email.</td><td class="num" data-label="Price">' + E(0) + '<br><span class="t-small t-muted">not for sale</span></td></tr>';
+      CV.applica();
+    }
+
+    /* arrivo da una pagina sessione o dall'account */
+    var pre = CV.sessione(CV.param('sessione')), modo = CV.param('modo');
+    if (pre && pre.pagamento && pre.posti.res !== 0) {
+      S.sessioni.push(pre.id);
+      if (modo === 'aggiunta' || modo === 'solo') {
+        S.tipo = 'sessioni';
+        $('#avviso-modo').innerHTML = '<div class="avviso avviso--info" role="status" style="margin-bottom:var(--s-4)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>' +
+          (modo === 'aggiunta' ? 'You are adding «' + pre.titolo + '» to your pass: you do not need another pass.' : 'You are buying only «' + pre.titolo + '», without a pass.') + '</div></div>';
+      }
+    }
+    if (CV.param('tipo') === 'companion' && CV.stato.pass) { S.tipo = 'companion'; S.comp = 1; }
+    if (CV.param('tipo') === 'espositore') S.tipo = 'espositore';
+
+    /* ---- disegno dei blocchi ---- */
+    function passVendibile() { var p = D.prezzi.intero; return !(p.pub === null && p.mem === null); }
+    function maxComp() { return (S.tipo === 'intero' ? S.n : 0) + (CV.stato.pass && S.tipo !== 'espositore' ? 1 : 0); }
+    function nPersone() { return S.tipo === 'companion' ? 0 : (S.tipo === 'sessioni' ? 1 : S.n); }
+
+    function partecipanti() {
+      var h = '', socio = CV.stato.ruolo === 'membro', connesso = CV.stato.ruolo !== 'visitatore';
+      for (var i = 0; i < nPersone(); i++) {
+        // il primo biglietto e' intestato a chi compra (dati dell'account, non modificabili qui); per il membro prende il prezzo membro
+        var mio = connesso && i === 0, nm = mio ? ME.nome : (S.nomi[i] || ''), em = mio ? ME.email : (S.email[i] || '');
+        h += '<fieldset class="campo scheda"><legend class="etichetta">Attendee ' + (i + 1) + (i === 0 ? ' (you)' : '') + (S.tipo === 'intero' && socio ? (i === 0 ? ' · member price' : ' · public price') : '') + '</legend>' +
+          '<div class="campo"><label for="nome-' + i + '">Full name on the ticket</label><input class="input" id="nome-' + i + '" autocomplete="' + (i === 0 ? 'name' : 'off') + '" value="' + nm + '"' + (mio ? ' readonly aria-describedby="aiuto-mio"' : '') + '></div>' +
+          '<div class="campo"><label for="email-' + i + '">Email</label><input class="input" id="email-' + i + '" type="email" autocomplete="' + (i === 0 ? 'email' : 'off') + '" value="' + em + '"' + (mio ? ' readonly' : '') + '>' +
+          (mio ? '<p class="campo__aiuto" id="aiuto-mio">Ticket in your name, from your account.' + (socio ? ' The member price applies only here.' : '') + '</p>' : '') + '</div></fieldset>';
+        if (mio) { S.nomi[0] = ME.nome; S.email[0] = ME.email; }
+      }
+      $('#partecipanti').innerHTML = h;
+      $$('#partecipanti input').forEach(function (inp) {
+        inp.addEventListener('input', function () { var m = inp.id.split('-'); (m[0] === 'nome' ? S.nomi : S.email)[+m[1]] = inp.value; nomi(); riepilogo(); });
+      });
+      $('#nota-persone').hidden = !(socio && S.tipo === 'intero');
+      $('#testo-nota-persone').innerHTML = S.n > 1
+        ? '<b>Member price on your ticket only.</b> Attendee 1 (you) pays the member price; the other ' + (S.n - 1) + (S.n === 2 ? ' attendee pays' : ' attendees pay') + ' the public price.'
+        : '<b>Member price on your ticket.</b> If you add other people, they pay the public price.';
+      $('#blocco-persone').hidden = S.tipo === 'companion';
+      $('#campo-qta').hidden = S.tipo === 'sessioni';
+      $('#blocco-espositore').hidden = S.tipo !== 'espositore';
+      $('#l-qta').textContent = S.tipo === 'espositore' ? 'How many exhibitor passes' : 'How many people';
+    }
+
+    function accompagnatori() {
+      var mx = maxComp(), h = '';
+      if (S.comp > mx) S.comp = mx;
+      if (!mx) {
+        h = '<div class="avviso avviso--info" role="note">' + CV.ic('info') + '<div>' + (S.tipo === 'espositore'
+          ? 'Companion tickets go with a full pass, not with an exhibitor pass.'
+          : '<b>A companion ticket needs a full pass.</b> Choose «Full pass» above, or buy companions later from your account once you have a pass.') + '</div></div>';
+      } else {
+        h = '<p class="campo__aiuto">Someone coming with a full pass holder. One companion per full pass (rule to be confirmed). ' +
+          'Price: <b>' + E(D.prezzi.companion.pub) + '</b>, same for everyone <span class="badge badge--warn">' + CV.ic('alert') + 'Placeholder price</span></p>' +
+          '<span class="etichetta" id="l-comp">How many companions</span><div class="qta" role="group" aria-labelledby="l-comp">' +
+          '<button type="button" id="c-meno" aria-label="One companion less"' + (S.comp === 0 ? ' disabled' : '') + '>−</button><output id="c-qta" aria-live="polite">' + S.comp + '</output>' +
+          '<button type="button" id="c-piu" aria-label="One companion more"' + (S.comp >= mx ? ' disabled' : '') + '>+</button></div>' +
+          '<p class="campo__aiuto">Up to ' + mx + ' in this order.</p>';
+        for (var i = 0; i < S.comp; i++) {
+          h += '<fieldset class="campo scheda"><legend class="etichetta">Companion ' + (i + 1) + ' · with ' + (S.tipo === 'intero' && S.nomi[i] ? S.nomi[i] : (S.tipo === 'intero' ? 'Attendee ' + (i + 1) : 'your pass')) + '</legend>' +
+            '<div class="campo"><label for="cnome-' + i + '">Full name on the ticket</label><input class="input" id="cnome-' + i + '" autocomplete="off" value="' + (S.cnomi[i] || '') + '"></div></fieldset>';
+        }
+      }
+      $('#comp-corpo').innerHTML = h;
+      if ($('#c-meno')) {
+        $('#c-meno').addEventListener('click', function () { S.comp = Math.max(0, S.comp - 1); accompagnatori(); nomi(); riepilogo(); $('#c-meno').disabled ? $('#c-piu').focus() : $('#c-meno').focus(); });
+        $('#c-piu').addEventListener('click', function () { S.comp = Math.min(maxComp(), S.comp + 1); accompagnatori(); nomi(); riepilogo(); $('#c-piu').disabled ? $('#c-meno').focus() : $('#c-piu').focus(); });
+      }
+      $$('#comp-corpo input').forEach(function (inp) { inp.addEventListener('input', function () { S.cnomi[+inp.id.split('-')[1]] = inp.value; nomi(); }); });
+    }
+
+    function elencoSessioni() {
+      $('#sessioni').innerHTML = pagamento.map(function (s) {
+        var esaurita = s.posti.res === 0, on = S.sessioni.indexOf(s.id) > -1;
+        return '<label class="opzione" for="sx-' + s.id + '"><input type="checkbox" id="sx-' + s.id + '" value="' + s.id + '"' + (on ? ' checked' : '') + (esaurita ? ' disabled' : '') + '>' +
+          '<span class="opzione__corpo"><span class="opzione__titolo">' + s.titolo + '</span>' +
+          '<span class="t-small">' + CV.giorno(s.g).breve + ' · ' + s.da + '–' + s.a + ' · ' + CV.sala(s.sala).nome + '</span>' +
+          '<span>' + CV.prezzoHTML(s.pagamento, { inline: true }) + '</span><span>' + CV.postiHTML(s) + '</span></span></label>';
+      }).join('');
+      $$('#sessioni input').forEach(function (c) {
+        c.addEventListener('change', function () { S.sessioni = $$('#sessioni input:checked').map(function (x) { return x.value; }); riepilogo(); });
+      });
+    }
+
+    // elenco dei nomi che finiranno sui biglietti: da ricontrollare prima di pagare
+    function nomi() {
+      var l = [];
+      for (var i = 0; i < nPersone(); i++) l.push([(S.tipo === 'espositore' ? 'Exhibitor / Sponsor pass' : (S.tipo === 'sessioni' ? 'Workshop ticket' : 'Full pass')), S.nomi[i]]);
+      for (var j = 0; j < S.comp; j++) l.push(['Companion', S.cnomi[j]]);
+      $('#nomi-biglietti').innerHTML = l.length ? l.map(function (x) { return '<li><span class="t-small t-muted">' + x[0] + '</span><br><b>' + (x[1] && x[1].trim() ? x[1].replace(/</g, '&lt;') : '<span class="t-muted">Name missing</span>') + '</b></li>'; }).join('')
+        : '<li class="t-muted">No tickets yet.</li>';
+    }
+
+    function calcola() {
+      var righe = [], sub = 0, risp = 0, p, mio, i, n = nPersone();
+      if (S.tipo === 'intero' && passVendibile()) {
+        p = D.prezzi.intero; mio = CV.prezzoMio(p);
+        righe.push({ t: 'Full pass · ' + (S.nomi[0] || 'Attendee 1') + ' (you) · ' + (mio < p.pub ? (p.fascia.id === 'early' ? 'early bird member price' : 'member price') : 'public price'), v: mio });
+        sub += mio; risp += p.pub - p.mem;
+        for (i = 1; i < n; i++) { righe.push({ t: 'Full pass · ' + (S.nomi[i] || 'Attendee ' + (i + 1)) + ' · public price', v: p.pub }); sub += p.pub; }
+      }
+      if (S.tipo === 'espositore') {
+        p = D.prezzi.espositore;
+        for (i = 0; i < n; i++) { righe.push({ t: 'Exhibitor / Sponsor pass · ' + (S.nomi[i] || 'Attendee ' + (i + 1)), v: p.pub }); sub += p.pub; }
+      }
+      for (i = 0; i < S.comp; i++) { righe.push({ t: 'Companion · ' + (S.cnomi[i] || 'Companion ' + (i + 1)) + ' (placeholder price)', v: D.prezzi.companion.pub }); sub += D.prezzi.companion.pub; }
+      S.sessioni.forEach(function (id) {
+        var s = CV.sessione(id);
+        righe.push({ t: 'Workshop · ' + s.titolo + ' · ' + (S.nomi[0] || 'Attendee 1'), v: s.pagamento.pub }); sub += s.pagamento.pub;
+      });
+      var sc = S.codice ? Math.round(sub * S.codice.pc) / 100 : 0;
+      return { righe: righe, sub: sub, sconto: sc, totale: sub - sc, risp: risp };
+    }
+
+    function riepilogo() {
+      var c = calcola(), h = '';
+      if (!c.righe.length) h = '<p class="t-muted">Nothing chosen yet.</p>';
+      c.righe.forEach(function (r) { h += '<div class="riepilogo__riga"><span>' + r.t + '</span><span>' + E(r.v) + '</span></div>'; });
+      if (c.sconto) h += '<div class="riepilogo__riga riepilogo__sconto"><span>Code ' + S.codice.nome + ' (−' + S.codice.pc + '%)</span><span>−' + E(c.sconto) + '</span></div>';
+      $('#righe').innerHTML = h;
+      $('#totale').textContent = E(c.totale);
+      $('#totale-barra').textContent = E(c.totale);
+      $('.barra-azione--mobile').hidden = !c.righe.length;
+
+      /* la membership conviene? Solo per chi non e' gia' membro; e' attiva subito dopo il pagamento */
+      var r = CV.stato.ruolo, nota = '', f = D.prezzi.intero.fascia;
+      if (r === 'membro' && S.n > 1 && S.tipo === 'intero') {
+        nota = '<div class="avviso avviso--info">' + CV.ic('info') + '<div>The member price applies only to your ticket (Attendee 1). The other ' + (S.n - 1) + ' tickets are at the public price.</div></div>';
+      } else if (r !== 'membro' && S.tipo === 'intero' && c.risp > 0) {
+        var netto = c.risp - D.prezzi.membership;
+        nota = '<div class="avviso avviso--info">' + CV.ic('info') + '<div>' + (netto > 0
+          ? 'With a membership (' + E(D.prezzi.membership) + ' per year) your own pass would cost ' + E(D.prezzi.intero.mem) + (f && f.id === 'early' ? ' (early bird, members only)' : '') + ': you save ' + E(netto) + ' net. The membership is active right after payment. <a href="membership.html">How it works</a>'
+          : 'For this order alone the membership does not pay off: you would save ' + E(c.risp) + ' against a ' + E(D.prezzi.membership) + ' fee.') + '</div></div>';
+      }
+      $('#nota-membro').innerHTML = nota;
+
+      /* conflitti di orario tra i workshop scelti: avviso, non blocco */
+      var ss = S.sessioni.map(CV.sessione), cf = [];
+      for (var i = 0; i < ss.length; i++) for (var j = i + 1; j < ss.length; j++) if (CV.sovrapposte(ss[i], ss[j])) cf.push('«' + ss[i].titolo + '» and «' + ss[j].titolo + '»');
+      $('#conflitti').innerHTML = cf.length ? '<div class="avviso avviso--warn">' + CV.ic('alert') + '<div><b>Overlapping times:</b> ' + cf.join('; ') + '. You can buy both, but you cannot attend both.</div></div>' : '';
+    }
+
+    function aggiornaTipo() {
+      var vend = passVendibile(), r = $('input[name="tipo"][value="intero"]');
+      r.disabled = !vend;
+      $('#nota-tba').hidden = vend;
+      $('#nota-tba').innerHTML = vend ? '' : '<b>Not on sale right now:</b> the ' + (D.prezzi.intero.fascia ? D.prezzi.intero.fascia.nome.toLowerCase() : '') + ' price has not been announced yet.';
+      if (!vend && S.tipo === 'intero') S.tipo = 'sessioni';
+      if (S.tipo === 'companion' && !CV.stato.pass) S.tipo = vend ? 'intero' : 'sessioni';
+      var sel = $('input[name="tipo"][value="' + S.tipo + '"]'); if (sel) sel.checked = true;
+      if (S.tipo === 'sessioni' || S.tipo === 'companion') S.n = 1;
+      if (S.tipo === 'companion' && S.comp === 0) S.comp = 1;
+      $('#qta').textContent = S.n; $('#meno').disabled = S.n === 1; $('#piu').disabled = S.n === 6;
+      partecipanti(); accompagnatori(); nomi(); riepilogo();
+    }
+
+    /* ---- eventi ---- */
+    $$('input[name="tipo"]').forEach(function (r) { r.addEventListener('change', function () { S.tipo = r.value; aggiornaTipo(); }); });
+    function qta(dl) {
+      S.n = Math.max(1, Math.min(6, S.n + dl));
+      $('#qta').textContent = S.n; $('#meno').disabled = S.n === 1; $('#piu').disabled = S.n === 6;
+      partecipanti(); accompagnatori(); nomi(); riepilogo();
+    }
+    $('#meno').addEventListener('click', function () { qta(-1); if (this.disabled) $('#piu').focus(); });
+    $('#piu').addEventListener('click', function () { qta(1); if (this.disabled) $('#meno').focus(); });
+
+    function codice() {
+      var v = $('#codice').value.trim().toUpperCase(), m = $('#msg-codice');
+      if (!v) { m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Type a code, then press Apply.</p>'; return; }
+      if (v === 'WELCOME10') {
+        S.codice = { nome: v, pc: 10 };
+        m.innerHTML = '<div class="avviso avviso--ok">' + CV.ic('check') + '<div><b>Code applied:</b> 10% off the total. <button type="button" class="btn btn--quiet" id="togli">Remove the code</button></div></div>';
+        $('#togli').addEventListener('click', function () { S.codice = null; $('#codice').value = ''; m.innerHTML = ''; riepilogo(); $('#codice').focus(); });
+      } else if (v === 'EXPIRED24') {
+        S.codice = null;
+        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'The code EXPIRED24 expired on 31 Oct 2026. Try another code.</p>';
+      } else {
+        S.codice = null;
+        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Code not recognised. Check the spelling: letters and numbers, no spaces.</p>';
+      }
+      riepilogo();
+    }
+    $('#applica').addEventListener('click', codice);
+    $('#codice').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); codice(); } });
+    function invito() {
+      var v = $('#invito').value.trim().toUpperCase(), m = $('#msg-invito');
+      if (!v) { S.invito = null; m.innerHTML = ''; return true; }
+      if (v === 'EXPO2027') { S.invito = v; m.innerHTML = '<div class="avviso avviso--ok">' + CV.ic('check') + '<div><b>Invitation confirmed:</b> Placeholder Aligners Ltd, stand B12 (example).</div></div>'; return true; }
+      S.invito = null; m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Invitation code not recognised. Leave it empty if you do not have one.</p>'; return false;
+    }
+    $('#applica-invito').addEventListener('click', invito);
+    $('#invito').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); invito(); } });
+
+    /* ---- invio: controlli e passaggio a Stripe (simulato) ---- */
+    $('#ordine').addEventListener('submit', function (e) {
+      e.preventDefault();
+      $$('.campo--errore').forEach(function (c) { c.classList.remove('campo--errore'); });
+      $$('[data-err]').forEach(function (x) { x.remove(); });
+      $$('[aria-invalid]').forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      var er = [], n = nPersone(), i;
+      for (i = 0; i < n; i++) {
+        if (!($('#nome-' + i).value.trim())) er.push({ id: 'nome-' + i, m: 'Write the full name of Attendee ' + (i + 1) + '.' });
+        if (!/^\S+@\S+\.\S+$/.test($('#email-' + i).value.trim())) er.push({ id: 'email-' + i, m: 'Check the email of Attendee ' + (i + 1) + ': the @ or the domain is missing.' });
+      }
+      for (i = 0; i < S.comp; i++) if (!$('#cnome-' + i).value.trim()) er.push({ id: 'cnome-' + i, m: 'Write the full name of Companion ' + (i + 1) + '.' });
+      if (S.tipo === 'companion' && !S.comp) er.push({ id: 'blocco-comp', m: 'Add at least one companion.' });
+      if (S.tipo === 'espositore' && !$('#azienda').value.trim()) er.push({ id: 'azienda', m: 'Write the company or sponsor name.' });
+      if (S.tipo === 'espositore' && !invito()) er.push({ id: 'invito', m: 'The invitation code is not valid. Correct it or leave it empty.' });
+      if (S.tipo === 'sessioni' && !S.sessioni.length) er.push({ id: 'elenco-sessioni', m: 'Choose at least one workshop.' });
+      if (!$('#conferma-nomi').checked) er.push({ id: 'conferma-nomi', m: 'Confirm that the names are correct: they cannot be changed after payment.' });
+      if (!$('#termini').checked) er.push({ id: 'termini', m: 'Confirm that you have read the terms of sale and the privacy notice.' });
+      var box = $('#errori');
+      if (er.length) {
+        box.hidden = false;
+        box.innerHTML = '<h3 class="t-3" tabindex="-1" id="h-err">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' +
+          er.map(function (x) { return '<li><a href="#' + x.id + '">' + x.m + '</a></li>'; }).join('') + '</ul>';
+        er.forEach(function (x) {
+          var el = $('#' + x.id), wr = el.closest('.campo');
+          if (wr) wr.classList.add('campo--errore');
+          var p = document.createElement('p'); p.className = 'campo__errore'; p.id = 'err-' + x.id; p.setAttribute('data-err', '1');
+          p.innerHTML = CV.ic('alert') + '<span>' + x.m + '</span>';
+          (wr || el.parentNode).appendChild(p);
+          el.setAttribute('aria-invalid', 'true');
+          var db = (el.getAttribute('aria-describedby') || '').split(' ').filter(function (z) { return z && z.indexOf('err-') !== 0; });
+          el.setAttribute('aria-describedby', db.concat('err-' + x.id).join(' '));
+        });
+        $('#h-err').focus();
+        return;
+      }
+      box.hidden = true;
+      var c = calcola();
+      try {
+        sessionStorage.setItem('cv-ordine', JSON.stringify({ righe: c.righe.map(function (r) { return { t: r.t, v: r.v }; }), sconto: c.sconto, codice: S.codice && S.codice.nome, totale: c.totale, newsletter: $('#newsletter').checked }));
+      } catch (x) { /* senza storage la pagina successiva mostra un ordine d'esempio */ }
+      var b = $('#paga'); b.classList.add('is-loading'); b.setAttribute('aria-busy', 'true');
+      setTimeout(function () { location.href = 'checkout-esito.html'; }, 400);
+    });
+
+    document.addEventListener('cv:stato', function () { fasce(); elencoSessioni(); aggiornaTipo(); });
+
+    fasce(); elencoSessioni(); aggiornaTipo();
+  });
+</script>
+</body>
+</html>

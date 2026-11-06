@@ -1,0 +1,3 @@
+﻿code,honorific,first_name,last_name,affiliation,country,bio_en,bio_it,photo_file,website,other_links,email,notes
+EXAMPLE-SPK01,Dr.,Ana,Exemplo,EXAMPLE University of Nowhere,PT,EXAMPLE. Orthodontist with 15 years of clinical experience in clear aligner therapy.,ESEMPIO. Ortodontista con 15 anni di esperienza clinica nella terapia con allineatori.,example-spk01.jpg,https://example.org,https://example.org/ana|https://example.com/profile,ana.exemplo@example.org,Example row: delete it / Riga di esempio: cancellala
+EXAMPLE-SPK02,Prof.,Marco,Esempio,EXAMPLE Clinic,IT,EXAMPLE. Lecturer in orthodontics.,ESEMPIO. Docente di ortodonzia.,example-spk02.jpg,,,marco.esempio@example.org,
