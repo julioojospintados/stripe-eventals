@@ -39,6 +39,8 @@ return [
         'secret' => env('STRIPE_SECRET_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
         'api_version' => env('STRIPE_API_VERSION'),
+        // Price ricorrente annuale della membership (price_...), creato nella Dashboard Stripe.
+        'membership_price' => env('STRIPE_MEMBERSHIP_PRICE'),
     ],
 
 ];

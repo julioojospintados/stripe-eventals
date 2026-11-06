@@ -91,6 +91,11 @@ class Order extends Model
         return $this->hasMany(CapacityHold::class);
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
     public function memberPriceClaims(): HasMany
     {
         return $this->hasMany(MemberPriceClaim::class);

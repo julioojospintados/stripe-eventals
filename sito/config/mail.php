@@ -115,4 +115,7 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    // Email in coda al minuto (casella SMTP del cliente: circa 1.000 l'ora). I codici di accesso partono fuori coda.
+    'rate_per_minute' => (int) env('MAIL_RATE_PER_MINUTE', 15),
+
 ];

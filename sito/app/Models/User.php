@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MembershipStatus;
 use App\Enums\StaffRole;
 use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
@@ -60,5 +61,19 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
+    }
+
+    /** Membro se ha una membership attiva almeno fino a $until (es. la scadenza della sessione di pagamento). */
+    public function isMemberUntil(\DateTimeInterface $until): bool
+    {
+        return $this->memberships()
+            ->whereIn('status', [MembershipStatus::Active, MembershipStatus::Trialing])
+            ->where('current_period_end', '>=', $until)
+            ->exists();
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasAnyRole(StaffRole::names());
     }
 }
