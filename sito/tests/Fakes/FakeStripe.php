@@ -14,6 +14,9 @@ class FakeStripe extends StripeGateway
 {
     public bool $live = false;
 
+    /** Stato del rimborso restituito da createRefund (Stripe può rispondere pending). */
+    public string $refundStatus = 'succeeded';
+
     /** @var array<string, array> */
     public array $sessions = [];
 
@@ -68,7 +71,7 @@ class FakeStripe extends StripeGateway
     {
         $this->calls[] = ['createRefund', $params, $idempotencyKey];
 
-        return $this->byKey[$idempotencyKey] ??= ['id' => 're_test_'.Str::random(16), 'status' => 'succeeded'];
+        return $this->byKey[$idempotencyKey] ??= ['id' => 're_test_'.Str::random(16), 'status' => $this->refundStatus];
     }
 
     public function retrieveSubscription(string $id): array
