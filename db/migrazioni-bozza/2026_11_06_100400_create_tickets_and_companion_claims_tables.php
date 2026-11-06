@@ -3,7 +3,7 @@
 // Bozza di migrazione Laravel. Autore: Giulio Occhipinti. Aggiornata al 06/11/2026.
 //
 // Biglietti nominativi e legame accompagnatore → pass.
-// Scritta per MySQL 8.0.16+ / MariaDB 10.6+. Provata il 06/11/2026 con Laravel 13.40 su MySQL 8.0.46 e
+// Scritta per MySQL 8.0.16+ / MariaDB 10.7+. Provata il 06/11/2026 con Laravel 13.40 su MySQL 8.0.46 e
 // MariaDB 10.11.14 (db/modello-dati.md §6).
 // Presuppone: users, events, ticket_types (090000), orders e order_items (100000).
 //
@@ -37,7 +37,7 @@ return new class extends Migration
     public function up(): void
     {
         if (! in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
-            throw new RuntimeException('Migrazione scritta per MySQL 8.0.16+ / MariaDB 10.6+.');
+            throw new RuntimeException('Migrazione scritta per MySQL 8.0.16+ / MariaDB 10.7+.');
         }
 
         Schema::create('tickets', function (Blueprint $table) {

@@ -1,0 +1,3 @@
+﻿session_code,position,start,end,title_en,title_it,abstract_en,abstract_it,speaker_codes,notes
+EXAMPLE-S001,1,09:00,09:45,EXAMPLE Part one,ESEMPIO Prima parte,EXAMPLE. Abstract of the first talk.,,EXAMPLE-SPK01,Example row: delete it / Riga di esempio: cancellala
+EXAMPLE-S001,2,09:45,10:30,EXAMPLE Part two,ESEMPIO Seconda parte,,,EXAMPLE-SPK02,

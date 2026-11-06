@@ -36,7 +36,7 @@ risposte precisa il server: **hosting condiviso con accesso SSH e MySQL o MariaD
 | Framework | **Laravel 13** (installata la 13.40.0 `[sure]`; bug fix fino al Q3 2027, sicurezza fino al Q1 2028 `[likely]`, [laravel-news.com](https://laravel-news.com/laravel-13-released)) | Copre l'evento di aprile 2027 con i bug fix |
 | Pannello | **Filament 5** (con Livewire 4) | Chiesto dal cliente. Compatibilità con Laravel 13: Composer risolve `filament/filament` 5.11.1 + `livewire/livewire` 4.4.8 su Laravel 13.40 e PHP 8.3 `[sure]` (prova `--dry-run` del 06/11/2026; non ancora avviato) |
 | Interfaccia pubblica | **Blade + Livewire 4 + Alpine.js** (§4.1) | Stessa tecnologia di Filament, pagine generate dal server |
-| Database | **MySQL 8.0.16+ o MariaDB 10.6+** (§3) | È quello che offre l'hosting. Migrazioni bozza riscritte per MySQL e provate su MySQL 8.0.46 e MariaDB 10.11.14 `[sure]` |
+| Database | **MySQL 8.0.16+ o MariaDB 10.7+** (§3) | È quello che offre l'hosting. Migrazioni bozza riscritte per MySQL e provate su MySQL 8.0.46 e MariaDB 10.11.14 `[sure]` |
 | Pagamenti | Stripe Checkout ospitato, Stripe Billing, Customer Portal, SDK `stripe-php` diretto (risolto 22.1.0 `[sure]`), **senza Laravel Cashier** (§6.1); **solo carta**, wallet compresi (§6.9) | Nessun dato di carta sul sito |
 | Coda e job | Laravel Queue con driver `database` + scheduler di Laravel **avviati dal cron ogni minuto**, nessun processo sempre attivo (§8) | L'hosting condiviso non ha Supervisor né systemd |
 | Email | SMTP esistente `Website@orthocongress.org`, circa 1.000 email l'ora (dato del cliente), in coda con limite di invio (§9) | Richiesta del cliente |
@@ -134,7 +134,8 @@ flowchart LR
 
 ## 3. Database
 
-**MySQL 8.0.16+ o MariaDB 10.6+** (decisione del 06/11/2026 dopo le risposte del cliente). Dettaglio di tabelle e
+**MySQL 8.0.16+ o MariaDB 10.7+** (decisione del 06/11/2026 dopo le risposte del cliente; minimo di MariaDB portato da
+10.6 a 10.7 il 06/11/2026 sera, riga «Identificativi su MariaDB prima della 10.7» qui sotto). Dettaglio di tabelle e
 vincoli in [`db/modello-dati.md`](../db/modello-dati.md); prove al §6 di quel file.
 
 | Tema | Come si fa con MySQL / MariaDB | Prova del 06/11/2026 |
@@ -143,6 +144,7 @@ vincoli in [`db/modello-dati.md`](../db/modello-dati.md); prove al §6 di quel f
 | `CHECK` e valori `NULL` | Un `CHECK` che vale `NULL` passa: ogni confronto su una colonna che può essere vuota porta il suo `is not null` | 🔴→🟢 trovati e corretti due casi (accompagnatore senza limite, omaggio senza motivo) `[sure]` |
 | `CHECK` e chiavi esterne | MySQL e MariaDB rifiutano un `CHECK` (e una colonna generata) su una colonna con `ON DELETE SET NULL` o `CASCADE`: le FK usate nei vincoli sono `RESTRICT` | 🟢 errore 3823 su MySQL, 1901 su MariaDB `[sure]` |
 | Indici unici «parziali» (una riserva aperta per persona, un prezzo membro per tipo, un accompagnatore per posto, un prezzo per tipo × fascia × ruolo) | **Colonna generata** `STORED` che vale la chiave solo quando la riga è attiva, `NULL` altrimenti, con indice unico (più `NULL` sono ammessi) | 🟢 `[sure]` |
+| Identificativi su MariaDB prima della 10.7 | Laravel 13 usa `char(36)` per le colonne `uuid` su MariaDB prima della 10.7 (`MariaDbGrammar::typeUuid`) `[sure]`, e MariaDB rifiuta una colonna generata che dipende da una chiave esterna `char(36)` (errore 1901), mentre la accetta su `UUID` nativo e su `bigint` | 🔴 riprodotto su MariaDB 10.11.14 con colonne `char(36)` `[sure]`; su una 10.6 vera non provato `[likely]`. Quindi **MariaDB 10.7+**, in pratica 10.11 o 11.4 |
 | UUID su MariaDB | Laravel 13 crea le colonne `uuid` con il tipo nativo `UUID` di MariaDB: `coalesce(uuid, '-')` fallisce; nelle colonne generate serve `cast(… as char(36))` | 🔴→🟢 trovato e corretto `[sure]` |
 | Vincoli di esclusione (fasce sovrapposte, sale sovrapposte) | Non esistono: trigger che legge la tabella (fasce) + Service con `lockForUpdate` sulla riga padre | 🟢 fasce sovrapposte rifiutate `[sure]` |
 | Trigger (transizioni di stato, dati fotografati dell'ordine, nominativo immutabile) | `SIGNAL SQLSTATE '45000'` | 🟢 su entrambi `[sure]`; ⚠️ vedi sotto |
@@ -639,10 +641,12 @@ Il programma ha **12 sale in parallelo, circa 120 sessioni e 30 speaker**, con c
 (risposta del cliente). **Proposta (fase 2):** importazione da foglio con le azioni di import di Filament `[likely]`
 (file CSV; da Excel o Google Sheets si salva in CSV).
 
-| File | Colonne | Note |
-|---|---|---|
-| `speakers.csv` | `code`, `full_name`, `headline_en`, `headline_it`, `bio_en`, `bio_it`, `website`, `email` (non pubblica) | Foto caricate dopo dal pannello; bio ripulite dall'HTML |
-| `sessions.csv` | `code`, `day` (AAAA-MM-GG), `start`, `end` (HH:MM, ora di Lisbona), `room`, `track`, `title_en`, `title_it`, `abstract_en`, `abstract_it`, `format`, `speakers` (codici separati da `;`), `speaker_roles` | Sale e tracce devono esistere (12 righe a mano) o vengono create dopo conferma |
+I modelli dei fogli, con colonne, formati e istruzioni per Excel e Google Sheets, sono in
+[`contenuti/modelli/`](../contenuti/modelli/README.md) (06/11/2026): `rooms.csv`, `speakers.csv`, `sessions.csv`,
+`session_parts.csv` per il programma; `ticket_types.csv`, `price_tiers.csv`, `ticket_prices.csv` per la configurazione
+della vendita (Fase 1). Elenchi di codici separati da `|`; separatore `,` o `;` riconosciuto dall'intestazione (Excel in
+italiano o portoghese salva con `;` e la virgola decimale); righe `EXAMPLE-` saltate; i workshop nascono dalle righe di
+`sessions.csv` con `paid=yes` (tipo `paid_session`, pool di `seats` posti, prezzo base pubblico 100 €).
 
 - **Idempotente**: la colonna `code` è la chiave esterna del foglio; un secondo import aggiorna, non duplica.
 - **Prova a vuoto** prima di scrivere: righe con errori (giorno fuori dall'evento, sala inesistente, orari
@@ -660,20 +664,21 @@ non ancora noti (dati in UE richiesti).
 
 ### 14.1 Requisiti da verificare prima di iniziare
 
-Lista da far controllare a Simone con un comando via SSH (`php -v`, `php -m`, `php -i`, `mysql --version`, `crontab -l`)
-e il pannello dell'hosting.
+Le voci si controllano da sole con lo script [`strumenti/verifica-hosting/`](../strumenti/verifica-hosting/README.md)
+(06/11/2026): Simone lo lancia via SSH e manda il riepilogo; restano da leggere nel pannello versione PHP del sito, cron
+ogni minuto, document root, HTTPS, paese del data center, processi PHP in parallelo e secondo database.
 
 | Voce | Serve | Perché |
 |---|---|---|
 | PHP | **8.4** (minimo 8.3) sia per il web sia da riga di comando, stessa versione | Laravel 13; `php` da SSH spesso è un'altra versione: va scelta quella giusta nel cron |
-| Estensioni | `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `gd` (o `imagick`), `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `tokenizer`, `xml`, `zip`; `pcntl` da riga di comando (consigliata) | Laravel, Filament, QR firmati, immagini, export |
+| Estensioni | `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `gd` (o `imagick`), `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `tokenizer`, `xml`, `xmlreader`, `xmlwriter`, `zip`; `pcntl` da riga di comando e `bcmath` consigliate (`bcmath` è solo un «suggest» delle librerie: Laravel 13 è installato e provato senza `[sure]`) | Laravel, Filament, QR firmati, immagini, export |
 | Funzioni | `proc_open`, `proc_get_status` **non** in `disable_functions`; `fastcgi_finish_request` o `litespeed_finish_request` | Scheduler e Composer; invio del codice di accesso dopo la risposta |
 | Argon2 | `PASSWORD_ARGON2ID` definito | Password dello staff (regola 1) |
 | Composer | Composer 2 sul server, oppure dipendenze installate in CI e caricate | Deploy |
 | Cron | Una riga ogni minuto | Coda e job (§8) |
 | Document root | Puntabile su `current/public` (o `public_html` come link a `current/public`) | La cartella del progetto, `.env` compreso, non deve essere raggiungibile dal web |
 | HTTPS | Certificato (Let's Encrypt automatico dal pannello), redirect da HTTP, HSTS | Cookie `Secure`, Stripe |
-| Database | MySQL 8.0.16+ o MariaDB 10.6+, privilegi `CREATE`, `ALTER`, `INDEX`, `REFERENCES`, `TRIGGER`; **`log_bin_trust_function_creators = 1` o log binario spento** (§3) | Vincoli e trigger di difesa |
+| Database | MySQL 8.0.16+ o MariaDB 10.7+ (in pratica 10.11 o 11.4, §3), privilegi `CREATE`, `ALTER`, `INDEX`, `REFERENCES`, `TRIGGER`; **`log_bin_trust_function_creators = 1` o log binario spento** (§3) | Vincoli e trigger di difesa |
 | Limiti | `memory_limit` ≥ 256M (web) e ≥ 512M (riga di comando), `max_execution_time` ≥ 60 s (web), `upload_max_filesize` ≥ 20M; nessun limite di tempo sui processi del cron sotto i 60 s; numero di processi contemporanei ≥ 5 | Filament, export, import, worker |
 | Disco | ≥ 5 GB liberi | Release, log, backup locali, foto |
 | Accessi in uscita | HTTPS verso `api.stripe.com`, Mailchimp, il server SMTP; porta SMTP aperta | Pagamenti, email |
@@ -912,6 +917,9 @@ configurazione: `orders.tax_cents`, `automatic_tax`, `invoice_creation`, `tax_id
 ---
 
 ## 21. Domande aperte
+
+**Superate dal terzo giro:** [`docs/domande-simone-terzo-giro.md`](domande-simone-terzo-giro.md) (06/11/2026), con le
+domande sull'hosting sostituite dallo script di verifica. La tabella qui sotto resta come storia.
 
 Solo domande tecniche e di prodotto, per Simone (nessuna legale o fiscale: decisione di Giulio, §19).
 

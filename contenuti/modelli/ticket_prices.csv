@@ -1,0 +1,9 @@
+﻿ticket_type_code,tier_code,role,amount_eur,notes
+full_pass,,public,695.00,Base price: valid in every tier without its own price / Prezzo base: vale in ogni fascia senza un prezzo suo
+full_pass,,member,395.00,Base price for members / Prezzo base per i membri
+full_pass,early_bird,member,276.50,395 - 30%. No public early bird price: the public pays 695 / Nessun early bird pubblico: il pubblico paga 695
+full_pass,last_minute,public,,To decide / Da decidere
+full_pass,last_minute,member,,To decide / Da decidere
+workshop,,public,100.00,"All workshops, every tier, no member price / Tutti i workshop, ogni fascia, nessun prezzo membro"
+companion,,public,,To decide / Da decidere
+exhibitor,,public,,To decide / Da decidere

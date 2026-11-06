@@ -6,7 +6,7 @@
 // per evento e per tipo (un pass intero; un giornaliero per ciascun giorno, se un giorno si venderanno; uno per
 // ciascuna sessione a pagamento), anche su più ordini. Vale in ogni fascia: l'early bird del membro (276,50 €) è
 // un prezzo membro e consuma la stessa prenotazione del prezzo membro regular.
-// Scritta per MySQL 8.0.16+ / MariaDB 10.6+ (database principale dal 06/11/2026). Il ramo Postgres resta nella
+// Scritta per MySQL 8.0.16+ / MariaDB 10.7+ (database principale dal 06/11/2026). Il ramo Postgres resta nella
 // storia di git.
 // Provata il 06/11/2026 con Laravel 13.40 su MySQL 8.0.46 e MariaDB 10.11.14 (db/modello-dati.md §6).
 // Presuppone: users, events, event_days, program_sessions (le sessioni del programma: «sessions» è la tabella
@@ -37,7 +37,7 @@ return new class extends Migration
     public function up(): void
     {
         if (! in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
-            throw new RuntimeException('Migrazione scritta per MySQL 8.0.16+ / MariaDB 10.6+.');
+            throw new RuntimeException('Migrazione scritta per MySQL 8.0.16+ / MariaDB 10.7+.');
         }
 
         Schema::create('member_price_claims', function (Blueprint $table) {

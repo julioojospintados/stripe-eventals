@@ -19,6 +19,9 @@ Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è anc
 | [`db/migrazioni-bozza/`](db/migrazioni-bozza/) | migrazioni Laravel per MySQL / MariaDB: tipi di biglietto, fasce e prezzi, ordini e omaggi, capienza, prezzo membro, eventi Stripe, biglietti e accompagnatori |
 | [`db/prove/`](db/prove/) | script delle prove con dati finti sulle migrazioni (MySQL 8 e MariaDB) e tabelle minime che presuppongono |
 | [`db/archivio/`](db/archivio/) | schema Postgres per Supabase del 05/11/2026, solo come riferimento storico (le migrazioni Postgres del 06/11/2026 mattina sono nella storia di git) |
+| [`docs/domande-simone-terzo-giro.md`](docs/domande-simone-terzo-giro.md) | domande aperte per Simone (terzo giro), solo tecniche e di prodotto, con cosa si fa nel frattempo |
+| [`strumenti/verifica-hosting/`](strumenti/verifica-hosting/README.md) | script PHP da lanciare via SSH che verifica l'hosting (PHP, estensioni, limiti, funzioni, Composer, cron, disco, rete, MySQL o MariaDB con prove reali di vincoli, lock e trigger) e stampa un riepilogo da incollare |
+| [`contenuti/modelli/`](contenuti/modelli/README.md) | modelli CSV (EN/IT) per raccogliere sale, speaker, sessioni, interventi, tipi di biglietto, fasce e prezzi, coerenti con il modello dati e l'import di Filament |
 | [`docs/ux/architettura-informazioni.md`](docs/ux/architettura-informazioni.md) | mappa del sito, flussi, casi limite, accessibilità |
 | [`prototipo/`](prototipo/index.html) | prototipo cliccabile in HTML statico: sito pubblico, area personale, admin, check-in |
 

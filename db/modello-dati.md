@@ -5,7 +5,7 @@ Autore: Giulio Occhipinti. Aggiornato al 06/11/2026 (secondo giro di risposte de
 Sostituisce `db/schema.sql` (Postgres su Supabase), che resta come riferimento storico in
 [`archivio/schema-postgres-supabase.sql`](archivio/schema-postgres-supabase.sql). Il modello di dominio e le regole
 provate (capienza, idempotenza dei webhook, prezzo membro per evento e tipo, sconti calcolati dal server) restano;
-dal 06/11/2026 il database principale è **MySQL 8.0.16+ o MariaDB 10.6+** (hosting condiviso del cliente) e le
+dal 06/11/2026 il database principale è **MySQL 8.0.16+ o MariaDB 10.7+** (hosting condiviso del cliente) e le
 migrazioni bozza sono scritte per quello. Il ramo Postgres della mattina, provato su Postgres 16.15, resta nella storia
 di git. Migrazioni di esempio per le parti delicate in [`migrazioni-bozza/`](migrazioni-bozza/), prove in
 [`prove/`](prove/).
@@ -19,7 +19,7 @@ da verificare.
 
 | Tema | Scelta |
 |---|---|
-| Database | MySQL 8.0.16+ o MariaDB 10.6+, InnoDB, `utf8mb4`; migrazioni provate su MySQL 8.0.46 e MariaDB 10.11.14 (§6) |
+| Database | MySQL 8.0.16+ o MariaDB 10.7+ (in pratica 10.11 o 11.4: §5), InnoDB, `utf8mb4`; migrazioni provate su MySQL 8.0.46 e MariaDB 10.11.14 (§6) |
 | Chiavi | `users.id` bigint (default di Laravel, compatibile con Filament e spatie/laravel-permission); tutte le altre tabelle UUID con `HasUuids`. Su MySQL `char(36)`, su MariaDB il tipo nativo `UUID` (scelta di Laravel 13 `[sure]`): nelle espressioni con testo serve `cast(… as char(36))` |
 | Importi | Centesimi interi, mai float. Valuta ISO minuscola come in Stripe (`eur`) |
 | Date | `datetime` in UTC (`$table->dateTime()`, `$table->datetimes()`), non `timestamp` (limite del 2038 e conversioni di fuso); il fuso dell'evento (`Europe/Lisbon`) solo per mostrare le ore |
@@ -82,11 +82,11 @@ Tutti i testi visibili al pubblico sono JSON tradotti (`en`, `it`).
 |---|---|---|---|
 | `events` | `slug`, `title`*, `summary`*, `description`*, `status` (`draft`, `published`, `cancelled`, `archived`), `timezone` (`Europe/Lisbon`), `starts_on`, `ends_on`, `venue_name`, `venue_address`, `currency`, `sales_open_at`, `sales_close_at` | `slug` unico; CHECK `ends_on >= starts_on`, finestra di vendita coerente | **Policy**: organizzatore e admin scrivono, **date comprese** (modificabili dal pannello); il pubblico legge solo `published`. Tolta `name_change_deadline_hours` (nessun cambio di nome) |
 | `event_days` | `event_id`, `day`, `label`* | unico (`event_id`, `day`) | **Service**: cambiando le date dell'evento il pannello propone di aggiornare i giorni; un giorno con biglietti venduti non si cancella |
-| `rooms` | `event_id`, `code`, `name`*, `physical_capacity`, `position` | unico (`event_id`, `code`); CHECK capienza > 0 | 12 sale per l'EAS8 |
+| `rooms` | `event_id`, `code`, `name`*, `physical_capacity`, `floor` (intero, 0 = piano terra), `position` | unico (`event_id`, `code`); CHECK capienza > 0 | 12 sale per l'EAS8 |
 | `tracks` | `event_id`, `name`*, `color`, `position` | | |
 | `program_sessions` | `event_id`, `code` (chiave del foglio di import), `event_day_id`, `room_id`, `track_id`, `slug`, `title`*, `abstract`*, `format`, `access` (`included`, `included_booking`, `paid`), `capacity_pool_id`, `starts_at`, `ends_at`, `published` | unico (`event_id`, `slug`) e (`event_id`, `code`); CHECK `ends_at > starts_at`; CHECK `access = 'included' or capacity_pool_id is not null` | **Service** + validazione del form e dell'import: giorno, sala e pool dello stesso evento; **sale sovrapposte** controllate nel Service con `lockForUpdate` sulla sala (MySQL non ha vincoli di esclusione). Fase 2 (~120 sessioni) |
 | `session_parts` | `program_session_id`, `position`, `title`*, `abstract`*, `starts_at`, `ends_at` | unico (`program_session_id`, `position`) | Fase 2 |
-| `speakers` | `code` (chiave del foglio di import), `slug`, `full_name`, `headline`*, `bio`* (HTML ripulito), `photo_path`, `website`, `links` (JSON), `user_id`, `published` | `slug` e `code` unici | Fase 2 (~30 speaker). **Service**: foto ricodificate senza EXIF, bio ripulite anche all'import |
+| `speakers` | `code` (chiave del foglio di import), `slug`, `honorific`, `first_name`, `last_name`, `affiliation`, `country` (ISO 3166-1 alpha-2), `bio`* (HTML ripulito), `photo_path`, `website`, `links` (JSON), `email` (privata, mai pubblicata), `user_id`, `published` | `slug` e `code` unici | Fase 2 (~30 speaker). **Service**: foto ricodificate senza EXIF, bio ripulite anche all'import |
 | `session_speakers` | `program_session_id`, `session_part_id`, `speaker_id`, `role`, `position` | unico (`program_session_id`, `session_part_id`, `speaker_id`) | Fase 2 |
 
 `*` = campo tradotto. L'import da CSV usa le tabelle `imports` e `failed_import_rows` di Filament (§3.6).
@@ -190,6 +190,7 @@ Lezioni delle prove del 06/11/2026 (§6), valide per tutte le migrazioni nuove.
 | Tema | Regola | Esito della prova |
 |---|---|---|
 | Indici unici «parziali» | Colonna generata `storedAs("case when <attiva> then <chiave> end")` + indice unico: più `NULL` sono ammessi. Al posto di `NULLS NOT DISTINCT`, i `NULL` della chiave diventano `'-'` o `'*'` con `coalesce` | 🟢 su entrambi |
+| MariaDB prima della 10.7 | Laravel 13 vi crea le colonne `uuid` come `char(36)` e MariaDB rifiuta una colonna generata che dipende da una chiave esterna `char(36)`: minimo **MariaDB 10.7** | 🔴 errore 1901, riprodotto su MariaDB 10.11.14 con `char(36)`; 🟢 con `UUID` nativo e con `bigint` (06/11/2026, sera) |
 | UUID su MariaDB | `cast(colonna_uuid as char(36))` dentro `coalesce` e simili | 🔴 senza cast: «Incorrect uuid value: '*'» su MariaDB |
 | `CHECK` e `NULL` | `(x is not null and x between 1 and 5)`, mai solo `x between 1 and 5`; `comp_reason is not null and comp_reason in (…)` | 🔴 senza: accompagnatore senza limite e omaggio senza motivo accettati |
 | `CHECK` e chiavi esterne | Le colonne usate in un `CHECK` o in una colonna generata hanno FK `RESTRICT` | 🔴 con `SET NULL`: errore 3823 (MySQL), 1901 (MariaDB) |
