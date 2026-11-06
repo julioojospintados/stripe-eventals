@@ -3,20 +3,28 @@
 // Bozza di migrazione Laravel. Autore: Giulio Occhipinti. Aggiornata al 06/11/2026.
 //
 // Ordini e righe d'ordine, con le transizioni di stato ammesse.
-// Scritta per Postgres 16+ (consigliato). I rami MySQL 8.0.16+ / MariaDB sono indicati ma non provati.
-// Presuppone migrazioni precedenti per: users (id bigint), events, ticket_types, ticket_prices, discount_codes.
+// Scritta per MySQL 8.0.16+ / MariaDB 10.6+ (database principale dal 06/11/2026). Il ramo Postgres del
+// 06/11/2026 mattina, provato su Postgres 16.15, resta nella storia di git.
+// Provata il 06/11/2026 con Laravel 13.40 su MySQL 8.0.46 e MariaDB 10.11.14 (db/modello-dati.md §6).
+// Presuppone: users (id bigint), events, discount_codes e la migrazione 090000 (ticket_types, price_tiers,
+// ticket_prices).
 //
 // Dove stanno le regole (dettagli in db/modello-dati.md):
-//   - DB: importi coerenti (CHECK), una sola riserva aperta per persona (indice unico parziale),
-//     transizioni di stato ammesse (trigger), riga a prezzo membro di quantità 1 (CHECK).
+//   - DB: importi coerenti (CHECK), una sola riserva aperta per persona (colonna generata + indice unico),
+//     transizioni di stato ammesse (trigger), ruolo, fascia, origine e importi "fotografati" non modificabili
+//     (trigger), riga a prezzo membro di quantità 1 (CHECK), omaggi a costo zero e firmati da chi li emette (CHECK).
 //   - Service (App\Services\Orders\OrderService): intestatario della riga membro = acquirente, ricontrollo della
-//     membership fino alla scadenza della Checkout Session, ordine e tipo di una riga non cambiano dopo l'insert.
+//     membership fino alla scadenza della Checkout Session, fascia attiva letta alla riserva, ordine e tipo di una
+//     riga non cambiano dopo l'insert. Sempre DB::transaction($fn, attempts: 3): con REPEATABLE READ un deadlock
+//     si riprova.
 //   - Enum PHP App\Enums\OrderStatus::canTransitionTo(): stessa tabella del trigger, per dare errori leggibili
 //     prima di toccare il database.
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -31,6 +39,9 @@ return new class extends Migration
         'expired>needs_refund', 'failed>needs_refund', 'cancelled>needs_refund',
         'paid>partially_refunded', 'paid>refunded', 'partially_refunded>refunded',
         'needs_refund>refunded',
+        // Omaggio revocato dallo staff (nessun rimborso: non c'è pagamento). Solo per gli ordini complimentary:
+        // il trigger rifiuta paid>cancelled sugli ordini pagati con Stripe.
+        'paid>cancelled',
     ];
 
     private const STATUSES = [
@@ -40,93 +51,100 @@ return new class extends Migration
 
     public function up(): void
     {
-        $pgsql = DB::getDriverName() === 'pgsql';
+        if (! in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            throw new RuntimeException('Migrazione scritta per MySQL 8.0.16+ / MariaDB 10.6+.');
+        }
 
-        Schema::create('orders', function (Blueprint $table) use ($pgsql) {
+        Schema::create('orders', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('event_id')->constrained('events')->restrictOnDelete();
             $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
-            // Email normalizzata in minuscolo dal model (mutator): niente citext, uguale su Postgres e MySQL.
+            // Email normalizzata in minuscolo dal model (mutator).
             $table->string('buyer_email', 254);
             $table->string('status', 20)->default('pending');
-            // Ruolo di prezzo dell'acquirente "fotografato" alla creazione della Checkout Session.
+            // checkout: acquisto sul sito con Stripe (o a costo zero con un codice al 100%);
+            // complimentary: omaggio emesso dal pannello per speaker, staff o sponsor.
+            $table->string('origin', 20)->default('checkout');
+            // Ruolo di prezzo dell'acquirente "fotografato" alla riserva (valido fino alla scadenza della sessione).
             $table->string('price_role', 10);
+            // Fascia attiva alla riserva (null se nessuna fascia era attiva o per gli omaggi). Non cambia più.
+            $table->foreignUuid('price_tier_id')->nullable()->constrained('price_tiers')->restrictOnDelete();
             $table->char('currency', 3)->default('eur');
             $table->integer('subtotal_cents');
             $table->integer('discount_cents')->default(0);
             $table->integer('total_cents');
-            // Imposte: null finché la catena legale-fiscale non decide (domanda aperta).
+            // Imposte: null finché il cliente non decide con il suo commercialista.
             $table->integer('tax_cents')->nullable();
-            $table->foreignUuid('discount_code_id')->nullable()->constrained('discount_codes')->nullOnDelete();
+            // RESTRICT e non SET NULL: i codici si disattivano, non si cancellano; e MySQL vieta i CHECK su colonne
+            // con azioni referenziali (il CHECK degli omaggi usa questa colonna).
+            $table->foreignUuid('discount_code_id')->nullable()->constrained('discount_codes')->restrictOnDelete();
+            // Omaggi: chi li ha emessi e perché (speaker, staff, sponsor, other). Scritti anche nel registro audit.
+            $table->foreignId('issued_by')->nullable()->constrained('users')->restrictOnDelete();
+            $table->string('comp_reason', 20)->nullable();
             $table->string('stripe_checkout_session_id')->nullable()->unique();
             $table->string('stripe_payment_intent_id')->nullable()->unique();
-            $table->timestampTz('checkout_expires_at')->nullable();
+            $table->dateTime('checkout_expires_at')->nullable();
             $table->boolean('discount_reserved')->default(false);
-            $table->timestampTz('paid_at')->nullable();
+            $table->dateTime('paid_at')->nullable();
             $table->boolean('livemode');
             $table->integer('stripe_amount_total_cents')->nullable();
-            // Lingua dell'acquirente: email e pagina Stripe nella stessa lingua (it, en).
+            // Lingua dell'acquirente: email e pagina Stripe nella stessa lingua (en predefinito, it).
             $table->string('locale', 5)->default('en');
-            $table->timestampsTz();
+            $table->datetimes();
 
             $table->index(['user_id', 'created_at']);
+            $table->index(['status', 'checkout_expires_at'], 'orders_open_idx');
+            $table->index(['event_id', 'origin', 'status']);
 
-            if (! $pgsql) {
-                // MySQL non ha indici parziali: colonna generata che vale user_id solo per gli ordini pending,
-                // NULL altrimenti. Un indice unico ammette più NULL, quindi blocca solo il secondo pending.
-                $table->unsignedBigInteger('pending_user_id')->nullable()
-                    ->storedAs("case when status = 'pending' then user_id end");
-                $table->unique('pending_user_id', 'orders_one_pending_per_user');
-                $table->index(['status', 'checkout_expires_at'], 'orders_open_idx');
-            }
+            // MySQL non ha indici parziali: colonna generata che vale user_id solo per gli ordini pending,
+            // NULL altrimenti. Un indice unico ammette più NULL, quindi blocca solo il secondo pending.
+            $table->unsignedBigInteger('pending_user_id')->nullable()
+                ->storedAs("case when status = 'pending' then user_id end");
+            $table->unique('pending_user_id', 'orders_one_pending_per_user');
         });
 
         $statuses = "'".implode("','", self::STATUSES)."'";
         DB::statement("alter table orders add constraint orders_status_valid check (status in ($statuses))");
+        DB::statement("alter table orders add constraint orders_origin_valid check (origin in ('checkout', 'complimentary'))");
         DB::statement("alter table orders add constraint orders_price_role_valid check (price_role in ('public', 'member'))");
         DB::statement('alter table orders add constraint orders_amounts_valid check (
             subtotal_cents >= 0 and discount_cents >= 0 and total_cents >= 0
             and total_cents = subtotal_cents - discount_cents
             and (tax_cents is null or tax_cents >= 0))');
         DB::statement("alter table orders add constraint orders_paid_has_date check (status <> 'paid' or paid_at is not null)");
-        DB::statement("alter table orders add constraint orders_currency_lower check (currency = lower(currency))");
+        DB::statement('alter table orders add constraint orders_currency_lower check (currency = lower(currency))');
+        // Omaggio: costo zero, nessun codice sconto, nessuna sessione Stripe, firmato da chi lo emette, con il motivo;
+        // nasce già pagato (insert diretto in paid), quindi non occupa mai la "riserva aperta" del beneficiario.
+        DB::statement("alter table orders add constraint orders_comp_shape check (
+            (origin = 'complimentary'
+               and total_cents = 0 and subtotal_cents = 0 and discount_code_id is null
+               and stripe_checkout_session_id is null and issued_by is not null
+               and comp_reason is not null and comp_reason in ('speaker', 'staff', 'sponsor', 'other')
+               and status in ('paid', 'cancelled'))
+            or (origin = 'checkout' and issued_by is null and comp_reason is null))");
 
-        if ($pgsql) {
-            // Una sola riserva aperta per persona: prima di un nuovo checkout il server chiama expire sulla
-            // Checkout Session precedente e chiude l'ordine.
-            DB::statement("create unique index orders_one_pending_per_user on orders (user_id) where status = 'pending'");
-            DB::statement("create index orders_open_idx on orders (status, checkout_expires_at) where status in ('pending', 'processing')");
-
-            $allowed = "'".implode("','", self::TRANSITIONS)."'";
-            DB::unprepared(<<<SQL
-                create function orders_status_transition() returns trigger
-                language plpgsql
-                as \$\$
-                begin
-                  if new.status is distinct from old.status
-                     and not (old.status || '>' || new.status) = any (array[$allowed]) then
-                    raise exception 'order_invalid_transition' using errcode = 'P0001',
-                      detail = old.status || '>' || new.status;
-                  end if;
-                  return new;
-                end;
-                \$\$;
-                create trigger orders_status_transition before update of status on orders
-                  for each row execute function orders_status_transition();
-                SQL);
-        } else {
-            // MySQL 8 / MariaDB: stesso controllo con SIGNAL. Non provato in questa sessione.
-            $allowed = "'".implode("','", self::TRANSITIONS)."'";
-            DB::unprepared(<<<SQL
-                create trigger orders_status_transition before update on orders
-                for each row
-                begin
-                  if new.status <> old.status and concat(old.status, '>', new.status) not in ($allowed) then
-                    signal sqlstate '45000' set message_text = 'order_invalid_transition';
-                  end if;
-                end
-                SQL);
-        }
+        // Un trigger solo per tabella ed evento: MariaDB e MySQL ne ammettono più d'uno, ma uno solo è più facile da
+        // leggere e da togliere. Serve il privilegio TRIGGER; con il log binario attivo MySQL può chiedere anche
+        // log_bin_trust_function_creators: da verificare sull'hosting (docs/architettura.md §14).
+        $allowed = "'".implode("','", self::TRANSITIONS)."'";
+        $this->trigger(<<<SQL
+            create trigger orders_guard before update on orders
+            for each row
+            begin
+              if new.status <> old.status and concat(old.status, '>', new.status) not in ($allowed) then
+                signal sqlstate '45000' set message_text = 'order_invalid_transition';
+              end if;
+              if old.status = 'paid' and new.status = 'cancelled' and old.origin <> 'complimentary' then
+                signal sqlstate '45000' set message_text = 'order_invalid_transition';
+              end if;
+              if not (new.origin <=> old.origin) or not (new.price_role <=> old.price_role)
+                 or not (new.price_tier_id <=> old.price_tier_id) or not (new.user_id <=> old.user_id)
+                 or not (new.event_id <=> old.event_id) or not (new.subtotal_cents <=> old.subtotal_cents)
+                 or not (new.discount_cents <=> old.discount_cents) or not (new.total_cents <=> old.total_cents) then
+                signal sqlstate '45000' set message_text = 'order_snapshot_immutable';
+              end if;
+            end
+            SQL);
 
         Schema::create('order_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -135,7 +153,7 @@ return new class extends Migration
             $table->integer('quantity');
             // Prezzo membro solo sul biglietto del membro che compra: righe member di quantità 1, intestate
             // all'acquirente (controllo in OrderService), al massimo una per membro, evento e tipo
-            // (member_price_claims).
+            // (member_price_claims, migrazione 100200).
             $table->string('price_role', 10);
             $table->integer('list_unit_amount_cents');
             $table->integer('unit_discount_cents')->default(0);
@@ -144,10 +162,12 @@ return new class extends Migration
             $table->integer('total_cents');
             // Testo della riga sulla pagina Stripe e in ricevuta, nella lingua dell'ordine.
             $table->string('stripe_line_name', 250);
-            $table->foreignUuid('ticket_price_id')->nullable()->constrained('ticket_prices')->nullOnDelete();
-            // Nominativi raccolti nel carrello: [{"name": "...", "email": "..."}], uno per unità.
-            $table->jsonb('attendees');
-            $table->timestampsTz();
+            // Prezzo usato (tipo × fascia × ruolo); null per gli omaggi. RESTRICT: un prezzo usato non si cancella.
+            $table->foreignUuid('ticket_price_id')->nullable()->constrained('ticket_prices')->restrictOnDelete();
+            // Nominativi raccolti nel carrello: [{"name": "...", "email": "..."}], uno per unità. Diventano i
+            // nominativi dei biglietti e non cambiano più (nessun cambio di nome dal 06/11/2026).
+            $table->json('attendees');
+            $table->datetimes();
 
             $table->index('order_id');
         });
@@ -160,22 +180,35 @@ return new class extends Migration
             and unit_amount_cents = list_unit_amount_cents - unit_discount_cents
             and total_cents = unit_amount_cents * quantity)');
         DB::statement("alter table order_items add constraint order_items_member_qty_one check (price_role <> 'member' or quantity = 1)");
+        DB::statement("alter table order_items add constraint order_items_attendees_match check (
+            json_type(attendees) = 'ARRAY' and json_length(attendees) = quantity)");
+    }
 
-        if ($pgsql) {
-            DB::statement("alter table order_items add constraint order_items_attendees_match check (
-                jsonb_typeof(attendees) = 'array' and jsonb_array_length(attendees) = quantity)");
-        } else {
-            DB::statement("alter table order_items add constraint order_items_attendees_match check (
-                json_type(attendees) = 'ARRAY' and json_length(attendees) = quantity)");
+    /**
+     * Crea un trigger di difesa. Su MySQL con il log binario attivo un utente senza SUPER riceve l'errore 1419
+     * (provato il 06/11/2026 su MySQL 8.0.46): l'hosting deve impostare log_bin_trust_function_creators = 1. Se non
+     * può, DB_TRIGGERS_OPTIONAL=true fa saltare il trigger con un avviso nel log: la regola resta nel Service e nei
+     * test, e il controllo di salute dell'app (da scrivere) segnala i trigger mancanti (docs/architettura.md §14).
+     */
+    private function trigger(string $sql): void
+    {
+        try {
+            DB::unprepared($sql);
+        } catch (QueryException $e) {
+            $optional = filter_var(env('DB_TRIGGERS_OPTIONAL', false), FILTER_VALIDATE_BOOL);
+            if (($e->errorInfo[1] ?? null) === 1419 && $optional) {
+                Log::warning('Trigger di difesa non creato (errore 1419): '.strtok(trim($sql), "\n"));
+
+                return;
+            }
+            throw $e;
         }
     }
 
     public function down(): void
     {
         Schema::dropIfExists('order_items');
-        if (DB::getDriverName() === 'pgsql') {
-            DB::unprepared('drop trigger if exists orders_status_transition on orders; drop function if exists orders_status_transition();');
-        }
+        DB::unprepared('drop trigger if exists orders_guard');
         Schema::dropIfExists('orders');
     }
 };

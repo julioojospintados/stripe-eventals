@@ -1,23 +1,25 @@
 # Architettura informatica
 
-Autore: Giulio Occhipinti. Aggiornato al 06/11/2026.
+Autore: Giulio Occhipinti. Aggiornato al 06/11/2026 (secondo giro di risposte del cliente).
 
 Documento di progetto, senza codice applicativo. Parte dal brief (`docs/brief.md`) e dalle risposte del cliente
-(`docs/cliente/risposte-2026-11-06.md`). Il modello dei dati è in [`db/modello-dati.md`](../db/modello-dati.md), le
-migrazioni di esempio in [`db/migrazioni-bozza/`](../db/migrazioni-bozza/), le decisioni in
-[`docs/decisioni.md`](decisioni.md). La versione per Next.js + Supabase del 05/11/2026 è superata; il suo schema resta
-in [`db/archivio/schema-postgres-supabase.sql`](../db/archivio/schema-postgres-supabase.sql). Le scelte non ancora
+([primo giro](cliente/risposte-2026-11-06.md), [secondo giro](cliente/risposte-2026-11-06-secondo-giro.md)). Il
+modello dei dati è in [`db/modello-dati.md`](../db/modello-dati.md), le migrazioni di esempio in
+[`db/migrazioni-bozza/`](../db/migrazioni-bozza/), le decisioni in [`docs/decisioni.md`](decisioni.md). La versione
+per Next.js + Supabase del 05/11/2026 è superata; il suo schema resta in
+[`db/archivio/schema-postgres-supabase.sql`](../db/archivio/schema-postgres-supabase.sql). Le scelte non ancora
 confermate da Giulio sono marcate **proposta**.
 
-Etichette di certezza: `[sure]` verificato in questa sessione su fonte primaria (la fonte è detta), `[likely]` fonte
-affidabile o conoscenza consolidata ma non ricontrollata ora, `[uncertain]` da verificare, `[falsy]` controllato e
-risultato falso.
+Etichette di certezza: `[sure]` verificato in questa sessione su fonte primaria o con una prova (la fonte è detta),
+`[likely]` fonte affidabile o conoscenza consolidata ma non ricontrollata ora, `[uncertain]` da verificare, `[falsy]`
+controllato e risultato falso.
 
-**Nota sulle fonti (06/11/2026).** Da questa sessione `stripe.com`, `laravel.com` e `filamentphp.com` non si
-aprono (nome host non risolto) e l'API di GitHub non è abilitata: l'indicazione che `stripe.com` fosse raggiungibile
-è `[falsy]`. Versioni e listini vengono da ricerche web (risultati che citano pagine ufficiali o siti noti, pagine
-non aperte): sono al massimo `[likely]` e vanno ricontrollati prima del contratto e del codice. Per aprirle bisogna
-abilitare quei domini nelle impostazioni di rete della sessione.
+**Nota sulle fonti (06/11/2026, pomeriggio).** Dalla sessione di oggi `stripe.com` e `docs.stripe.com` si leggono
+con `curl` attraverso il proxy della sessione (lo strumento di lettura web invece non risolve il nome): i listini
+Stripe per la Francia e le pagine sui wallet sono `[sure]`. Composer e Packagist funzionano (scaricando i sorgenti da
+git): Laravel è installato davvero in una cartella di prova e le migrazioni bozza girano con il vero `Schema` di
+Laravel. `vimeo.com` e `wistia.com` non si aprono (proxy, 403): quello che riguarda i video è `[likely]` o
+`[uncertain]`.
 
 ---
 
@@ -25,35 +27,41 @@ abilitare quei domini nelle impostazioni di rete della sessione.
 
 ### 1.1 Scelta
 
-Decisione di Giulio del 06/11/2026: **Laravel + Filament sul server del cliente, dati in UE**.
+Decisione di Giulio del 06/11/2026: **Laravel + Filament sul server del cliente, dati in UE**. Il secondo giro di
+risposte precisa il server: **hosting condiviso con accesso SSH e MySQL o MariaDB, gestito da Simone**.
 
 | Strato | Scelta | Motivo |
 |---|---|---|
-| Linguaggio | PHP 8.4 (minimo 8.3) | Laravel 13 chiede PHP 8.3+ e supporta 8.3–8.5 `[likely]` ([laravel-news.com](https://laravel-news.com/laravel-13-released), ricerca del 06/11/2026) |
-| Framework | **Laravel 13** (13.0.0 del 17/03/2026; bug fix fino al Q3 2027, sicurezza fino al Q1 2028) `[likely]` (stessa fonte; [benjamincrozat.com](https://benjamincrozat.com/laravel-versions)) | Versione corrente; copre l'evento di aprile 2027 con i bug fix. Laravel 12 ha solo correzioni di sicurezza fino al 24/02/2027 `[likely]`: non partire da lì |
-| Pannello | **Filament 5** (16/01/2026; stesse funzioni della 4, in più Livewire 4) `[likely]` ([laravel-news.com](https://laravel-news.com/filament-5)) | Chiesto dal cliente; CRUD, tabelle, filtri, export, MFA già pronti. Compatibilità Filament 5 ↔ Laravel 13: `[uncertain]`, da provare con `composer require` nel primo spike |
-| Interfaccia pubblica | **Blade + Livewire 4 + Alpine.js** (§4.1) | Stessa tecnologia di Filament: un solo modo di lavorare, pagine generate dal server |
-| Database | **Postgres 16+** se il server lo permette, altrimenti MySQL 8.0.16+ / MariaDB 10.6+ (§3) | Vincoli più forti nel database (indici parziali, esclusioni, trigger) |
-| Pagamenti | Stripe Checkout ospitato, Stripe Billing, Customer Portal, SDK `stripe-php` diretto, **senza Laravel Cashier** (§6.1) | Nessun dato di carta sul sito; una sola via per webhook e idempotenza |
-| Coda e job | Laravel Queue con driver `database` + scheduler di Laravel (un solo cron di sistema) + Supervisor o systemd per i worker (§8) | Sostituisce Vercel Cron e `pg_cron`; il job nasce nella stessa transazione dei dati |
-| Email | SMTP esistente `Website@orthocongress.org`, in coda e con limite di invio (§9) | Richiesta del cliente; piano B con un fornitore transazionale UE |
-| File | Disco locale del server (`storage/app/public` per le foto degli speaker, `storage/app/private` per gli export) | Niente fornitore in più; nei backup |
-| Video | Bunny Stream o api.video, link firmati (§12) | Dati in UE, prezzi a consumo |
+| Linguaggio | **PHP 8.4** (minimo 8.3) | Laravel 13 chiede PHP 8.3+ `[sure]` (`composer.json` di `laravel/framework` 13.40.0, installato il 06/11/2026). L'ultima versione di `spatie/laravel-translatable` (6.15.0) chiede già PHP 8.4 `[sure]` (risoluzione di Composer): con 8.3 si resta alla 6.14 |
+| Framework | **Laravel 13** (installata la 13.40.0 `[sure]`; bug fix fino al Q3 2027, sicurezza fino al Q1 2028 `[likely]`, [laravel-news.com](https://laravel-news.com/laravel-13-released)) | Copre l'evento di aprile 2027 con i bug fix |
+| Pannello | **Filament 5** (con Livewire 4) | Chiesto dal cliente. Compatibilità con Laravel 13: Composer risolve `filament/filament` 5.11.1 + `livewire/livewire` 4.4.8 su Laravel 13.40 e PHP 8.3 `[sure]` (prova `--dry-run` del 06/11/2026; non ancora avviato) |
+| Interfaccia pubblica | **Blade + Livewire 4 + Alpine.js** (§4.1) | Stessa tecnologia di Filament, pagine generate dal server |
+| Database | **MySQL 8.0.16+ o MariaDB 10.6+** (§3) | È quello che offre l'hosting. Migrazioni bozza riscritte per MySQL e provate su MySQL 8.0.46 e MariaDB 10.11.14 `[sure]` |
+| Pagamenti | Stripe Checkout ospitato, Stripe Billing, Customer Portal, SDK `stripe-php` diretto (risolto 22.1.0 `[sure]`), **senza Laravel Cashier** (§6.1); **solo carta**, wallet compresi (§6.9) | Nessun dato di carta sul sito |
+| Coda e job | Laravel Queue con driver `database` + scheduler di Laravel **avviati dal cron ogni minuto**, nessun processo sempre attivo (§8) | L'hosting condiviso non ha Supervisor né systemd |
+| Email | SMTP esistente `Website@orthocongress.org`, circa 1.000 email l'ora (dato del cliente), in coda con limite di invio (§9) | Richiesta del cliente |
+| Newsletter | **Mailchimp** (account già attivo), solo con consenso (§13.2) | Risposta del cliente |
+| File | Disco dell'hosting (`storage/app/public` per le foto degli speaker, `storage/app/private` per export e import) | Niente fornitore in più; nei backup |
+| Video | **Wistia e Vimeo già in uso**, embed privati con restrizione di dominio, accesso per ruolo (§12) | Risposta del cliente; nessun servizio video nuovo |
 | Accesso | Codice via email per chi compra, password argon2id + TOTP obbligatorio per lo staff (§5) | Regola 1 del ruolo |
-| Permessi | Policies di Laravel + `spatie/laravel-permission` (§5.3) | Ruoli admin, commerciale, organizzatore chiesti dal cliente |
+| Permessi | Policies di Laravel + `spatie/laravel-permission` (risolto 8.5.0 `[sure]`) (§5.3) | Ruoli admin, commerciale, organizzatore |
+| Lingue | **Inglese predefinito**, italiano seconda lingua (§10) | Risposta del cliente |
 
 ### 1.2 Alternative scartate
 
 | Area | Alternativa | Perché scartata |
 |---|---|---|
-| Stack | Next.js su Vercel + Supabase (architettura del 05/11/2026) | **Superata: decisione di Giulio del 06/11/2026** (il cliente vuole Laravel + Filament sul suo server, dati in UE) |
-| Interfaccia | Inertia + Vue o React | Due mondi da mantenere (PHP e un framework JavaScript con build); dopo il lancio non c'è un tecnico. Ha senso solo per un'app molto interattiva, che qui non serve |
-| Interfaccia | Pannello e sito tutti in Filament | Filament è fatto per lo staff; il sito pubblico deve seguire l'aspetto di eas-aligners.com |
-| Pagamenti | Laravel Cashier | Vedi §6.1: utile per la sola membership, ma porta tabelle, webhook e versione API propri |
+| Stack | Next.js su Vercel + Supabase (architettura del 05/11/2026) | **Superata: decisione di Giulio del 06/11/2026** |
+| Database | ~~Postgres 16+ come principale~~ | **Superata il 06/11/2026**: l'hosting del cliente offre solo MySQL o MariaDB. Il ramo Postgres delle migrazioni, provato su Postgres 16.15, resta nella storia di git |
+| Worker | Supervisor o systemd con `queue:work` sempre attivo | Non disponibili su un hosting condiviso; sostituiti dal cron (§8). Tornano utili se un giorno si passa a un VPS |
+| Video | ~~Bunny Stream o api.video~~ | **Superata il 06/11/2026**: i video sono già su Wistia e Vimeo |
+| Newsletter | Brevo | Il cliente ha già Mailchimp attivo |
+| Interfaccia | Inertia + Vue o React | Due mondi da mantenere; dopo il lancio non c'è un tecnico |
+| Interfaccia | Pannello e sito tutti in Filament | Filament è fatto per lo staff; il sito pubblico ha il suo aspetto |
+| Pagamenti | Laravel Cashier | §6.1: porta tabelle, webhook e versione API propri |
 | Ticketing | pretix, Tito, Eventbrite | Scartati il 05/11/2026 (tutto su misura) |
-| Code | Redis + Horizon | Ottimi, ma un servizio in più da gestire; il driver `database` basta per questi volumi. Redis resta un'opzione se il server lo ha già |
-| Permessi | `bezhansalleh/filament-shield` | Genera permessi dal pannello: con tre ruoli fissi è più semplice definirli nel codice |
-| Accesso | Laravel Breeze | Non è più lo starter kit consigliato da Laravel 12 `[likely]`; ci serve poco: accesso con codice e pannello Filament |
+| Code | Redis + Horizon | Horizon ha bisogno di un processo sempre attivo: non su questo hosting |
+| Permessi | `bezhansalleh/filament-shield` | Con tre ruoli fissi è più semplice definirli nel codice |
 
 ---
 
@@ -62,32 +70,32 @@ Decisione di Giulio del 06/11/2026: **Laravel + Filament sul server del cliente,
 ```mermaid
 flowchart LR
   subgraph Browser["Browser e telefono"]
-    V[Sito pubblico IT/EN<br/>programma, speaker, prezzi]
+    V[Sito pubblico EN/IT<br/>evento, prezzi per fascia e ruolo]
     U[Area personale<br/>ordini, biglietti con QR,<br/>membership, video]
     A[Pannello Filament /admin<br/>admin, commerciale, organizzatore<br/>MFA obbligatoria]
   end
 
-  subgraph Server["Server del cliente, UE"]
-    WEB[Nginx + PHP-FPM<br/>Laravel 13]
+  subgraph Hosting["Hosting condiviso del cliente, UE"]
+    WEB[Web server + PHP 8.4<br/>Laravel 13]
     LW[Blade + Livewire]
     FIL[Filament 5]
-    WH[POST /stripe/webhook]
-    PAPI[API partner /api/partner/v1<br/>firma HMAC]
-    Q[Worker della coda<br/>Supervisor o systemd]
-    SCH[Scheduler<br/>cron ogni minuto]
-    DB[(Postgres 16+<br/>vincoli, stripe_events,<br/>jobs, audit_log)]
-    FS[(storage/<br/>foto speaker, export)]
+    WH[POST /stripe/webhook<br/>risponde subito, mette in coda]
+    PAPI[API partner /api/partner/v1<br/>firma HMAC, fase 2]
+    CRON[cron ogni minuto<br/>schedule:run]
+    Q[queue:work --stop-when-empty<br/>--max-time=50]
+    DB[(MySQL 8 / MariaDB<br/>vincoli, stripe_events,<br/>jobs, audit_log)]
+    FS[(storage/<br/>foto speaker, export, import)]
   end
 
   subgraph Stripe
-    CO[Checkout ospitato]
+    CO[Checkout ospitato<br/>solo carta e wallet]
     BP[Customer Portal]
     EV[Eventi webhook]
   end
 
   SMTP[SMTP Website@orthocongress.org]
-  VID[Video UE<br/>Bunny Stream o api.video]
-  NL[Newsletter<br/>Brevo o Mailchimp]
+  VID[Wistia e Vimeo<br/>embed privati per dominio]
+  NL[Mailchimp]
   XE[Xero]
   PAR[Partner del check-in]
 
@@ -102,47 +110,58 @@ flowchart LR
   WEB -- crea sessione --> BP
   EV -- firmato --> WH
   WH --> DB
-  SCH --> Q
+  CRON --> Q
   Q --> DB
   Q -- riconciliazione, expire, rimborsi --> Stripe
   Q --> SMTP
   Q --> NL
-  U -. link firmato .-> VID
-  PAR -- HMAC --> PAPI
+  U -. embed .-> VID
+  PAR -- export CSV, poi HMAC --> PAPI
   PAPI --> DB
   Stripe -- payout e commissioni --> XE
 ```
 
 | Componente | Cosa fa | Chi lo usa |
 |---|---|---|
-| Sito pubblico | Evento, programma per giorni, sale e tracce, sessioni e interventi, speaker, prezzi per ruolo, membership; IT e EN | Tutti |
-| Area personale | Carrello con nominativi, ordini e ricevute, biglietti con QR, membership (rimando al Customer Portal), video dei congressi passati per i membri | Chi ha un account |
-| Pannello Filament | Contenuti, biglietti, tier e prezzi, capienze, codici sconto, ordini, rimborsi, membership, export, registro audit | Staff con MFA |
-| Webhook Stripe | Verifica la firma, registra l'evento una volta sola, mette in coda l'elaborazione | Stripe |
-| API partner | Elenco dei biglietti validi e revocati per il check-in, richieste firmate | Partner sul posto |
-| Worker e scheduler | Eventi Stripe, scadenza delle sessioni, rimborsi automatici, email, export, newsletter, riconciliazione, pulizie | Sistema |
+| Sito pubblico | Evento, prezzi per fascia e ruolo, membership; in fase 2 programma per giorni e sale, sessioni, speaker; EN e IT | Tutti |
+| Area personale | Carrello con nominativi, ordini e ricevute, biglietti con QR, membership (rimando al Customer Portal), video ammessi al proprio ruolo | Chi ha un account |
+| Pannello Filament | Evento e date, fasce e prezzi, tipi di biglietto, capienze, codici sconto, ordini, omaggi, membership, export; in fase 2 programma, speaker, import CSV, video | Staff con MFA |
+| Webhook Stripe | Verifica la firma, registra l'evento una volta sola, mette in coda l'elaborazione, risponde 200 | Stripe |
+| Cron e coda | Ogni minuto: scadenza delle sessioni Stripe, elaborazione degli eventi, email, rimborsi automatici, export; ogni notte la riconciliazione e il backup | Sistema |
+| API partner | Elenco dei biglietti validi e revocati per il check-in, richieste firmate (fase 2) | Partner sul posto |
 
 ---
 
 ## 3. Database
 
-**Proposta:** Postgres 16 o più recente (Postgres 15 è il minimo per `nulls not distinct`) se il server lo
-permette; altrimenti MySQL 8.0.16+ o MariaDB 10.6+. Il dettaglio delle differenze è in
-[`db/modello-dati.md` §5](../db/modello-dati.md); in breve:
+**MySQL 8.0.16+ o MariaDB 10.6+** (decisione del 06/11/2026 dopo le risposte del cliente). Dettaglio di tabelle e
+vincoli in [`db/modello-dati.md`](../db/modello-dati.md); prove al §6 di quel file.
 
-| Tema | Con Postgres | Con MySQL / MariaDB |
+| Tema | Come si fa con MySQL / MariaDB | Prova del 06/11/2026 |
 |---|---|---|
-| `CHECK` (capienza, importi, forma delle chiavi) | Applicati | Applicati da MySQL 8.0.16 `[likely]`; con versioni più vecchie vengono ignorati: **non accettabili** |
-| Indici unici parziali (una riserva aperta per persona, un prezzo membro per tipo) | Nativi | Emulati con una **colonna generata** che vale la chiave solo quando la riga è attiva, `NULL` altrimenti, e un indice unico su di essa (esempi nelle migrazioni) |
-| Vincoli di esclusione (sale e listini sovrapposti) | Nativi (`btree_gist`) | Solo nel Service, con `lockForUpdate` sulla riga padre |
-| Trigger (transizioni di stato, audit solo in aggiunta, cambio nominativo) | PL/pgSQL | Possibili con `SIGNAL`, più limitati `[likely]` |
-| Lock | `lockForUpdate()` = `SELECT … FOR UPDATE`; `READ COMMITTED` | Stesso metodo; `REPEATABLE READ` con gap lock: più deadlock, quindi `DB::transaction($fn, attempts: 3)` e lock sempre nello stesso ordine |
+| `CHECK` (capienza, importi, forma delle chiavi, omaggi) | Applicati da MySQL 8.0.16 e da MariaDB 10.2 `[likely]`; su versioni più vecchie vengono ignorati: **non accettabili** | 🟢 applicati su MySQL 8.0.46 e MariaDB 10.11.14 `[sure]` |
+| `CHECK` e valori `NULL` | Un `CHECK` che vale `NULL` passa: ogni confronto su una colonna che può essere vuota porta il suo `is not null` | 🔴→🟢 trovati e corretti due casi (accompagnatore senza limite, omaggio senza motivo) `[sure]` |
+| `CHECK` e chiavi esterne | MySQL e MariaDB rifiutano un `CHECK` (e una colonna generata) su una colonna con `ON DELETE SET NULL` o `CASCADE`: le FK usate nei vincoli sono `RESTRICT` | 🟢 errore 3823 su MySQL, 1901 su MariaDB `[sure]` |
+| Indici unici «parziali» (una riserva aperta per persona, un prezzo membro per tipo, un accompagnatore per posto, un prezzo per tipo × fascia × ruolo) | **Colonna generata** `STORED` che vale la chiave solo quando la riga è attiva, `NULL` altrimenti, con indice unico (più `NULL` sono ammessi) | 🟢 `[sure]` |
+| UUID su MariaDB | Laravel 13 crea le colonne `uuid` con il tipo nativo `UUID` di MariaDB: `coalesce(uuid, '-')` fallisce; nelle colonne generate serve `cast(… as char(36))` | 🔴→🟢 trovato e corretto `[sure]` |
+| Vincoli di esclusione (fasce sovrapposte, sale sovrapposte) | Non esistono: trigger che legge la tabella (fasce) + Service con `lockForUpdate` sulla riga padre | 🟢 fasce sovrapposte rifiutate `[sure]` |
+| Trigger (transizioni di stato, dati fotografati dell'ordine, nominativo immutabile) | `SIGNAL SQLSTATE '45000'` | 🟢 su entrambi `[sure]`; ⚠️ vedi sotto |
+| Lock e isolamento | `lockForUpdate()` = `SELECT … FOR UPDATE`; isolamento di default `REPEATABLE READ`: l'`UPDATE` condizionale aspetta il lock e legge l'ultima versione confermata della riga; `DB::transaction($fn, attempts: 3)` contro i deadlock e lock sempre nello stesso ordine (ordine, poi pool per id) | 🟢 ultimo posto e prezzo membro in parallelo `[sure]` |
+| DDL | Non transazionale: una migrazione che fallisce a metà lascia le tabelle create. Migrazioni piccole, provate prima in staging, backup prima del deploy | — |
+| Date | `datetime` in UTC (non `timestamp`, che ha il limite del 2038 `[likely]`) | — |
 
-Con MySQL le regole restano tutte, ma alcune passano dal database al solo Service: un bug in quel punto non verrebbe
-più fermato dal database.
+⚠️ **Trigger su hosting condiviso.** Con il log binario attivo (predefinito su MySQL 8) un utente senza `SUPER` non
+può creare trigger: errore 1419 `[sure]` (provato su MySQL 8.0.46 e su MariaDB 10.11.14 con `--log-bin`, utente con
+tutti i permessi sul solo database). Servono **`log_bin_trust_function_creators = 1`** dall'hosting, oppure il log
+binario spento (MariaDB lo ha spento di default `[sure]` nella versione provata). Se l'hosting non può, le migrazioni
+saltano i trigger con `DB_TRIGGERS_OPTIONAL=true` e un avviso: le 11 difese che dipendono dai trigger (transizioni di
+stato, fascia e importi fotografati, nominativo immutabile, fasce sovrapposte, biglietti non cancellabili) restano
+nei Service, nelle enum PHP e nei test. **Capienza, prezzo membro, idempotenza dei webhook e biglietti unici non
+dipendono dai trigger** e restano nel database comunque `[sure]` (prova senza trigger, `db/modello-dati.md` §6).
 
-**Utenti del database:** uno per l'applicazione con i soli permessi su dati e sequenze, uno separato per le
-migrazioni (usato dal deploy), nessun superutente nell'`.env` dell'app (**proposta**).
+**Utenti del database:** l'hosting di solito ne dà uno per database. **Proposta:** se il pannello dell'hosting lo
+permette, uno per l'applicazione (solo dati) e uno per le migrazioni (usato dal deploy); altrimenti uno solo, con la
+password solo nel `.env`.
 
 ---
 
@@ -150,46 +169,41 @@ migrazioni (usato dal deploy), nessun superutente nell'`.env` dell'app (**propos
 
 ### 4.1 Sito pubblico: Blade + Livewire
 
-**Proposta: Blade + Livewire 4**, non Inertia.
+**Proposta: Blade + Livewire 4**, non Inertia (confronto invariato rispetto al 06/11/2026 mattina: una sola
+tecnologia con Filament, HTML dal server, manutenzione da parte di qualunque sviluppatore Laravel).
 
-| | Blade + Livewire | Inertia + Vue/React |
-|---|---|---|
-| Linguaggi da sapere | PHP e HTML (Alpine per i ritocchi) | PHP + JavaScript, componenti, build |
-| Stessa tecnologia di Filament | Sì | No |
-| Pagine pubbliche e motori di ricerca | HTML dal server, veloce senza configurazioni | Serve il rendering lato server per la SEO, un processo Node in più |
-| Chi la mantiene dopo il lancio | Qualunque sviluppatore Laravel, anche a ore | Serve anche chi conosce il framework JavaScript |
-| Interazioni del carrello (quantità, nominativi, codice sconto) | Coperte bene da Livewire | Più fluide, ma non servono |
+Il prototipo HTML (`prototipo/`) diventa una serie di componenti Blade. Il sito è **nuovo e separato** su
+`orthocongress.org` (dominio da comprare); eas-aligners.com serve solo come esempio di colori e testi.
 
-Il prototipo HTML (`prototipo/`) diventa una serie di componenti Blade con lo stesso aspetto di eas-aligners.com
-(decisione del 06/11/2026); la versione migliorata resta in `proposte/`.
-
-Rotte principali, con prefisso di lingua: `/{it|en}/`, `/programma`, `/sessioni/{slug}`, `/speaker`,
-`/speaker/{slug}`, `/biglietti`, `/membership`, `/accesso`, `/account/...`.
+Rotte principali, con prefisso di lingua: `/{en|it}/`, `/tickets` (`/biglietti`), `/membership`, `/login`,
+`/account/...`; in fase 2 `/programme`, `/sessions/{slug}`, `/speakers`, `/speakers/{slug}`. Lingua predefinita
+inglese (§10).
 
 ### 4.2 Area personale
 
-Una sola area per chi compra (il cliente la chiama «member area»): ordini e ricevute, biglietti con QR, cambio
-nominativo (nella prima versione su richiesta allo staff), membership con link al Customer Portal, profilo e lingua,
-consensi. La sezione **video** è visibile solo ai membri attivi. Ogni pagina e ogni azione Livewire verifica lato
-server sessione e Policy (regola 1), non solo il middleware delle rotte.
+Una sola area per chi compra: ordini e ricevute, biglietti con QR, membership con link al Customer Portal, profilo e
+lingua, consensi, **acquisto di un accompagnatore** dal proprio pass (fase 2, §7.4). Il nominativo del biglietto
+**non si cambia** (§6.7). La sezione **video** mostra solo i video ammessi ai ruoli della persona (§12). Ogni pagina
+e ogni azione Livewire verifica lato server sessione e Policy (regola 1), non solo il middleware delle rotte.
 
 ### 4.3 Pannello Filament
 
-Un solo pannello in `/admin` (**proposta**: anche su un sottodominio `admin.orthocongress.org` con elenco di IP
-ammessi, se il cliente lo vuole). Accesso solo a chi ha uno dei tre ruoli (`User::canAccessPanel()`) e la MFA
-attiva. Ogni risorsa usa la sua Policy: menu e pulsanti compaiono solo a chi ha il permesso, e le Policy valgono anche
-se qualcuno chiama l'azione direttamente.
+Un solo pannello in `/admin` (**proposta**: elenco di IP ammessi se l'hosting lo permette). Accesso solo a chi ha uno
+dei tre ruoli (`User::canAccessPanel()`) e la MFA attiva. Ogni risorsa usa la sua Policy.
 
-| Gruppo nel menu | Risorse | Ruoli |
-|---|---|---|
-| Programma | Eventi, giorni, sale, tracce, sessioni e interventi, speaker | organizzatore, admin |
-| Vendita | Tipi di biglietto, tier e prezzi, capienze, codici sconto | organizzatore (biglietti, tier, prezzi, capienze), commerciale (codici sconto, **proposta**), admin |
-| Ordini e soldi | Ordini, biglietti, rimborsi, membership, coda «da riconciliare» | commerciale, admin |
-| Member area | Raccolte e video | organizzatore, admin |
-| Export | Partecipanti per il check-in, ordini per la contabilità, iscritti alla newsletter | secondo il contenuto (§13.3) |
-| Sistema | Utenti dello staff e ruoli, chiavi del partner, registro audit, eventi Stripe | admin |
+| Gruppo nel menu | Risorse | Ruoli | Fase |
+|---|---|---|---|
+| Evento | Evento (**date modificabili**, finestra di vendita), giorni | organizzatore, admin | 1 |
+| Vendita | Tipi di biglietto, **fasce di prezzo** (date modificabili), prezzi per tipo × fascia × ruolo, capienze | organizzatore, admin | 1 |
+| Vendita | Codici sconto | commerciale **e** organizzatore, admin | 1 |
+| Ordini e soldi | Ordini, biglietti, rimborsi (lettura), membership (lettura), coda «da riconciliare» | commerciale, admin | 1 |
+| Ordini e soldi | **Omaggi** per speaker e staff (§7.4) | organizzatore, admin | 1 se gli speaker devono avere il biglietto all'apertura, altrimenti 2 |
+| Export | Partecipanti per il partner del check-in, ordini per la contabilità, iscritti con consenso | secondo il contenuto (§13.3) | 1 |
+| Programma | Sale (12), tracce, sessioni (~120), interventi, speaker (~30), **import da CSV** (§13.4) | organizzatore, admin | 2 |
+| Video | Video Wistia e Vimeo con ruoli ammessi (§12) | organizzatore, admin | 2 |
+| Sistema | Utenti dello staff e ruoli, chiavi del partner, registro audit, eventi Stripe, job falliti | admin | 1 |
 
-Testi del pannello in italiano e inglese; campi tradotti con due schede IT/EN per campo (§10).
+Testi del pannello in inglese e italiano; campi tradotti con due schede EN/IT per campo (§10).
 
 ---
 
@@ -197,100 +211,89 @@ Testi del pannello in italiano e inglese; campi tradotti con due schede IT/EN pe
 
 ### 5.1 Chi compra: codice via email
 
-Come nella proposta del 05/11/2026 e nel prototipo (`accesso.html`): **codice di 6 cifre via email**, nessuna
-password da ricordare, account creato al primo accesso. In Laravel non c'è un pacchetto ufficiale per questo `[likely]`:
-è un controller piccolo con la tabella `login_codes` (codice salvato come hash, scadenza 10 minuti, 5 tentativi) e il
-`RateLimiter` per email e per IP. Dopo l'accesso `session()->regenerate()`.
+**Codice di 6 cifre via email**, nessuna password, account creato al primo accesso (prototipo `accesso.html`). Tabella
+`login_codes` (codice salvato come hash, scadenza 10 minuti, 5 tentativi) e `RateLimiter` per email e per IP; dopo
+l'accesso `session()->regenerate()`.
 
-Cookie di sessione di Laravel: `httpOnly`, `Secure`, `SameSite=Lax`, firmato e cifrato con `APP_KEY`; sessioni nel
-database. È la regola 1 del ruolo.
+Su questo hosting il codice **non passa dalla coda del cron** (arriverebbe fino a un minuto dopo): si manda con un
+job `dispatch(...)->afterResponse()`, che Laravel esegue nello stesso processo dopo aver chiuso la risposta, con
+`fastcgi_finish_request()` su PHP-FPM o `litespeed_finish_request()` su LiteSpeed `[sure]` (codice di
+`symfony/http-foundation` installato). Se l'hosting non ha nessuna delle due, invio diretto nella richiesta (un
+secondo circa in più).
+
+Cookie di sessione: `httpOnly`, `Secure`, `SameSite=Lax`, firmato e cifrato con `APP_KEY`; sessioni nel database
+(tabella `sessions` di Laravel: per questo le sessioni del programma si chiamano `program_sessions`).
 
 ### 5.2 Staff: password argon2id + TOTP obbligatorio
 
-- Login del pannello Filament con password, hash **argon2id** (`config/hashing.php`, regola 1). PHP deve essere
-  compilato con argon2: sul PHP 8.3.6 di questa sessione c'è `[sure]` (`PASSWORD_ARGON2ID` definito); sul server
-  del cliente da controllare.
-- **MFA obbligatoria** con app TOTP (e codici di recupero), con l'autenticazione a più fattori integrata in Filament
-  dalla versione 4 `[likely]`. Sessioni dello staff più brevi (es. 2 ore di inattività).
-- Laravel Fortify serve solo se si vuole la 2FA anche fuori da Filament: per ora no (**proposta**). Breeze non serve.
-- Limite ai tentativi di accesso del pannello (Filament lo ha `[likely]`) più un limite per IP.
+- Login del pannello con password, hash **argon2id** (regola 1). PHP deve essere compilato con argon2: da
+  controllare sull'hosting (`php -r "var_dump(defined('PASSWORD_ARGON2ID'));"`); se manca, bcrypt con costo 12 non
+  rispetta la regola del ruolo e va segnalato a Giulio.
+- **MFA obbligatoria** con app TOTP e codici di recupero, integrata in Filament dalla versione 4 `[likely]`. Sessioni
+  dello staff più brevi (2 ore di inattività).
+- Limite ai tentativi di accesso del pannello e per IP.
 
 ### 5.3 Ruoli e permessi
 
-`spatie/laravel-permission` (licenza MIT `[likely]`, da far passare a `supply-chain-risk-auditor`) con ruoli e
-permessi definiti nel codice. Membro **non è un ruolo**: si deriva da `memberships` a ogni acquisto e a ogni accesso ai
-video.
+`spatie/laravel-permission` con ruoli e permessi definiti nel codice (da far passare a `supply-chain-risk-auditor`).
+Membro **non è un ruolo dello staff**: si deriva da `memberships` a ogni acquisto e a ogni accesso ai video.
 
 | Permesso | admin | commerciale | organizzatore |
 |---|---|---|---|
-| Eventi, giorni, sale, tracce, sessioni, interventi, speaker | ✔ | lettura | ✔ |
-| Tipi di biglietto, tier e prezzi, capienze | ✔ | lettura | ✔ |
-| Codici sconto (**proposta**, da confermare col cliente) | ✔ | ✔ | lettura |
+| Evento, date, giorni; in fase 2 sale, tracce, sessioni, speaker, import | ✔ | lettura | ✔ |
+| Tipi di biglietto, fasce e prezzi, capienze | ✔ | lettura | ✔ |
+| Codici sconto (decisione del cliente: li creano entrambi) | ✔ | ✔ | ✔ |
+| Codici d'invito per espositori (§7.4, fase 2) | ✔ | ✔ | lettura |
 | Ordini, pagamenti, biglietti | ✔ | ✔ | lettura senza importi |
+| Omaggi per speaker e staff | ✔ | lettura | ✔ |
 | Rimborsi (evento annullato, pagato senza posti) | ✔ | ✔ | — |
+| **Correzione di un refuso nel nominativo** (§6.7) | ✔ | — | — |
 | Fatture, export contabili, riconciliazione | ✔ | ✔ | — |
-| Cambio nominativo su richiesta | ✔ | ✔ | — |
 | Membership (lettura; le modifiche si fanno in Stripe) | ✔ | ✔ | — |
-| Video della member area | ✔ | — | ✔ |
+| Video e ruoli ammessi | ✔ | — | ✔ |
 | Export partecipanti per il check-in | ✔ | ✔ | ✔ |
 | Utenti dello staff, ruoli, chiavi del partner, registro audit, eventi Stripe | ✔ | — | — |
 
-Il primo admin si crea con un comando Artisan sul server (`php artisan staff:create --role=admin`), non da una pagina
-pubblica.
+Codici sconto: `DiscountCodePolicy` ammette commerciale e organizzatore; ogni creazione e modifica va nel registro
+audit con l'autore (`discount_codes.created_by`), così si vede chi ha creato cosa.
+
+Il primo admin si crea con un comando Artisan via SSH (`php artisan staff:create --role=admin`).
 
 ### 5.4 Cosa sostituisce l'RLS di Supabase
 
-Con Supabase il browser parlava direttamente con il database, quindi servivano le policy RLS. Qui **il browser non
-tocca mai il database**: l'unico client è l'applicazione sul server. Le stesse protezioni diventano:
-
-| Prima (Supabase) | Ora (Laravel) |
-|---|---|
-| Policy RLS di lettura pubblica (`published`) | Scope Eloquent `published()` nelle query del sito pubblico |
-| Policy «l'utente legge i propri ordini e biglietti» | Query sempre dalla relazione (`$request->user()->orders()`) + Policy `view` su ogni modello; ID UUID non indovinabili |
-| `is_admin_mfa()` nelle policy di scrittura | Policy + ruolo + MFA di Filament; `canAccessPanel()` |
-| `service_role` per le scritture su soldi e posti | Solo i Service scrivono ordini, posti e biglietti; Filament li mostra in sola lettura dove serve (niente modifica a mano dei contatori) |
-| `security definer` e `revoke execute` | Utente del database senza privilegi in più (§3) |
-| Funzioni SQL per capienza e conferma | Service PHP in transazione + vincoli del database (§7) |
-
-Il rischio nuovo è l'**IDOR** (cambiare un id nell'URL o in una proprietà Livewire per vedere dati di altri): si
-chiude con Policy su ogni azione, proprietà Livewire `#[Locked]` per gli id e test automatici per ogni rotta
-riservata.
+Invariato: il browser non tocca mai il database; scope `published()`, query dalle relazioni dell'utente, Policy su
+ogni modello e azione, UUID non indovinabili, proprietà Livewire `#[Locked]`, test per ogni rotta riservata contro
+l'**IDOR**.
 
 ---
 
 ## 6. Integrazione Stripe
 
+Account Stripe **in Francia**, incasso **in euro** (risposta del cliente del 06/11/2026).
+
 ### 6.1 Cashier o SDK diretto
 
-**Proposta: SDK `stripe-php` diretto per tutto, senza Laravel Cashier.**
-
-| | Laravel Cashier | `stripe-php` diretto |
-|---|---|---|
-| Membership in abbonamento | Ottimo: Checkout per abbonamenti, Customer Portal, stato della subscription con poche righe | Qualche centinaio di righe in più (tabella `memberships` già progettata) |
-| Biglietti una tantum con `price_data` riga per riga | Possibile passando le opzioni della sessione `[uncertain]`, ma Cashier non aggiunge nulla: riserve, sconti e conferma idempotente restano nostri | Naturale |
-| Webhook | Ha il suo controller; va esteso per passare da `stripe_events` e dai nostri lock | Un solo endpoint, una sola tabella di idempotenza, un solo flusso |
-| Tabelle | Le sue (`subscriptions`, `subscription_items`, colonne su `users`) accanto alle nostre: due copie dello stato | Solo le nostre (regola 2: una sola sorgente da leggere) |
-| Versione API Stripe | Fissata da Cashier (Cashier 16: `2025-07-30.basil` `[likely]`, da una PR della documentazione Laravel) e aggiornata con Cashier | La fissiamo noi e la aggiorniamo quando vogliamo |
-
-Cashier conviene se un giorno ci saranno più piani, prove gratuite e cambi di piano. Con un solo piano annuale il
-risparmio di codice non vale due modi di gestire Stripe.
-
-Versione API: si fissa nel client (`new StripeClient(['api_key' => …, 'stripe_version' => '…'])`) e nell'endpoint
-webhook; quale versione è `[uncertain]` finché non si apre la documentazione. Chiave segreta **limitata** (restricted
-key) ai soli permessi usati.
+**Proposta invariata: SDK `stripe-php` diretto per tutto, senza Laravel Cashier** (un solo webhook, una sola tabella
+di idempotenza, una sola copia dello stato della membership, versione API fissata da noi). Versione API da fissare
+nel client e nell'endpoint webhook: quale, `[uncertain]` finché non si legge la versione predefinita di `stripe-php`
+22.x. Chiave segreta **limitata** (restricted key) ai soli permessi usati.
 
 ### 6.2 Checkout dei biglietti
 
-Stesso flusso del 05/11/2026, ora in `CheckoutService` (in transazione):
+`CheckoutService`, in `DB::transaction($fn, attempts: 3)`:
 
-1. ricarica utente e prezzi dal database, mai dal browser;
-2. calcola il ruolo di prezzo valido **fino alla scadenza della Checkout Session** (adesso + 31 minuti);
-3. prezzo membro solo sul biglietto del membro che compra (quantità 1, intestato a lui), al massimo uno per membro,
-   evento e tipo anche su più ordini (`member_price_claims`); gli altri biglietti a prezzo pubblico;
-4. codice sconto calcolato riga per riga dal server (§6.4);
-5. se c'è un ordine `pending` della stessa persona: `expire` della sessione precedente e chiusura;
-6. crea l'ordine `pending` con ruolo e importi fotografati, riserva posti e utilizzo del codice;
-7. dopo il commit crea la Checkout Session con `Idempotency-Key: checkout-<order_id>` e salva il suo id.
+1. ricarica utente, tipo di biglietto e prezzi dal database, mai dal browser;
+2. legge la **fascia attiva adesso** (§6.3) e la fissa sull'ordine (`orders.price_tier_id`): se la fascia finisce
+   durante il pagamento, il prezzo non cambia;
+3. calcola il ruolo di prezzo valido **fino alla scadenza della Checkout Session** (adesso + 31 minuti);
+4. prezzo membro solo sul biglietto del membro che compra (quantità 1, intestato a lui), al massimo uno per membro,
+   evento e tipo anche su più ordini e in qualunque fascia (`member_price_claims`); gli altri biglietti a prezzo
+   pubblico;
+5. codice sconto calcolato riga per riga dal server (§6.4);
+6. se c'è un ordine `pending` della stessa persona: `expire` della sessione precedente e chiusura;
+7. crea l'ordine `pending` con ruolo, fascia e importi fotografati (il database non li lascia più cambiare),
+   riserva posti e utilizzo del codice;
+8. dopo il commit crea la Checkout Session con `Idempotency-Key: checkout-<order_id>` e salva il suo id.
 
 ```text
 mode                    payment
@@ -299,100 +302,145 @@ client_reference_id     <order_id>
 line_items[]            price_data: { currency: eur, unit_amount: <unit_amount_cents>,
                           product_data: { name: <stripe_line_name nella lingua dell'ordine>, metadata: {...} } },
                         quantity
+payment_method_types    [card]                      (solo carta; Apple Pay e Google Pay passano come carta, §6.9)
 allow_promotion_codes   false
-metadata                { order_id, kind: tickets, price_role, discount_code, env }
+metadata                { order_id, kind: tickets, price_role, price_tier, discount_code, env }
 payment_intent_data     { metadata: { order_id } }
 expires_at              adesso + 31 minuti (minimo Stripe 30 minuti [likely])
-locale                  it | en (lingua dell'ordine)
-invoice_creation        da decidere con la catena legale-fiscale (§13.1)
-tax_id_collection       da decidere con la catena legale-fiscale
-success_url             /{locale}/account/ordini/<order_id>?session_id={CHECKOUT_SESSION_ID}
-cancel_url              /{locale}/biglietti
+locale                  en | it (lingua dell'ordine)
+invoice_creation        da decidere col cliente a lavoro ultimato (§13.1, §19)
+success_url             /{locale}/account/orders/<order_id>?session_id={CHECKOUT_SESSION_ID}
+cancel_url              /{locale}/tickets
 ```
 
-- Metodi di pagamento: configurazione senza metodi a notifica differita per i biglietti (**proposta**, domanda
-  aperta); il codice gestisce comunque `processing`.
-- Ordini a costo zero: confermati senza Stripe dallo stesso `PaymentService::markPaid()`.
+- Ordini a costo zero (codice al 100%): confermati senza Stripe dallo stesso `PaymentService::markPaid()`.
 - La pagina di successo non è la prova del pagamento: se l'ordine è ancora `pending`, il server rilegge la sessione
-  da Stripe e chiama lo stesso `markPaid()` del webhook.
+  da Stripe e chiama lo stesso `markPaid()` del webhook. **Su questo hosting è la strada normale**: il webhook viene
+  elaborato dal cron entro un minuto, la pagina di successo mostra il biglietto subito.
 
-### 6.3 Prezzi: `price_data`, non un Price per combinazione
+### 6.3 Prezzi: fasce × ruolo, `price_data`
 
-Invariato: prezzi dei biglietti passati con `price_data.product_data`, importo per unità già scontato; una sola
-sorgente dei prezzi (`ticket_prices`). Price vero solo per la membership (200 €/anno, ricorrente annuale), che
-serve al Customer Portal.
+Fasce **early bird, regular, last minute** per evento, con date modificabili dal pannello (risposta del cliente).
+
+| Regola | Come |
+|---|---|
+| Una fascia attiva per volta | Le fasce di un evento non si sovrappongono (trigger `price_tiers_no_overlap_*` + lock sull'evento nel Service): a ogni istante al massimo una fascia attiva, quindi una sola per ogni tipo di biglietto (**proposta**: fasce per evento, non per tipo; se un giorno un tipo avrà date sue, si aggiunge `price_tiers.ticket_type_id`) |
+| Prezzi | Uno per (tipo di biglietto × fascia × ruolo) in `ticket_prices`; «fascia vuota» = **prezzo base**, valido nelle fasce che non hanno un prezzo loro. Indice unico su tipo, fascia e ruolo |
+| Calcolo (`PriceResolver`) | Fascia attiva → prezzo (tipo, fascia, ruolo) → altrimenti prezzo base (tipo, ruolo) → per il membro senza prezzo, lo stesso calcolo col ruolo pubblico → nessun prezzo = non acquistabile |
+| Si fissa sull'ordine | `orders.price_tier_id` e `order_items.ticket_price_id` al momento della riserva; importi fotografati, immutabili per trigger |
+| Early bird solo membri | È un dato, non codice: esiste il prezzo (pass, early bird, membro) e non (pass, early bird, pubblico) |
+| Pannello | Il form calcola il −30% come aiuto, ma salva l'importo in centesimi: una sola sorgente dei prezzi |
+
+Prezzi dell'EAS8 (risposte del cliente):
+
+| Tipo | Pubblico | Membro |
+|---|---|---|
+| Pass intero, early bird | 695,00 € (prezzo base: l'early bird è solo per i membri) | **276,50 €** (395 − 30%) |
+| Pass intero, regular | 695,00 € | 395,00 € |
+| Pass intero, last minute | **da definire** (domanda aperta 1) | **da definire** |
+| Workshop (10 da 20 posti) | 100,00 € in ogni fascia | nessun prezzo membro: 100,00 € |
+| Accompagnatore, espositore | da definire (domanda aperta 4) | nessun prezzo membro |
+| Omaggio speaker e staff | 0 € (emesso dal pannello) | — |
+| Membership | 200,00 €/anno (Price ricorrente in Stripe) | — |
+
+I biglietti vanno a Stripe con `price_data.product_data` e importo per unità già scontato (invariato); Price vero solo
+per la membership, che serve al Customer Portal.
 
 ### 6.4 Codici sconto e cumulo
 
-Invariato rispetto al 05/11/2026: nessun Coupon Stripe per i biglietti; regole in `discount_codes`; sconto per unità
-e per riga; utilizzi contati con `UPDATE … WHERE redeemed_count < max_redemptions` nella transazione della riserva e
-restituiti alla scadenza; sulla riga del membro il migliore tra prezzo membro e prezzo pubblico scontato, mai
-entrambi (salvo codici marcati `combinable_with_role_price`).
+Invariato: nessun Coupon Stripe per i biglietti; regole in `discount_codes`; sconto per unità e per riga; utilizzi
+contati con `UPDATE … WHERE redeemed_count < max_redemptions` nella transazione della riserva e restituiti alla
+scadenza; sulla riga del membro il migliore tra prezzo membro (anche early bird) e prezzo pubblico scontato, mai
+entrambi (salvo codici marcati `combinable_with_role_price`). Li creano commerciale e organizzatore (§5.3).
 
 ### 6.5 Membership
 
 - Checkout `mode=subscription` con il Price annuale da 200 €, `client_reference_id = user_id`,
-  `subscription_data.metadata = { user_id }`. Se la persona è già membro, rimando al Customer Portal.
-- 12 mesi dall'acquisto, rinnovo automatico, annullamento dal Customer Portal (decisione del 05/11/2026). Rimborso
-  della quota: il cliente ha risposto «non so» → catena legale.
-- Vantaggi dichiarati dal cliente: prezzo membro, accesso all'early bird (significato da chiarire, §21), video dei
-  congressi passati.
-- `memberships` aggiornata solo dagli eventi Stripe, rileggendo la subscription; nelle versioni recenti dell'API le
-  date del periodo stanno sulle voci della subscription `[uncertain]`.
+  `subscription_data.metadata = { user_id }`, solo carta. Se la persona è già membro, rimando al Customer Portal.
+- **Attiva subito** dopo il pagamento (risposta del cliente): a `checkout.session.completed` con `payment_status =
+  paid` il job rilegge la subscription e crea la riga `memberships` attiva; la pagina di successo fa lo stesso in
+  modo sincrono (rilegge la sessione da Stripe), così il membro vede i prezzi membro e l'early bird appena torna sul
+  sito, senza aspettare il cron. Stessa funzione `MembershipService::activateFromCheckout()`, idempotente.
+- 12 mesi dall'acquisto, rinnovo automatico, annullamento dal Customer Portal (decisione del 05/11/2026).
+- Vantaggi: prezzo membro, **early bird** (solo membri), video ammessi al ruolo membro.
+- `memberships` aggiornata poi solo dagli eventi Stripe, rileggendo la subscription; nelle versioni recenti dell'API
+  le date del periodo stanno sulle voci della subscription `[uncertain]`.
 
-### 6.6 Webhook
+### 6.6 Webhook su hosting condiviso
 
-Endpoint `POST /stripe/webhook`, escluso dalla protezione CSRF, uno per ambiente con il suo segreto.
+Endpoint `POST /stripe/webhook`, escluso dalla protezione CSRF, uno per ambiente con il suo segreto. **Risponde
+subito e mette in coda**:
 
-1. `StripeWebhookController` legge il corpo grezzo (`$request->getContent()`) e verifica la firma con
-   `\Stripe\Webhook::constructEvent()`; firma sbagliata → 400, nessuna scrittura.
-2. Rifiuta `livemode` diverso dall'ambiente.
-3. In una transazione: `insertOrIgnore` in `stripe_events` e `ProcessStripeEvent::dispatch($id)` sulla coda
-   `database`. La riga del job entra nella stessa transazione: se il processo cade, o ci sono entrambe o nessuna.
-   Risposta 200 subito. Un reinvio di Stripe trova la riga e risponde 200 senza fare nulla.
-4. Il job blocca la riga dell'evento, esce se è già `processed`, chiama il Service giusto, segna `processed`. Errore →
-   `failed` + `last_error` + nuovo tentativo con attesa crescente; all'ultimo tentativo avviso allo staff. La
-   riconciliazione notturna ripesca ciò che manca.
+1. `StripeWebhookController` legge il corpo grezzo e verifica la firma con `\Stripe\Webhook::constructEvent()`;
+   firma sbagliata → 400, nessuna scrittura. Rifiuta `livemode` diverso dall'ambiente.
+2. In una transazione: `insertOrIgnore` in `stripe_events` e `ProcessStripeEvent::dispatch($id)` sulla coda
+   `database`. La riga del job entra nella stessa transazione. Risposta 200 in pochi millisecondi. Un reinvio di
+   Stripe trova la riga e risponde 200 senza fare nulla.
+3. Il cron di ogni minuto avvia il worker (§8): il job blocca la riga dell'evento, esce se è già `processed`, chiama
+   il Service giusto, segna `processed`. Errore → `failed` + `last_error` + nuovo tentativo con attesa crescente;
+   all'ultimo tentativo avviso allo staff. La riconciliazione notturna ripesca ciò che manca.
 
-Dentro i Service le regole provate restano: **lock sull'ordine** (`lockForUpdate`) prima di tutto, poi pool in
-ordine di id; transizioni ammesse (enum PHP + trigger, migrazione `100000`); `unique (order_item_id, seq)` sui
-biglietti; email con `dedupe_key`. Stripe non garantisce l'ordine degli eventi `[likely]`: per subscription e
-fatture si rilegge l'oggetto e si ignorano eventi più vecchi di `memberships.last_stripe_event_at`.
+Dentro i Service le regole provate restano: **lock sull'ordine** prima di tutto, poi pool in ordine di id;
+transizioni ammesse (enum PHP + trigger); `unique (order_item_id, seq)` sui biglietti; email con `dedupe_key`. Stripe
+non garantisce l'ordine degli eventi `[likely]`: per subscription e fatture si rilegge l'oggetto e si ignorano eventi
+più vecchi di `memberships.last_stripe_event_at`.
 
 | Evento | Azione |
 |---|---|
-| `checkout.session.completed` | Biglietti: pagato → `markPaid` (esiti `paid`, `paid_late`, `needs_refund`, `already_done`); `unpaid` → `markProcessing`. Membership: collega subscription e utente |
-| `checkout.session.async_payment_succeeded` / `_failed` | `markPaid` / chiusura `failed` con rilascio di posti e codice |
-| `checkout.session.expired` | Chiusura `expired`, posti e codice rilasciati |
+| `checkout.session.completed` | Biglietti: pagato → `markPaid` (esiti `paid`, `paid_late`, `needs_refund`, `already_done`). Membership: `activateFromCheckout` |
+| `checkout.session.expired` | Chiusura `expired`, posti, codice e prenotazioni (prezzo membro, accompagnatore) rilasciati |
 | `charge.refunded`, `refund.updated` | Aggiorna `refunds`; rimborsi nati in Dashboard → `needs_review` |
 | `charge.dispute.created` / `closed` | Biglietti `disputed`, avviso al commerciale |
 | `customer.subscription.created` / `updated` / `deleted` | Rilettura e aggiornamento di `memberships` |
 | `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required` | Rinnovo, avviso di pagamento fallito, richiesta SCA |
 
-### 6.7 Riconciliazione, rimborsi, cambio nominativo
+Con solo carta gli eventi `checkout.session.async_payment_*` non dovrebbero arrivare `[likely]`; il codice li gestisce
+lo stesso (`markPaid` o chiusura `failed`).
 
-Invariati rispetto al 05/11/2026, ora come job e Service:
+### 6.7 Riconciliazione, rimborsi, nominativo immutabile
 
-- **Riconciliazione notturna** (`ReconcileStripe`): sessioni completate ↔ ordini `paid`, `needs_refund` ↔ rimborsi,
-  `processing` fermi da 7 giorni, subscription ↔ `memberships`, rimborsi ↔ `refunds`, ricalcolo di `held` e
-  `confirmed` dai dati reali, eventi non consegnati.
+- **Riconciliazione notturna** (`ReconcileStripe`): invariata (sessioni completate ↔ ordini `paid`, `needs_refund` ↔
+  rimborsi, subscription ↔ `memberships`, ricalcolo di `held` e `confirmed`, eventi non consegnati). Dopo un
+  ripristino da backup è anche il modo di recuperare i pagamenti arrivati dopo l'ultimo dump (§14.3).
 - **Rimborsi**: nessun rimborso self-service; solo commerciale o admin per evento annullato o ordine pagato senza
-  posti, con causa obbligatoria; rimborso automatico (job `RefundOrderFully`, `Idempotency-Key auto-refund-<id>`) per
-  `needs_refund`. Nella prima versione i rimborsi manuali si fanno dalla Dashboard Stripe e il webhook li registra.
-- **Cambio nominativo**: gratuito fino a 48 ore prima dell'inizio dell'evento, mai sui biglietti a prezzo membro, solo
-  il nome si corregge sempre; `qr_version + 1`, audit, email al nuovo partecipante. Da far confermare alla catena
-  legale.
+  posti; rimborso automatico (`RefundOrderFully`, `Idempotency-Key auto-refund-<id>`) per `needs_refund`. Nella Fase 1
+  i rimborsi manuali si fanno dalla Dashboard Stripe e il webhook li registra.
+- **Nessun cambio di nome** (risposta del cliente del 06/11/2026): tolti la regola delle 48 ore, la funzione di cambio
+  nominativo, `name_change_deadline_hours`, `name_changes_count` e i relativi controlli. Il nominativo nasce dal
+  carrello e **non cambia più**: un trigger lo blocca.
+- **Proposta: correzione di un refuso, solo admin.** Azione «Correggi nominativo» nel pannello, permesso solo
+  all'admin con MFA, motivo obbligatorio, massimo 3 correzioni per biglietto, riga nel registro audit nella stessa
+  transazione. Il trigger la ammette solo se nella stessa modifica aumenta il contatore e c'è la firma di chi corregge
+  (provato, §6 del modello dati). Se cambia l'email: `qr_version + 1` e biglietto rimandato al nuovo indirizzo; se
+  cambia solo il nome il QR resta valido (non contiene il nome). Non è un cambio di intestatario: il pannello avvisa se
+  il nuovo nome è molto diverso dal vecchio.
 
 ### 6.8 Test e produzione
 
 | | Locale e staging | Produzione |
 |---|---|---|
-| Stripe | Modalità test o sandbox | Chiavi live |
-| Database | Database separato (staging sullo stesso server o in locale) | Database di produzione |
+| Stripe | Modalità test o sandbox | Chiavi live dell'account francese |
+| Database | MySQL o MariaDB della stessa versione dell'hosting (in locale con Docker, in staging un secondo database sull'hosting) | Database di produzione |
 | Webhook | `stripe listen` in locale; endpoint di staging | Endpoint live |
 | Email | Mailpit in locale, casella di prova in staging | SMTP del cliente |
 
-`orders.livemode` e `stripe_events.livemode` registrano la modalità; il webhook rifiuta quella sbagliata.
+### 6.9 Metodi di pagamento: solo carta
+
+Risposta del cliente: **solo carta tramite Stripe**, niente bonifico.
+
+- Apple Pay e Google Pay sono wallet che contengono carte: Stripe applica a quelle carte le stesse regole delle carte
+  («Checkout also filters cards in Apple and Google Pay wallets») `[sure]`
+  ([docs.stripe.com/payments/checkout/customization/behavior](https://docs.stripe.com/payments/checkout/customization/behavior),
+  letto il 06/11/2026) e il listino francese mette i wallet nella stessa voce delle carte («credit and debit cards,
+  prepaid cards, and digital wallets») `[sure]` ([stripe.com/en-fr/pricing](https://stripe.com/en-fr/pricing), letto il
+  06/11/2026). Rimborsi e contestazioni funzionano come per le carte `[sure]` ([docs.stripe.com/google-pay](https://docs.stripe.com/google-pay)).
+- Con Checkout ospitato Apple Pay funziona senza configurazione in più (niente registrazione del dominio, che serve
+  solo con Elements o Checkout incorporato) `[sure]` ([docs.stripe.com/apple-pay](https://docs.stripe.com/apple-pay)).
+- **Proposta:** `payment_method_types: ['card']` nella sessione, che mostra anche Apple Pay e Google Pay sui
+  dispositivi che li hanno `[likely]` (da vedere in modalità test prima del lancio); niente SEPA, Klarna, bonifico.
+  Link (il salvataggio dei dati di carta di Stripe) è anch'esso un pagamento con carta, ma ha una voce sua nel listino:
+  da lasciare spento finché il cliente non lo chiede.
+- Con solo carta il pagamento è sincrono: niente riserve aperte per giorni.
 
 ---
 
@@ -401,95 +449,115 @@ Invariati rispetto al 05/11/2026, ora come job e Service:
 ### 7.1 Modello
 
 Invariato: pool di posti (`capacity_pools`) con `held + confirmed <= capacity` nel database; ogni tipo di biglietto
-consuma uno o più pool (`ticket_type_pools`). Per l'EAS8: un pool per giorno (6.000 posti, dato del cliente) consumato
-dal pass intero; un pool per ogni workshop. Nessun giornaliero per ora.
+consuma uno o più pool (`ticket_type_pools`). Per l'EAS8: un pool per giorno (6.000 posti) consumato dal pass intero
+e, **proposta**, anche da espositori, accompagnatori e omaggi (sono persone in sede); un pool per ognuno dei **10
+workshop da 20 posti**. Le 12 sale del programma non hanno pool: le sessioni sono comprese nel pass.
 
 ### 7.2 Come si evita l'overselling
 
-Stesso flusso provato il 05/11/2026, ora in `CapacityService` dentro `DB::transaction()`:
+Stesso flusso provato il 05/11/2026 (Postgres) e il 06/11/2026 (MySQL e MariaDB), in `CapacityService` dentro
+`DB::transaction($fn, attempts: 3)`:
 
 1. **Riserva**: lock sull'ordine, poi pool in ordine di id;
    `UPDATE capacity_pools SET held = held + n WHERE id = ? AND held + confirmed + n <= capacity`; 0 righe = esaurito.
-   Errori: `sold_out`, `too_many_for_pool`, `discount_exhausted`, `discount_user_limit`, `hold_too_short`,
-   `member_price_limit`. In errore nessuna sessione Stripe.
 2. **Durata**: sessione 31 minuti, riserva 5 minuti in più; sotto i 30 minuti rifiutata.
-3. **Una sola riserva aperta per persona** (indice unico parziale).
-4. **Limiti per ordine** su tipo e pool (es. 2 sui workshop).
-5. **Rilascio solo dopo conferma di Stripe**: webhook `expired` o job `ExpireStaleOrders` (ogni minuto) che legge la
-   sessione: `open` → `expire` e chiusura; `expired` → chiusura; `complete` → `markPaid`. Job fermo = si vende meno,
-   mai due volte.
-6. **Conferma con riprenotazione**: riserve convertite; pagamento tardivo → riprenota se c'è posto (`paid_late`),
-   altrimenti `needs_refund`, nessun biglietto, rimborso automatico. In PHP il «tutto o niente» del ciclo sui pool è
-   una transazione annidata (savepoint).
-7. **Pagamento asincrono**: riserva `awaiting_payment` senza scadenza.
+3. **Una sola riserva aperta per persona** (colonna generata + indice unico).
+4. **Limiti per ordine** su tipo e pool (2 sui workshop).
+5. **Rilascio solo dopo conferma di Stripe**: webhook `expired` o job `ExpireStaleOrders` (dal cron ogni minuto)
+   che legge la sessione. Job fermo = si vende meno, mai due volte.
+6. **Conferma con riprenotazione**: pagamento tardivo → riprenota se c'è posto (`paid_late`), altrimenti
+   `needs_refund`, nessun biglietto, rimborso automatico in coda nella stessa transazione.
 
 ### 7.3 Prove
 
 | Quando | Cosa | Esito |
 |---|---|---|
-| 05/11/2026 | Funzioni SQL dello schema precedente su Postgres 16, 17 scenari (riserva corta, doppia riserva, caso del bug del rilascio cieco, webhook ripetuto e parallelo, pagamento tardivo, sessione diversa, limite per pool, codice sconto, limite prezzo membro, cambio nominativo a 47/49 ore, biglietto membro non cedibile, rimborso senza causa) | 🟢 tutti come atteso `[sure]` in quella sessione |
-| 06/11/2026 | Difese del database delle 4 migrazioni bozza (ramo Postgres) su Postgres 16.15 con dati finti, comprese due prove in parallelo (ultimo posto, prezzo membro) | 🟢 tutte come atteso `[sure]`, dettaglio in [`db/modello-dati.md` §6](../db/modello-dati.md) |
-| Da fare | Gli stessi 17 scenari come **test Pest** sui Service PHP, su Postgres (e MySQL se scelto), prima del rilascio | — |
+| 05/11/2026 | Funzioni SQL dello schema precedente su Postgres 16, 17 scenari | 🟢 `[sure]` in quella sessione |
+| 06/11/2026 mattina | Difese del database delle 4 migrazioni bozza (ramo Postgres) su Postgres 16.15 | 🟢 `[sure]` |
+| 06/11/2026 pomeriggio | Le 6 migrazioni bozza riscritte per MySQL, applicate con **Laravel 13.40** (`migrate:fresh` e `rollback`) su **MySQL 8.0.46** e **MariaDB 10.11.14**, 59 prove con dati finti per database, comprese le prove in parallelo (ultimo posto, prezzo membro su due ordini, webhook ripetuto con pagina di successo), la conferma tardiva con e senza posto, le fasce e il nominativo immutabile | 🟢 59/59 su entrambi `[sure]`; dettaglio in [`db/modello-dati.md` §6](../db/modello-dati.md) |
+| Da fare | Gli stessi scenari come **test Pest** sui Service PHP, sulla stessa versione di MySQL o MariaDB dell'hosting | — |
+
+### 7.4 Omaggi, accompagnatori, espositori
+
+| Tipo | Regola (**proposta** dove non detto dal cliente) | Nel database |
+|---|---|---|
+| **Omaggio** speaker e staff (`staff_pass`, canale `panel`) | Emesso dal pannello da organizzatore o admin, a costo zero, per una persona (nome ed email); motivo `speaker`, `staff`, `sponsor`, `other`; **conta nella capienza** con lo stesso aggiornamento condizionale (direttamente su `confirmed`); email con il biglietto; revocabile (ordine `cancelled`, posto liberato); tutto nel registro audit | Ordine con `origin = complimentary`, importi 0, `issued_by` e `comp_reason` obbligatori, nasce già `paid` (non occupa la riserva aperta del beneficiario) — tutto per `CHECK` |
+| **Accompagnatore** (`companion`) | Si compra solo da chi ha un **pass valido** (intero o espositore) a suo nome, in un ordine separato dopo il pass (dalla pagina del biglietto: «Aggiungi un accompagnatore»); al massimo **1 per pass** (configurabile fino a 5); sempre prezzo pubblico; nominativo suo; legato al pass (`host_ticket_id`): se il pass viene rimborsato per evento annullato, anche l'accompagnatore; cosa include (cena, area espositiva, sessioni?) è una domanda di prodotto | `companion_claims` con indice unico su (pass, posto) per le prenotazioni attive; `tickets.host_ticket_id` immutabile |
+| **Espositore / sponsor** (`exhibitor`) | Tipo di biglietto a pagamento con canale `invite`: visibile e acquistabile solo con un **codice d'invito** creato dal commerciale per azienda (numero di pass del pacchetto, scadenza), contato come i codici sconto; i pass compresi nel pacchetto sponsor si emettono come omaggi con motivo `sponsor` | `ticket_types.channel`; tabella `invite_codes` (fase 2, nel modello dati) |
 
 ---
 
-## 8. Code, job e scheduler
+## 8. Code, job e scheduler senza processi sempre attivi
 
-Coda di Laravel con driver `database` (stessa base dati: il job nasce nella stessa transazione dell'ordine o
-dell'evento Stripe). Worker `php artisan queue:work` tenuti vivi da Supervisor o systemd, riavviati a ogni deploy
-(`queue:restart`). Scheduler: una sola riga di cron `* * * * * php artisan schedule:run`.
+L'hosting condiviso non permette processi sempre attivi (niente Supervisor, systemd, Horizon). Tutto parte da **una
+sola riga di cron**:
+
+```text
+* * * * * cd /home/<utente>/eas8/current && php artisan schedule:run >> /dev/null 2>&1
+```
+
+e nello scheduler di Laravel (`routes/console.php`):
+
+```php
+Schedule::command('queue:work --queue=critical,default,low --stop-when-empty --max-time=50 --tries=5 --memory=192')
+    ->everyMinute()->withoutOverlapping(5)->runInBackground();
+Schedule::job(new ExpireStaleOrders)->everyMinute()->withoutOverlapping();
+Schedule::job(new ReconcileStripe)->dailyAt('03:15');
+Schedule::command('backup:run --only-db')->hourly();   // §14.3
+```
+
+- `--stop-when-empty` e `--max-time` esistono in Laravel 13 `[sure]` (`WorkCommand`, versione installata): il worker
+  vuota la coda e si ferma entro 50 secondi, prima del cron successivo; `withoutOverlapping` (lock nella cache
+  `database`) evita due worker insieme se un job è lungo.
+- Latenza: un job aspetta al massimo circa un minuto. Per questo il **codice di accesso** non passa dalla coda (§5.1)
+  e la **pagina di successo** conferma il pagamento da sola (§6.2).
+- `queue:restart` al deploy resta utile (un worker partito con il codice vecchio si ferma al job successivo).
+- Il timeout per job (`--timeout`) funziona solo con l'estensione `pcntl` nel PHP da riga di comando `[likely]`: da
+  controllare sull'hosting; senza, i job devono essere brevi per costruzione (export e rimborsi massivi a lotti).
+- Se l'hosting vieta `proc_open` (`disable_functions`), lo scheduler non può avviare i comandi: in quel caso righe di
+  cron separate per `queue:work` e per i job programmati (requisito al §14.1).
 
 | Coda | Job | Quando |
 |---|---|---|
-| `critical` | `ProcessStripeEvent`, `RefundOrderFully`, email del codice di accesso | Subito |
-| `default` | Email di conferma e biglietti, cambio nominativo, avvisi allo staff | Subito, con limite di invio (§9) |
-| `low` | Export, sincronizzazione newsletter, promemoria, rimborsi massivi a lotti | Subito, priorità bassa |
+| `critical` | `ProcessStripeEvent`, `RefundOrderFully` | Entro un minuto |
+| `default` | Email di conferma e biglietti, omaggi, avvisi allo staff | Entro un minuto, con limite di invio (§9) |
+| `low` | Export, sincronizzazione Mailchimp, import CSV del programma, promemoria | Quando c'è tempo nel minuto |
 
 | Job programmato | Frequenza |
 |---|---|
-| `ExpireStaleOrders` (riserve scadute: lettura della sessione su Stripe, `expire`, chiusura o conferma) | Ogni minuto, `withoutOverlapping()` |
+| `ExpireStaleOrders` (sessioni scadute: lettura su Stripe, `expire`, chiusura o conferma) | Ogni minuto |
 | `ReconcileStripe` | Ogni notte |
-| `PruneStripePayloads` (payload a `null` dopo 90 giorni), pulizia `login_codes`, export scaduti | Ogni giorno |
-| Promemoria evento (7 giorni e 1 giorno prima) | Ogni giorno |
-| Controllo dei backup e dei job falliti, con avviso | Ogni giorno |
-
-Ogni job è idempotente (`ShouldBeUnique` dove serve, `dedupe_key` sulle email) e ha tentativi con attesa
-crescente. `failed_jobs` è visibile all'admin nel pannello. Redis + Horizon solo se il carico lo chiede.
+| Backup del database (§14.3) | Ogni ora durante le vendite, poi ogni notte |
+| `PruneStripePayloads`, pulizia `login_codes`, export e import scaduti | Ogni giorno |
+| Controllo di salute: job falliti, trigger presenti (§3), backup riusciti, ultimo giro del cron | Ogni giorno, con avviso via email |
 
 ---
 
 ## 9. Email
 
-- Invio dalla casella esistente `Website@orthocongress.org` via SMTP (richiesta del cliente), con mailer Laravel
-  `smtp` e credenziali solo nel `.env`.
-- **Limiti:** dipendono dal fornitore della casella, non ancora noto. Ordini di grandezza: Google Workspace circa
-  2.000 messaggi al giorno per utente, Microsoft 365 circa 10.000 destinatari al giorno e 30 messaggi al minuto
-  `[uncertain]`, da verificare sul fornitore reale. Microsoft sta ritirando l'autenticazione di base su SMTP AUTH
-  `[uncertain]`: se la casella è su Microsoft 365 potrebbe servire OAuth.
-- Tutte le email passano dalla coda con un **limite di invio** (middleware `RateLimited` sui job, per esempio 20 al
-  minuto, regolabile dal `.env`). Il codice di accesso va sulla coda `critical` per arrivare in pochi secondi.
-- **Picco all'apertura delle vendite:** con 1.000 ordini nella prima ora e 20 email al minuto le conferme arrivano
-  fino a circa 50 minuti dopo; il biglietto resta comunque visibile subito nell'area personale. Se non basta,
-  **proposta**: email transazionali da un fornitore UE (es. Brevo o Mailjet, Francia) con il dominio
-  `orthocongress.org`, costi da verificare `[uncertain]`.
-- SPF, DKIM e DMARC del dominio da controllare prima del lancio (oggi `orthocongress.org` dava errore 502 dal
-  sito: il DNS è da verificare).
+- Invio dalla casella esistente `Website@orthocongress.org` via SMTP, credenziali solo nel `.env`.
+- **Limite: circa 1.000 email l'ora** (dato del cliente). Tutte le email passano dalla coda con il middleware
+  `RateLimited` (es. 15 al minuto, regolabile dal `.env`, sotto il limite con margine per i codici di accesso, che
+  partono fuori coda).
+- **Picco all'apertura delle vendite:** con 1.000 ordini nella prima ora le conferme arrivano fino a circa un'ora dopo;
+  il biglietto è comunque visibile subito nell'area personale e sulla pagina di successo. Se non basta, **proposta**:
+  fornitore transazionale UE con il dominio `orthocongress.org`.
+- SPF, DKIM e DMARC del dominio da impostare appena il dominio è comprato (domanda aperta 3).
 - La newsletter **non** passa da questa casella (§13.2).
 
 ---
 
-## 10. Lingue (IT, EN)
+## 10. Lingue (EN, IT)
 
 | Cosa | Come |
 |---|---|
-| Testi dell'interfaccia | File di lingua: `lang/it.json`, `lang/en.json` e i file pubblicati di Laravel (`validation.php` ecc.) |
-| Contenuti (evento, giorni, sale, tracce, sessioni, interventi, speaker, tipi di biglietto, piani, video) | Colonne JSON `{"it": …, "en": …}` con `spatie/laravel-translatable` (da far passare a `supply-chain-risk-auditor`); nel pannello due schede IT/EN per campo |
-| URL | Prefisso `/it/…` e `/en/…`, `hreflang` nelle pagine; la prima visita sceglie dalla lingua del browser, poi un cookie; slug unici per tutte e due le lingue |
-| Regola di pubblicazione | **Proposta**: un evento o una sessione si pubblica solo con titolo in tutte e due le lingue; per le bio degli speaker si ammette una sola lingua con riserva sull'inglese |
-| Email, PDF, pagina Stripe | Nella lingua dell'acquirente (`users.locale`, `orders.locale`); `locale` di Checkout uguale |
+| Lingua predefinita | **Inglese** (risposta del cliente), italiano seconda lingua. `APP_LOCALE=en`, `APP_FALLBACK_LOCALE=en` |
+| Testi dell'interfaccia | `lang/en.json`, `lang/it.json` e i file pubblicati di Laravel |
+| Contenuti | Colonne JSON `{"en": …, "it": …}` con `spatie/laravel-translatable`; nel pannello due schede EN/IT per campo, EN obbligatoria |
+| URL | Prefisso `/en/…` e `/it/…`, `hreflang`; la radice `/` porta a `/en/` salvo browser in italiano, poi un cookie |
+| Regola di pubblicazione | **Proposta**: si pubblica con il titolo in inglese; l'italiano, se manca, mostra l'inglese |
+| Email, PDF, pagina Stripe | Nella lingua dell'acquirente (`users.locale`, `orders.locale`, predefinito `en`) |
 | Date e prezzi | Formattati con `intl` nel fuso dell'evento (`Europe/Lisbon`) |
-
-Lingua predefinita: domanda aperta (congresso internazionale a Lisbona: **proposta** inglese).
 
 ---
 
@@ -497,106 +565,151 @@ Lingua predefinita: domanda aperta (congresso internazionale a Lisbona: **propos
 
 ### 11.1 Biglietto e QR
 
-- Un biglietto nominativo per partecipante, visibile nell'area personale e mandato per email.
-- QR firmato **Ed25519** con `ext-sodium` di PHP (incluso in PHP, nessuna libreria per la firma; presente nel PHP di
-  questa sessione `[sure]`). Il QR contiene `ticket_id`, `qr_version`, `event_id`, `qr_key_id` e la firma; niente
-  nome. Chiave privata solo nel `.env` del server; chiave pubblica data al partner. Codice breve di 8 caratteri per il
-  desk.
-- La generazione dell'immagine del QR richiede una libreria (es. `chillerlan/php-qrcode` o `bacon/bacon-qr-code`), da
-  far passare a `supply-chain-risk-auditor`.
+- Un biglietto nominativo per partecipante, **nominativo immutabile** (§6.7), visibile nell'area personale e mandato
+  per email.
+- QR firmato **Ed25519** con `ext-sodium` (presente nel PHP di questa sessione `[sure]`; sull'hosting da controllare).
+  Il QR contiene `ticket_id`, `qr_version`, `event_id`, `qr_key_id` e la firma; niente nome. Chiave privata solo nel
+  `.env`. Codice breve di 8 caratteri senza caratteri ambigui (formato controllato da un `CHECK`).
+- Immagine del QR con una libreria (es. `chillerlan/php-qrcode` o `bacon/bacon-qr-code`), da far passare a
+  `supply-chain-risk-auditor`.
 
 ### 11.2 Check-in fatto dal partner
 
-Il cliente ha un partner che scansiona i biglietti digitali: la PWA di check-in del 05/11/2026 **non serve più**.
-Servono due modi di dargli i biglietti validi:
+Il partner **legge il QR** (risposta del cliente).
 
 | Modo | Come | Quando |
 |---|---|---|
-| **Export CSV** dal pannello | Colonne: `ticket_id`, `qr_version`, `short_code`, nome, tipo di biglietto, giorni ammessi, stato (`valid` / `revoked`). Export in coda, file privato con scadenza 7 giorni, scaricato da un ruolo ammesso, scritto nel registro audit | Prima versione |
-| **API firmata** `GET /api/partner/v1/events/{event}/tickets?updated_since=…` | Paginata, restituisce i biglietti nuovi, cambiati e revocati. Ogni richiesta porta `X-Key-Id`, `X-Timestamp` e `X-Signature` = HMAC-SHA256 di metodo, percorso, query, timestamp e hash del corpo con il segreto del partner; rifiutate le richieste con più di 5 minuti di scarto o firma già vista; elenco di IP ammessi; limite di richieste | Quando il partner conferma che la usa |
-| Ritorno degli ingressi (facoltativo) | `POST /api/partner/v1/checkins` con id generato dal partner, idempotente; tabella `checkins` | Fase 2 |
+| **Export CSV** dal pannello | `ticket_id`, `qr_version`, `short_code`, nome, tipo di biglietto (pass, workshop, accompagnatore, espositore, omaggio), giorni ammessi, stato (`valid` / `revoked`). In coda, file privato con scadenza 7 giorni, nel registro audit | Fase 1 |
+| **API firmata** `GET /api/partner/v1/events/{event}/tickets?updated_since=…` | Paginata, HMAC-SHA256 con `X-Key-Id`, `X-Timestamp`, `X-Signature`, finestra di 5 minuti, IP ammessi, limite di richieste | Fase 2, se il partner la usa |
+| Ritorno degli ingressi | `POST /api/partner/v1/checkins`, idempotente; tabella `checkins` | Fase 2 |
 
-Il partner riceve dati personali dei partecipanti: serve un accordo sul trattamento dei dati (art. 28 GDPR) →
-catena legale. Formato del QR e del CSV da concordare con il partner prima di stampare o mandare biglietti.
+Formato del QR e del CSV da concordare con il partner prima di mandare i biglietti.
 
 ---
 
-## 12. Member area con video dei congressi passati
+## 12. Video su Wistia e Vimeo, accesso per ruolo
 
-Accesso: Policy `VideoPolicy::view` = membership attiva in questo momento. Il player riceve un **link firmato con
-scadenza breve** (es. 2 ore) creato dal server a ogni apertura della pagina; la chiave per firmare sta solo nel
-`.env`. Il link può comunque essere condiviso finché non scade: per una protezione più forte serve il DRM, a
-pagamento.
+Risposta del cliente: i video sono **già su Wistia e Vimeo** e vanno associati a ruoli diversi dal pannello; ore non
+note. **Nessun servizio video nuovo** (Bunny Stream tolto).
 
-| | **Bunny Stream** (BunnyWay, Slovenia) | **api.video** (Francia) |
-|---|---|---|
-| Dati in UE | Area di archiviazione principale a Francoforte `[likely]` | Società francese; area dei dati `[uncertain]` |
-| Link firmati | Autenticazione a token con scadenza inclusa senza costi `[likely]` | Video privati con token `[likely]` |
-| Prezzo | Codifica gratuita; archiviazione circa 0,01 $/GB al mese per regione; consegna Europa e Nord America circa 0,01 $/GB; minimo 1 $/mese `[likely]` ([docs.bunny.net](https://docs.bunny.net/stream/pricing), [bunny.net/pricing/stream](https://bunny.net/pricing/stream/), ricerca del 06/11/2026) | Codifica gratuita; archiviazione da 0,00285–0,003 $/minuto di video al mese; consegna da 0,0017 $/minuto visto `[likely]` ([api.video/pricing](https://api.video/pricing/), ricerca del 06/11/2026) |
-| Stima annua (150 ore di video, il 30% dei partecipanti è membro e guarda 3 ore l'anno) | ≈ 100 $ a 1.000 partecipanti, ≈ 220 $ a 10.000 `[uncertain]` | ≈ 420 $ a 1.000, ≈ 1.250 $ a 10.000 `[uncertain]` |
+| Tema | Come |
+|---|---|
+| Tabella | `videos`: `provider` (`wistia`, `vimeo`), `provider_video_id` (unico per fornitore), titolo e descrizione tradotti, congresso (`event_id`, anche passato), raccolta, posizione, `published`; ruoli ammessi in `video_access_roles` (§3.5 del modello dati) |
+| Ruoli ammessi | **Proposta**: `public` (tutti), `registered` (chi ha un account), `member` (membership attiva adesso), `attendee` (biglietto valido per il congresso del video), `speaker`, `staff`. Un video può avere più ruoli |
+| Controllo | `VideoPolicy::view` lato server a ogni apertura della pagina: almeno uno dei ruoli ammessi. Senza permesso la pagina non contiene né il player né l'id del video |
+| Embed | Player ufficiale in `iframe` (`player.vimeo.com`, `fast.wistia.net`). Vimeo: video «nascosto» e incorporabile **solo sui domini indicati** (`orthocongress.org`); Wistia: progetto privato con **restrizione di dominio** `[likely]` (funzioni dei piani a pagamento: da verificare sugli account del cliente `[uncertain]`, pagine dei fornitori non raggiungibili da questa sessione) |
+| Limiti | La restrizione di dominio impedisce l'embed su altri siti, non la condivisione dell'accesso o la registrazione dello schermo; niente link firmati a scadenza come con Bunny. Per la protezione più forte servirebbe un servizio con token o DRM, non richiesto |
+| Sicurezza | CSP con `frame-src https://player.vimeo.com https://fast.wistia.net` (e i domini indicati dai fornitori); nessuna chiave dei fornitori nel browser; le eventuali chiavi API (per leggere titoli e durate) solo nel `.env` |
+| Costi | 0 € in più: gli account esistono già (limiti di banda e di video dei loro piani `[uncertain]`) |
 
-**Proposta: Bunny Stream** (più economico a questo uso, UE). Ipotesi della stima: circa 4,5 GB per ora di video
-archiviata con tutte le risoluzioni e 1,5 GB per ora vista `[uncertain]`. Scartati: Vimeo, Mux (USA), YouTube
-non in elenco (nessuna protezione), Cloudflare Stream (residenza dei dati in UE non chiara `[uncertain]`).
-
-Prima di pubblicare i video servono i permessi di relatori e pazienti eventualmente ripresi → catena legale.
+Fase 2. Prima di pubblicare i video servono i permessi dei relatori ripresi → al cliente a lavoro ultimato (§19).
 
 ---
 
 ## 13. Integrazioni
 
-### 13.1 Fatture: Stripe Invoicing + Xero
+### 13.1 Fatture: Stripe + Xero
 
-- Stripe può creare una fattura per ogni pagamento di Checkout (`invoice_creation`) e raccogliere partita IVA e
-  indirizzo dell'azienda (`tax_id_collection`); le fatture della membership le crea già Billing. Costo di Stripe
-  Invoicing Starter: 0,4% per fattura pagata `[likely]` ([support.stripe.com](https://support.stripe.com/questions/stripe-invoicing-pricing?locale=en-GB), ricerca del 06/11/2026); se si applichi anche alle fatture create da Checkout è `[uncertain]`.
-- Xero: collegamento a Stripe dal lato di Xero (feed di pagamenti, commissioni e payout) `[likely]`; nessun codice
-  nostro nella prima versione.
-- **Non deciso:** se le fatture di Stripe bastano per l'organizzatore (soggetto forse francese, evento in Portogallo,
-  acquirenti ovunque), numerazione, diciture, IVA, obblighi di fattura elettronica in Francia e Portogallo. Va alla
-  catena legale-fiscale e al commercialista del cliente (§19).
+- Stripe può creare una fattura per ogni pagamento di Checkout (`invoice_creation`): «Post-payment invoices» **0,4%
+  del totale, massimo 2,00 US$ per fattura** `[sure]` ([stripe.com/en-fr/pricing](https://stripe.com/en-fr/pricing),
+  letto il 06/11/2026; prima era `[likely]` senza tetto). Le fatture della membership le crea Billing.
+- Xero collegato a Stripe dal lato di Xero `[likely]`; nessun codice nostro nella Fase 1.
+- Se le fatture di Stripe bastano lo decide il cliente con il suo commercialista a lavoro ultimato (§19): Checkout ha
+  già i parametri per accenderle.
 
-### 13.2 Newsletter con consenso
+### 13.2 Newsletter con Mailchimp
 
-- **Proposta: Brevo** (società francese, dati in UE `[likely]`); Mailchimp possibile se il cliente lo usa già
-  (società USA: trasferimento dei dati da valutare con la catena legale).
+- **Mailchimp**, account già attivo (risposta del cliente). Integrazione con l'API Marketing via client HTTP di Laravel
+  (nessuna libreria in più): job sulla coda `low` che aggiunge o aggiorna il contatto nell'audience con stato
+  `pending` (doppia conferma di Mailchimp) solo per chi ha dato il consenso.
 - Casella di consenso **non preselezionata** e separata dall'acquisto; ogni consenso o revoca salvato in `consents`
-  (testo, versione, data, fonte); doppia conferma via email dal fornitore; disiscrizione dal fornitore che torna a noi
-  via webhook.
-- Sincronizzazione con un job sulla coda `low`, con il client HTTP di Laravel (nessuna libreria in più).
-- Se si possono scrivere ai clienti senza consenso esplicito (soft opt-in) lo decide la catena legale.
+  (testo, versione, data, fonte); disiscrizione da Mailchimp che torna a noi via webhook di Mailchimp (URL segreto e
+  ricontrollo del contatto via API prima di aggiornare).
+- Chiave API solo nel `.env` (`MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID`, `MAILCHIMP_SERVER_PREFIX`).
+- Fase 1: si raccolgono i consensi e si esportano in CSV; Fase 2: sincronizzazione automatica.
 
 ### 13.3 Export Google Sheets / Excel
 
-- Azioni di export di Filament (CSV e XLSX, in coda, con notifica a fine lavoro) `[likely]`.
-- Export con dati personali solo ai ruoli ammessi, scritti nel registro audit, file privati cancellati dopo 7 giorni.
-- Google Sheets: nella prima versione si scarica il file e lo si importa in Sheets; un collegamento automatico (API
-  Google con account di servizio) solo se serve davvero, perché porta i dati in un altro sistema.
+Invariato: azioni di export di Filament (CSV e XLSX, in coda, con notifica), solo ai ruoli ammessi, nel registro
+audit, file privati cancellati dopo 7 giorni; in Google Sheets si importa il file.
+
+### 13.4 Import del programma da CSV/Excel
+
+Il programma ha **12 sale in parallelo, circa 120 sessioni e 30 speaker**, con contenuti sparsi tra email e documenti
+(risposta del cliente). **Proposta (fase 2):** importazione da foglio con le azioni di import di Filament `[likely]`
+(file CSV; da Excel o Google Sheets si salva in CSV).
+
+| File | Colonne | Note |
+|---|---|---|
+| `speakers.csv` | `code`, `full_name`, `headline_en`, `headline_it`, `bio_en`, `bio_it`, `website`, `email` (non pubblica) | Foto caricate dopo dal pannello; bio ripulite dall'HTML |
+| `sessions.csv` | `code`, `day` (AAAA-MM-GG), `start`, `end` (HH:MM, ora di Lisbona), `room`, `track`, `title_en`, `title_it`, `abstract_en`, `abstract_it`, `format`, `speakers` (codici separati da `;`), `speaker_roles` | Sale e tracce devono esistere (12 righe a mano) o vengono create dopo conferma |
+
+- **Idempotente**: la colonna `code` è la chiave esterna del foglio; un secondo import aggiorna, non duplica.
+- **Prova a vuoto** prima di scrivere: righe con errori (giorno fuori dall'evento, sala inesistente, orari
+  sovrapposti nella stessa sala, speaker sconosciuto) mostrate nel pannello e scaricabili (`failed_import_rows`), niente
+  scritto finché non sono a posto.
+- In coda (`low`), nel registro audit; modello di foglio scaricabile dal pannello, con due righe d'esempio.
+- La sovrapposizione delle sale si controlla nel Service (MySQL non ha vincoli di esclusione).
 
 ---
 
-## 14. Hosting sul server del cliente (UE)
+## 14. Hosting condiviso del cliente
 
-Il cliente ha un server esistente e i dati devono stare in UE. Tipo di server, fornitore, sistema e chi lo gestisce
-**non sono noti** (domanda aperta 1). Requisiti minimi (**proposta**):
+Risposta del cliente: **hosting condiviso con accesso SSH e MySQL o MariaDB, gestito da Simone**. Fornitore e paese
+non ancora noti (dati in UE richiesti).
 
-| Voce | Minimo | Consigliato per l'apertura delle vendite |
+### 14.1 Requisiti da verificare prima di iniziare
+
+Lista da far controllare a Simone con un comando via SSH (`php -v`, `php -m`, `php -i`, `mysql --version`, `crontab -l`)
+e il pannello dell'hosting.
+
+| Voce | Serve | Perché |
 |---|---|---|
-| Tipo | VPS o server dedicato con accesso SSH e root (un hosting condiviso senza worker e cron **non basta**) | |
-| Sistema | Linux con supporto lungo (es. Ubuntu 24.04 LTS) | |
-| CPU / RAM / disco | 2 vCPU, 4 GB, 40 GB SSD | 4 vCPU, 8 GB, 80 GB SSD |
-| Software | Nginx, PHP-FPM 8.4 con `bcmath`, `ctype`, `curl`, `intl`, `mbstring`, `openssl`, `pdo_pgsql` (o `pdo_mysql`), `sodium`, `xml`, `zip`, `gd`; Composer; Postgres 16+; Supervisor o systemd; cron | Redis se già presente |
-| Posizione | Data center in UE, contratto con accordo sul trattamento dei dati | |
+| PHP | **8.4** (minimo 8.3) sia per il web sia da riga di comando, stessa versione | Laravel 13; `php` da SSH spesso è un'altra versione: va scelta quella giusta nel cron |
+| Estensioni | `bcmath`, `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `gd` (o `imagick`), `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `tokenizer`, `xml`, `zip`; `pcntl` da riga di comando (consigliata) | Laravel, Filament, QR firmati, immagini, export |
+| Funzioni | `proc_open`, `proc_get_status` **non** in `disable_functions`; `fastcgi_finish_request` o `litespeed_finish_request` | Scheduler e Composer; invio del codice di accesso dopo la risposta |
+| Argon2 | `PASSWORD_ARGON2ID` definito | Password dello staff (regola 1) |
+| Composer | Composer 2 sul server, oppure dipendenze installate in CI e caricate | Deploy |
+| Cron | Una riga ogni minuto | Coda e job (§8) |
+| Document root | Puntabile su `current/public` (o `public_html` come link a `current/public`) | La cartella del progetto, `.env` compreso, non deve essere raggiungibile dal web |
+| HTTPS | Certificato (Let's Encrypt automatico dal pannello), redirect da HTTP, HSTS | Cookie `Secure`, Stripe |
+| Database | MySQL 8.0.16+ o MariaDB 10.6+, privilegi `CREATE`, `ALTER`, `INDEX`, `REFERENCES`, `TRIGGER`; **`log_bin_trust_function_creators = 1` o log binario spento** (§3) | Vincoli e trigger di difesa |
+| Limiti | `memory_limit` ≥ 256M (web) e ≥ 512M (riga di comando), `max_execution_time` ≥ 60 s (web), `upload_max_filesize` ≥ 20M; nessun limite di tempo sui processi del cron sotto i 60 s; numero di processi contemporanei ≥ 5 | Filament, export, import, worker |
+| Disco | ≥ 5 GB liberi | Release, log, backup locali, foto |
+| Accessi in uscita | HTTPS verso `api.stripe.com`, Mailchimp, il server SMTP; porta SMTP aperta | Pagamenti, email |
+| Posizione | Data center in UE, contratto con accordo sul trattamento dei dati | Dati in UE |
+| Carico | Quante richieste PHP in parallelo regge il piano (worker PHP-FPM o LSAPI) | Picco all'apertura delle vendite (§20) |
 
-| Tema | Come |
-|---|---|
-| HTTPS | Certificato Let's Encrypt con rinnovo automatico, HSTS, redirect da HTTP; TLS 1.2+ |
-| Backup | Database: dump giornaliero cifrato + archiviazione continua del WAL (es. pgBackRest) per tornare a pochi minuti prima di un guasto; copie fuori dal server in UE (bucket compatibile S3); 30 giornalieri + 12 mensili; **prova di ripristino ogni mese**. File: `storage/app` nello stesso backup |
-| Monitoraggio | Controllo esterno della rotta `/up` (salute di Laravel `[likely]`); errori con Sentry in regione UE o Flare `[uncertain]`; Laravel Pulse sul server per richieste lente, code e job falliti; avvisi via email per job falliti, backup mancati, disco quasi pieno, certificato in scadenza |
-| Log | Rotazione giornaliera per 14 giorni, nessun dato personale (email mascherate, nessun payload Stripe) |
-| Deploy | GitHub Actions: test (Pest su Postgres), build degli asset, poi rilascio via SSH con cartelle per versione e link simbolico (es. Deployer), `migrate --force`, cache di config, rotte e viste, `queue:restart`; ritorno alla versione precedente con un comando. Migrazioni sempre compatibili con la versione precedente del codice |
-| Aggiornamenti | Aggiornamenti di sicurezza automatici del sistema; PHP e pacchetti (`composer audit` in CI) ogni mese. **Serve qualcuno che lo faccia**: dopo il lancio il cliente non ha tecnici (rischio §20) |
-| Staging | Un secondo sito sullo stesso server o in locale, con database e chiavi Stripe di test |
+### 14.2 Deploy via SSH
+
+**Proposta:** GitHub Actions → test Pest su MySQL della stessa versione → `composer install --no-dev
+--optimize-autoloader` e build degli asset in CI → copia via SSH (rsync) in `releases/<data>`, link a `shared/.env` e
+`shared/storage` → `php artisan migrate --force` (dopo un backup) → `config:cache`, `route:cache`, `view:cache`,
+`filament:optimize` → cambio del link `current` → `queue:restart`. Ritorno indietro: link alla release precedente.
+Chiave SSH dedicata al deploy, solo nei segreti di GitHub. Migrazioni sempre compatibili con la versione precedente
+del codice. Se l'hosting non permette link simbolici nella document root, deploy in una cartella fissa con
+`php artisan down` durante la copia (pochi secondi).
+
+### 14.3 Backup del database
+
+Su un hosting condiviso non c'è l'archiviazione continua del log (niente ripristino al minuto):
+
+- **Dump con `mysqldump --single-transaction --routines --triggers`** (o `spatie/laravel-backup`, da far passare a
+  `supply-chain-risk-auditor`), compresso e **cifrato**, **ogni ora durante le vendite** e ogni notte dopo;
+  database piccolo (pochi MB) `[likely]`.
+- Copie **fuori dall'hosting** in un bucket UE compatibile S3 (30 giornalieri + 12 mensili), più i backup
+  dell'hosting stesso.
+- **Prova di ripristino ogni mese** in staging; dopo un ripristino, `ReconcileStripe` recupera da Stripe i pagamenti
+  arrivati dopo l'ultimo dump (Stripe resta la fonte dei pagamenti).
+- File (`storage/app`) nello stesso backup.
+
+### 14.4 Monitoraggio, log, aggiornamenti
+
+- Controllo esterno della rotta `/up`; errori con un servizio in UE (Sentry UE o Flare) `[uncertain]`; avvisi via
+  email per job falliti, cron fermo, backup mancati, trigger mancanti, certificato in scadenza.
+- Log a rotazione giornaliera per 14 giorni, senza dati personali.
+- Aggiornamenti di PHP e del sistema: dell'hosting; pacchetti (`composer audit` in CI) ogni mese. **Serve qualcuno che
+  lo faccia** dopo il lancio (rischio §20).
 
 ---
 
@@ -604,82 +717,81 @@ Il cliente ha un server esistente e i dati devono stare in UE. Tipo di server, f
 
 | Tema (OWASP) | Misura in Laravel |
 |---|---|
-| Controllo degli accessi (IDOR) | Policy su ogni modello e ogni azione Livewire e Filament; query dalle relazioni dell'utente; id UUID; proprietà Livewire `#[Locked]`; test per ogni rotta riservata |
-| Autenticazione | Codice via email per chi compra; argon2id + TOTP obbligatorio per lo staff; `session()->regenerate()` al login; cookie `httpOnly`, `Secure`, `SameSite=Lax`; sessioni dello staff brevi |
-| Limiti ai tentativi | `RateLimiter`: richiesta del codice (es. 3 ogni 10 minuti per email, 10 l'ora per IP), verifica del codice (5 tentativi), codici sconto (10 al minuto), creazione del checkout (5 al minuto per persona), API del partner (60 al minuto), login del pannello |
-| Iniezione SQL | Solo query builder ed Eloquent con parametri; niente `DB::raw` con input dell'utente |
-| XSS | Blade con `{{ }}`; HTML delle bio e dei testi ricchi ripulito al salvataggio (sanificatore da scegliere e far controllare); CSP con nonce. Livewire e Alpine potrebbero chiedere eccezioni alla CSP `[uncertain]` |
-| CSRF | Protezione attiva su tutto, esclusi solo il webhook Stripe (firmato) e l'API del partner (firmata) |
-| Mass assignment | `$fillable` esplicito su ogni model; i form Filament salvano solo i campi dichiarati |
-| Upload | Foto degli speaker: tipo e dimensione controllati, ricodificate, senza EXIF, nome casuale; caricate solo dallo staff |
-| Segreti | Solo nel `.env` sul server, fuori dalla cartella pubblica (la radice web è `public/`), mai nel repository; `.env.example` con i soli nomi: `APP_KEY`, `APP_ENV`, `APP_URL`, `DB_*`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION`, `QR_SIGNING_PRIVATE_KEY`, `QR_SIGNING_KEY_ID`, `MAIL_*`, `MAIL_RATE_PER_MINUTE`, `BUNNY_STREAM_LIBRARY_ID`, `BUNNY_STREAM_TOKEN_KEY`, `NEWSLETTER_API_KEY`, `SENTRY_DSN`. Colonne sensibili con cast `encrypted` (segreti del partner, MFA) |
-| Configurazione | `APP_DEBUG=false` in produzione; intestazioni HSTS, CSP, `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options` |
+| Controllo degli accessi (IDOR) | Policy su ogni modello e azione Livewire e Filament; query dalle relazioni dell'utente; UUID; proprietà `#[Locked]`; test per ogni rotta riservata |
+| Autenticazione | Codice via email per chi compra; argon2id + TOTP per lo staff; `session()->regenerate()`; cookie `httpOnly`, `Secure`, `SameSite=Lax` |
+| Limiti ai tentativi | `RateLimiter`: richiesta e verifica del codice, codici sconto e d'invito (10 al minuto), creazione del checkout, API del partner, login del pannello |
+| Iniezione SQL | Query builder ed Eloquent con parametri; niente `DB::raw` con input dell'utente |
+| XSS | Blade con `{{ }}`; HTML ripulito al salvataggio e all'import; CSP con nonce e `frame-src` limitato ai player video |
+| CSRF | Attiva ovunque, esclusi solo il webhook Stripe (firmato), il webhook di Mailchimp (URL segreto) e l'API del partner (firmata) |
+| Mass assignment | `$fillable` esplicito; i form Filament salvano solo i campi dichiarati |
+| Upload | Foto e CSV caricati solo dallo staff, tipo e dimensione controllati, foto ricodificate senza EXIF, nome casuale, cartella privata per i CSV |
+| Segreti | Solo nel `.env` fuori dalla document root, mai nel repository; `.env.example` con i soli nomi: `APP_KEY`, `APP_ENV`, `APP_URL`, `APP_LOCALE`, `DB_*`, `DB_TRIGGERS_OPTIONAL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION`, `QR_SIGNING_PRIVATE_KEY`, `QR_SIGNING_KEY_ID`, `MAIL_*`, `MAIL_RATE_PER_MINUTE`, `MAILCHIMP_API_KEY`, `MAILCHIMP_AUDIENCE_ID`, `MAILCHIMP_SERVER_PREFIX`, `MAILCHIMP_WEBHOOK_SECRET`, `BACKUP_ARCHIVE_PASSWORD`, `BACKUP_S3_*`, `SENTRY_DSN`. Colonne sensibili con cast `encrypted` |
+| Configurazione | `APP_DEBUG=false`; HSTS, CSP, `frame-ancestors 'none'`, `Referrer-Policy`, `X-Content-Type-Options`; `.env`, `storage/` e `vendor/` fuori dalla document root |
 | Webhook | Firma verificata, `livemode` controllato, idempotenza su `stripe_events` |
-| Chiavi lato client | Nessuna chiave Stripe nel browser (Checkout ospitato). Una mappa del luogo, se c'è, con chiave limitata per dominio e API nella console del fornitore (regola 4) o un link a OpenStreetMap |
-| Registro audit | `audit_log` solo in aggiunta (trigger): azioni dello staff, cambi nominativo, rimborsi, export, accessi al pannello, chiavi del partner |
+| Chiavi lato client | Nessuna chiave Stripe nel browser; i player video non usano chiavi; una mappa del luogo, se c'è, con chiave limitata per dominio e API (regola 4) o un link a OpenStreetMap |
+| Registro audit | `audit_log` solo in aggiunta (trigger): azioni dello staff, omaggi, correzioni di nominativo, codici sconto e d'invito, rimborsi, export e import, accessi al pannello |
 | Dipendenze | `composer audit` in CI; prima di aggiungerle `supply-chain-risk-auditor` per: `stripe/stripe-php`, `filament/filament`, `spatie/laravel-permission`, `spatie/laravel-translatable`, libreria QR, sanificatore HTML, eventuale `spatie/laravel-backup` e client Sentry |
-| Account cancellato | Ordini e biglietti non si cancellano: il profilo si anonimizza. Tempi di conservazione: catena legale-fiscale |
+| Account cancellato | Ordini e biglietti non si cancellano: il profilo si anonimizza |
 
 ---
 
 ## 16. Costi stimati
 
-### 16.1 Listini usati (ricerca del 06/11/2026)
-
-`stripe.com` non si apre da questa sessione: i prezzi Stripe vengono da risultati di ricerca che citano il supporto
-Stripe e da siti terzi. Da ricontrollare su <https://stripe.com/pricing> per il **paese dell'account Stripe del
-cliente** (Francia o Portogallo? domanda aperta 2).
+### 16.1 Listini usati
 
 | Voce | Prezzo usato | Fonte |
 |---|---|---|
-| Carta standard SEE | 1,5% + 0,25 € | `[sure]` [stripe.com/en-pt/pricing](https://stripe.com/en-pt/pricing) e [stripe.com/fr/pricing](https://stripe.com/fr/pricing), letti il 06/11/2026 |
-| Carta premium SEE | 2,8% + 0,25 € | `[sure]` stesse pagine (prima stimato 1,9% da siti terzi: era sbagliato) |
-| Carta del Regno Unito | 2,5% + 0,25 € | `[sure]` stesse pagine |
-| Carta extra SEE | 3,15% + 0,25 € | `[sure]` stesse pagine (prima stimato 3,25%) |
-| Conversione di valuta | +2% se serve la conversione | `[sure]` stesse pagine; con prezzi solo in euro di solito non si applica `[likely]` |
-| Stripe Billing (membership) | 0,7% del volume ricorrente | `[likely]` ([flexprice.io](https://flexprice.io/blog/stripe-pricing-breakdown-2026) e altri) |
-| Stripe Invoicing Starter | 0,4% per fattura pagata | `[likely]` support.stripe.com (via ricerca) |
+| Carta standard SEE (anche in Apple Pay e Google Pay) | 1,5% + 0,25 € | `[sure]` [stripe.com/en-fr/pricing](https://stripe.com/en-fr/pricing), listino Francia letto il 06/11/2026 |
+| Carta premium SEE | 2,8% + 0,25 € | `[sure]` stessa pagina |
+| Carta del Regno Unito | 2,5% + 0,25 € | `[sure]` stessa pagina |
+| Carta internazionale | 3,15% + 0,25 € | `[sure]` stessa pagina |
+| Conversione di valuta | +2% se serve la conversione | `[sure]` stessa pagina; con prezzi solo in euro di solito non si applica `[likely]` |
+| Stripe Billing (membership) | 0,7% del volume di Billing, a consumo | `[sure]` [stripe.com/en-fr/billing/pricing](https://stripe.com/en-fr/billing/pricing), letto il 06/11/2026 |
+| Fatture dopo il pagamento (Checkout) | 0,4% del totale, massimo 2,00 US$ per fattura | `[sure]` [stripe.com/en-fr/pricing](https://stripe.com/en-fr/pricing) |
+| Contestazione | 20,00 € per contestazione ricevuta (+ 20,00 € se si risponde e si perde) | `[sure]` stessa pagina |
 | Stripe Tax, se adottato | 0,5% per transazione | `[uncertain]` |
-| Contestazione | circa 20 € | `[uncertain]` |
 
-Con questi volumi (milioni di euro l'anno) Stripe di solito offre prezzi personalizzati: **proposta** di chiederli
-prima dell'apertura delle vendite `[likely]`.
+Rispetto alla stima della mattina **non cambia nulla nei listini**: le percentuali usate erano già quelle francesi.
+Cambiano i prezzi medi (early bird solo per i membri) e la voce fatture (con il tetto di 2 US$). Con questi volumi
+Stripe di solito offre prezzi personalizzati: **proposta** di chiederli prima dell'apertura delle vendite `[likely]`.
 
 ### 16.2 Ipotesi
 
-- Prezzi reali: pass 695 € pubblico / 395 € membro; early bird −30% (486,50 € / 276,50 €); workshop 100 €;
-  membership 200 €/anno; nessun giornaliero.
-- 30% dei partecipanti è membro; metà dei pass venduti in early bird; prezzo medio del pass **514,25 €**.
-- Il 20% compra un workshop nello stesso ordine.
-- Un ordine per partecipante (ipotesi prudente: più ordini = più quote fisse) + un pagamento di membership per membro.
-- Carte: 60% standard SEE, 15% premium SEE, 5% Regno Unito, 20% extra SEE → **2,075%** + 0,25 € di media (ricalcolato il 06/11/2026 con i listini ufficiali; prima 1,96%).
+- Prezzi: pass 695 € pubblico in ogni fascia (last minute non ancora noto: stimato uguale), membro 276,50 € in early
+  bird e 395 € dopo; workshop 100 € per tutti; membership 200 €/anno.
+- 30% dei partecipanti è membro; metà dei membri compra in early bird → prezzo medio del pass **587,23 €** (prima
+  514,25 €, quando l'early bird valeva per tutti).
+- Il 20% compra un workshop nello stesso ordine; un ordine per partecipante + un pagamento di membership per membro.
+- Carte: 60% standard SEE, 15% premium SEE, 5% Regno Unito, 20% internazionali → **2,075%** + 0,25 € di media.
+- Accompagnatori, espositori e omaggi esclusi (prezzi non noti; gli omaggi non costano commissioni).
 
 ### 16.3 Stima annuale di Stripe
 
-| Voce | 150 partecipanti | 1.000 | 6.000 (posti dell'EAS8) | 10.000 (partecipanti l'anno) |
+| Voce | 150 partecipanti | 1.000 | 6.000 (posti dell'EAS8) | 10.000 |
 |---|---|---|---|---|
-| Incasso lordo (pass + workshop + membership) | 89.138 € | 594.250 € | 3.565.500 € | 5.942.500 € |
-| Commissioni carta (mix sopra) | 1.899 € | 12.655 € | 75.934 € | 126.557 € |
+| Incasso lordo (pass + workshop + membership) | 100.084 € | 667.225 € | 4.003.350 € | 6.672.250 € |
+| Commissioni carta (mix sopra) | 2.125 € | 14.170 € | 85.020 € | 141.699 € |
 | Stripe Billing 0,7% sulle membership | 63 € | 420 € | 2.520 € | 4.200 € |
-| **Totale Stripe base** | **1.962 €** (2,2%) | **13.075 €** (2,2%) | **78.454 €** (2,2%) | **130.757 €** (2,2%) |
-| Se tutte le carte fossero standard SEE (solo carta) | 1.386 € | 9.239 € | 55.432 € | 92.388 € |
-| + Invoicing 0,4% su biglietti e workshop, se si usa | + 321 € | + 2.137 € | + 12.822 € | + 21.370 € |
-| + Stripe Tax 0,5%, se si adotta | + 446 € | + 2.971 € | + 17.828 € | + 29.712 € |
+| **Totale Stripe base** | **2.188 €** (2,2%) | **14.590 €** (2,2%) | **87.540 €** (2,2%) | **145.899 €** (2,2%) |
+| Se tutte le carte fossero standard SEE (senza Billing) | 1.550 € | 10.333 € | 62.000 € | 103.334 € |
+| + fatture dopo il pagamento, se si usano (≈ 2 US$ per ordine, sopra i 500 € scatta il tetto) | + ≈ 300 US$ | + ≈ 2.000 US$ | + ≈ 12.000 US$ | + ≈ 20.000 US$ |
+| + Stripe Tax 0,5%, se si adotta | + 455 € | + 3.036 € | + 18.217 € | + 30.361 € |
 
-### 16.4 Infrastruttura (al mese, `[uncertain]`: nessun listino aperto)
+### 16.4 Infrastruttura (al mese, `[uncertain]`: listini non aperti)
 
 | Voce | Stima |
 |---|---|
-| Server del cliente | Già pagato dal cliente, costo non noto; se servisse un VPS UE nuovo da 4 vCPU / 8 GB: circa 10–30 € |
-| Backup fuori dal server (UE) | 3–10 € |
-| Video (Bunny Stream) | 10–20 € |
-| Errori e monitoraggio esterno | 0–30 € (piani gratuiti possibili) |
-| Email | 0 € con la casella esistente; 10–25 € con un fornitore transazionale |
-| **Totale** | **≈ 25–115 €/mese**, dentro il budget di «più di 100 €/mese» |
+| Hosting condiviso del cliente | Già pagato dal cliente; se a 6.000 posti il piano non regge il picco, un piano superiore o un VPS UE: circa 10–30 € |
+| Backup fuori dall'hosting (bucket UE) | 1–5 € |
+| Video | 0 € in più (Wistia e Vimeo già pagati dal cliente) |
+| Newsletter | 0 € in più (Mailchimp già attivo; il piano cresce con i contatti `[uncertain]`) |
+| Errori e monitoraggio esterno | 0–30 € |
+| Email | 0 € con la casella esistente |
+| Dominio `orthocongress.org` | qualche decina di euro l'anno `[uncertain]` |
+| **Totale** | **≈ 1–65 €/mese** |
 
-La voce che pesa davvero è la **manutenzione del server e dell'app** (aggiornamenti di sicurezza, Laravel 14 dopo
-l'evento, controllo dei backup): non è nel budget e va prevista come contratto. Le commissioni Stripe superano di
-molto l'infrastruttura già a 150 partecipanti. Numeri da passare a `monetization` o alla skill `unit-economics`.
+La voce che pesa è la **manutenzione** (aggiornamenti, Laravel 14 dopo l'evento, controllo dei backup), da
+prevedere come contratto. Numeri da passare a `monetization` o alla skill `unit-economics`.
 
 ---
 
@@ -687,105 +799,135 @@ molto l'infrastruttura già a 150 partecipanti. Numeri da passare a `monetizatio
 
 | Prossimo passo | Cosa è già pronto | Cosa servirà |
 |---|---|---|
-| App negli store | API del partner come primo esempio di API versionata; Service separati dalle pagine | Laravel Sanctum per le app, API `/api/v1` per l'area personale |
+| App negli store | API del partner come primo esempio di API versionata; Service separati dalle pagine | Laravel Sanctum, API `/api/v1` per l'area personale |
 | Altre lingue | Colonne JSON tradotte e file di lingua | Una lingua in più = una chiave in più |
 | Altre valute e mercati | `currency` su evento, prezzi e ordini | Prezzi per valuta, regole fiscali per paese |
-| Più eventi l'anno | Tutto è legato a `event_id` | Niente |
-| Più organizzatori | | Tabella `organizations` e Stripe Connect (domanda aperta) |
-| Più carico | Coda già separata | Redis per cache, sessioni e coda; un secondo server web dietro un bilanciatore |
+| Più eventi l'anno | Tutto è legato a `event_id`, fasce comprese | Niente |
+| Più carico | Coda già separata, nessun processo sempre attivo richiesto | VPS UE con worker sempre attivi (Supervisor) e Redis: si cambia solo la configurazione |
+| Postgres | Le regole provate su Postgres il 06/11/2026 sono nella storia di git | Un ramo di migrazioni Postgres, se un giorno si lascia l'hosting condiviso |
 
 ---
 
-## 18. Prima versione (MVP)
+## 18. Fase 1: apertura vendite e Fase 2
 
-Obiettivo: vendere l'EAS8 senza perdere soldi né posti, con uno staff senza tecnici.
+Il cliente vuole le vendite **«subito»**, con un dominio ancora da comprare e i contenuti da raccogliere: la prima
+versione si taglia al minimo indispensabile per vendere senza perdere soldi né posti.
 
-| Resta | Motivo |
+### 18.1 Fase 1: apertura vendite
+
+| Dentro | Note |
 |---|---|
-| Capienza garantita dal database, rilascio solo con conferma di Stripe | Un posto venduto due volte non si ripara a mano |
-| Conferma idempotente con riprenotazione, `needs_refund` e rimborso automatico | Gli errori più cari |
-| Membership con Billing e Customer Portal; prezzo membro lato server, uno per membro, evento e tipo | Decisioni di Giulio |
-| Codici sconto calcolati dal server | Decisione di Giulio |
-| Biglietti nominativi con QR firmato nell'area personale e per email | Il partner li scansiona |
-| **Export CSV per il partner del check-in** | Basta per il primo evento |
-| Pannello Filament con i tre ruoli e MFA | Richiesta del cliente: dopo il lancio nessun tecnico |
-| IT e EN | Richiesta del cliente |
-| Video per i membri (elenco + player con link firmato) | È un vantaggio dichiarato della membership |
-| Raccolta dei consensi alla newsletter | Si raccolgono dal primo ordine, anche se la sincronizzazione arriva dopo |
+| Pagina evento EN/IT (date, luogo, cosa include il pass, workshop, membership, FAQ) | Contenuti dal cliente; niente programma completo |
+| Biglietti con **fasce** (early bird, regular, last minute) **e ruoli** (pubblico, membro), workshop con capienza | Prezzi e date dal pannello |
+| **Membership** con Stripe Billing, attiva subito, Customer Portal | Early bird e prezzo membro subito dopo il pagamento |
+| **Stripe** solo carta (wallet compresi): Checkout, webhook in coda, scadenze, conferma tardiva, rimborso automatico, riconciliazione | Le regole provate |
+| Codici sconto calcolati dal server | Creati da commerciale e organizzatore |
+| Accesso con codice via email, area personale con ordini e biglietti | |
+| **Email con QR** firmato, in coda con limite di invio | |
+| **Filament essenziale**: evento e date, tipi, fasce, prezzi, capienze, codici sconto, ordini (lettura), membership (lettura), utenti dello staff con MFA, registro audit, job falliti | |
+| **Export CSV per il partner** del check-in e degli ordini | |
+| Raccolta dei consensi alla newsletter (export CSV) | La sincronizzazione arriva in Fase 2 |
+| Hosting: deploy via SSH, cron, backup orari, HTTPS, monitoraggio | |
+| Test Pest delle regole (capienza, prezzo membro, fasce, webhook, conferma tardiva, IDOR) | Sulla stessa versione di MySQL o MariaDB dell'hosting |
 
-| Si taglia | Al suo posto | Quando rimetterlo |
-|---|---|---|
-| API firmata per il partner | Export CSV | Quando il partner conferma che la usa |
-| Sincronizzazione automatica con la newsletter | Export CSV degli iscritti con consenso | Prima della prima campagna |
-| Collegamento automatico a Google Sheets | Download XLSX/CSV | Se serve davvero |
-| Cambio nominativo self-service | Cambio fatto dal commerciale su richiesta, con audit | Quando le richieste pesano |
-| Pannello rimborsi | Dashboard Stripe, registrata dal webhook | Quando i rimborsi parziali diventano frequenti |
-| Lista d'attesa | Messaggio «esaurito» ed email di contatto | Dopo il primo esaurito |
-| PWA di check-in offline | **Tolta**: il check-in lo fa il partner | — |
+### 18.2 Fase 2
+
+Programma completo (12 sale, ~120 sessioni) e speaker con **import da CSV**; video Wistia e Vimeo per ruolo;
+sincronizzazione Mailchimp; omaggi per speaker e staff (in Fase 1 se gli speaker devono avere il biglietto
+all'apertura); accompagnatori ed espositori con codici d'invito, se non urgenti; correzione admin del nominativo
+(in Fase 1 si fa come operazione tracciata da un admin via SSH, se servisse); API firmata per il partner; pannello
+rimborsi; abstract e poster, attestati di partecipazione, crediti formativi (risposta del cliente: nessuna serve
+all'apertura delle vendite); lista d'attesa.
+
+### 18.3 Stima della Fase 1
+
+Stima in **settimane-persona** di uno sviluppatore Laravel esperto, con il prototipo e questo documento già pronti.
+
+| Blocco | Settimane-persona |
+|---|---|
+| Avvio: progetto, verifica dell'hosting (§14.1), deploy via SSH, staging, cron, backup, HTTPS | 1,0 |
+| Modello dati e migrazioni della Fase 1, dati di prova | 0,75 |
+| Sito pubblico EN/IT (pagina evento, biglietti, membership) dai componenti del prototipo | 1,5 |
+| Accesso con codice, area personale (ordini, biglietti, membership) | 1,0 |
+| Checkout: fasce, ruoli, prezzo membro, codici sconto, capienza e riserve | 2,0 |
+| Webhook, coda, scadenze, conferma tardiva, rimborso automatico, riconciliazione | 1,25 |
+| Membership (Billing, attivazione subito, Customer Portal, eventi della subscription) | 0,75 |
+| Biglietti con QR firmato ed email in coda | 0,75 |
+| Filament essenziale con i tre ruoli, MFA, audit | 1,5 |
+| Export per il partner e per la contabilità | 0,25 |
+| Test Pest delle regole e dei permessi | 1,25 |
+| Prova di carico in staging, Stripe live, DNS ed email del dominio, controllo dei testi con il cliente | 0,75 |
+| **Totale** | **≈ 12,75**, con il margine per gli imprevisti dell'hosting e dei contenuti (15%) **≈ 14,5** |
+
+**Intervallo onesto: 12–16 settimane-persona.** Con uno sviluppatore: circa 3–4 mesi di calendario; con due che
+lavorano in parallelo (uno su checkout, Stripe e test, uno su sito, area personale e pannello): circa 8–9 settimane di
+calendario, perché non tutto si divide.
+
+Ipotesi: hosting conforme ai requisiti del §14.1 senza trattative lunghe (`log_bin_trust_function_creators` e
+`proc_open` compresi); dominio comprato e DNS gestibili entro la seconda settimana; testi, prezzi del last minute e
+date delle fasce consegnati prima della settimana 4; account Stripe francese già verificato; nessun requisito fiscale
+che cambi il checkout (decisione rimandata al cliente, §19); nessuna richiesta nuova durante la Fase 1; un solo
+evento; revisione del cliente entro due giorni lavorativi.
+
+Con l'evento l'8 aprile 2027 e un inizio a metà novembre 2026, l'apertura delle vendite cade realisticamente **tra
+metà gennaio (due sviluppatori) e metà febbraio-marzo 2027 (uno)**: un early bird che finisce a fine gennaio non è
+compatibile. **Proposta** per partire prima: una pagina «registrati per l'apertura delle vendite» con raccolta dei
+contatti e del consenso (una settimana di lavoro, sul dominio nuovo), mentre si costruisce la Fase 1.
 
 ---
 
 ## 19. Fisco e legale (a cura del cliente, a lavoro ultimato)
 
-Decisione di Giulio del 06/11/2026: queste questioni non si affrontano adesso. Le gestiscono il cliente e il suo
-commercialista a lavoro ultimato; i punti sotto restano come promemoria e l'architettura non li presuppone risolti.
-
-**Non decido io: va alla catena legale-fiscale (`catena-legale-fiscale`) e al commercialista del cliente, prima dello
-sviluppo** (decisione di Giulio, confermata il 06/11/2026).
-
-- Evento in **Portogallo** (Lisbona), organizzatore **forse in Francia** (sede indicata su eas-aligners.com a
-  Sanary-sur-Mer; forma giuridica incerta: «società» e «associazione con partita IVA»), **compratori ovunque**
-  (privati in Italia, aziende ed enti con fattura, persone UE ed extra UE).
-- Per l'ingresso a eventi l'IVA di solito segue il luogo dell'evento anche verso le aziende `[uncertain]`: da
-  verificare, con le conseguenze su registrazione IVA in Portogallo, aliquote, fatture e Stripe Tax.
-- Da chiarire anche: regime IVA della membership (servizio digitale? accesso ai video?), fatture Stripe + Xero
-  bastano, fattura elettronica in Francia e Portogallo, condizioni di vendita (nessun rimborso, cambio nominativo a 48
-  ore, quota della membership non rimborsata), privacy (partner del check-in, video, newsletter, conservazione dei
-  dati).
-- L'architettura è pronta per tutte le strade: `orders.tax_cents` vuoto finché non si decide, `automatic_tax`,
-  `invoice_creation` e `tax_id_collection` di Checkout accendibili da configurazione, `billing_details` sull'ordine.
+Decisione di Giulio del 06/11/2026: queste questioni non si affrontano adesso e non generano domande. Le gestiscono il
+cliente e il suo commercialista a lavoro ultimato; l'architettura non le presuppone risolte. Promemoria per quel
+momento: IVA dell'ingresso a un evento in Portogallo e della membership, fatture Stripe + Xero, condizioni di vendita
+(nessun rimborso, **nessun cambio di nome**, correzione dei refusi), trattamento dei dati con il partner del check-in,
+Mailchimp (società USA) e Wistia/Vimeo, permessi dei relatori ripresi nei video, tempi di conservazione. Pronti da
+configurazione: `orders.tax_cents`, `automatic_tax`, `invoice_creation`, `tax_id_collection`, `billing_details`.
 
 ---
 
 ## 20. Rischi e limiti
 
-- 🔴 Server del cliente sconosciuto (tipo, sistema, chi lo gestisce, Postgres sì o no): se è un hosting condiviso senza worker e cron, l'architettura non regge così. `[uncertain]`
-- 🔴 Nessun tecnico dopo il lancio su un server gestito in proprio: senza un contratto di manutenzione restano scoperti aggiornamenti di sicurezza, backup e incidenti.
-- 🔴 Fisco non definito (Portogallo, Francia, compratori ovunque): può cambiare checkout, prezzi lordi o netti e fatture. `[uncertain]`
-- 🔴 Listini Stripe, versioni di Laravel e Filament non verificati su fonte primaria in questa sessione: sono al massimo `[likely]`.
-- 🟡 La logica delle funzioni SQL provate passa ai Service PHP: le prove vanno rifatte come test Pest prima del rilascio; finché non ci sono, le regole sono provate solo nel database.
-- 🟡 Ramo MySQL delle migrazioni non provato (nessun MySQL in questa sessione); con MySQL alcune difese passano al solo Service.
-- 🟡 Limiti di invio della casella SMTP all'apertura delle vendite: conferme in ritardo, codici di accesso lenti. `[uncertain]`
-- 🟡 Picco di 6.000 posti in poche ore: dimensionare il server e provare il carico in staging prima dell'apertura.
-- 🟡 Date incongruenti (8–10 aprile sul sito, 10–14 nel modulo): i pool per giorno dipendono da questo.
-- 🟡 Laravel 13 riceve bug fix fino al Q3 2027 `[likely]`: va bene per l'EAS8, poi serve l'aggiornamento.
-- 🟡 Link firmati dei video condivisibili finché non scadono; DRM a pagamento.
-- 🟡 Dati dei partecipanti al partner del check-in: serve un accordo sul trattamento; formato del QR da concordare in tempo.
-- 🟡 Pagamento arrivato a posti finiti: rimborso automatico, commissione Stripe persa. `[likely]`
-- 🟢 Overselling, biglietti doppi, secondo prezzo membro: fermati dal database anche con un bug, provati su Postgres 16 il 05/11 e il 06/11/2026. `[sure]`
+- 🔴 **Tempi**: «vendite subito» contro 12–16 settimane-persona di Fase 1 (§18.3); senza un secondo sviluppatore o
+  tagli in più, l'early bird slitta.
+- 🔴 Hosting condiviso non ancora verificato: senza `log_bin_trust_function_creators` le difese dei trigger passano al
+  solo Service; senza `proc_open` serve un cron per comando; senza `pcntl` niente timeout dei job. `[uncertain]`
+- 🔴 Picco all'apertura su hosting condiviso (6.000 posti, workshop da 20 esauriti in minuti): i processi PHP in
+  parallelo del piano sono il collo di bottiglia. Prova di carico in staging obbligatoria; piano superiore o VPS se
+  non regge. `[uncertain]`
+- 🔴 Nessun tecnico dopo il lancio: senza un contratto di manutenzione restano scoperti aggiornamenti e backup.
+- 🟡 Coda con un minuto di latenza: conferme e webhook non immediati (la pagina di successo e l'invio fuori coda del
+  codice coprono i casi visibili).
+- 🟡 Backup orari senza ripristino al minuto: dopo un guasto si recupera dai pagamenti Stripe con la riconciliazione.
+- 🟡 Limite di circa 1.000 email l'ora: all'apertura le conferme arrivano fino a un'ora dopo.
+- 🟡 Video: la restrizione di dominio di Wistia e Vimeo non impedisce la condivisione dell'accesso; funzioni dei piani
+  del cliente da verificare. `[uncertain]`
+- 🟡 Dominio da comprare: DNS, SPF, DKIM e certificato prima di mandare la prima email.
+- 🟡 Pagamento arrivato a posti finiti: rimborso automatico, commissione Stripe persa `[likely]`.
+- 🟢 Overselling, biglietti doppi, secondo prezzo membro, webhook ripetuti: fermati dal database anche con un bug,
+  provati su Postgres 16 (05/11 e 06/11/2026) e su **MySQL 8.0.46 e MariaDB 10.11.14** (06/11/2026), anche senza
+  trigger. `[sure]`
 
 ---
 
 ## 21. Domande aperte
 
-Ricalibrate il 06/11/2026: le questioni legali e fiscali non si chiedono adesso, le gestisce il cliente a lavoro
-ultimato (§19). Restano solo domande tecniche e di prodotto, tutte per Simone.
+Solo domande tecniche e di prodotto, per Simone (nessuna legale o fiscale: decisione di Giulio, §19).
 
 | # | Tema | Domanda | Cosa cambia |
 |---|---|---|---|
-| 1 | Server | Fornitore e paese, VPS o condiviso, accesso SSH, Postgres o solo MySQL, chi lo aggiorna dopo il lancio? | Database, deploy, backup |
-| 2 | Stripe | In che paese è aperto l'account verificato e in che valuta incassa? | Commissioni e conversione di valuta |
-| 3 | Evento | 8–10 o 10–14 aprile 2027? Nome pubblico «EAS8» o «Orthodontic Congress»? | Testi, date di vendita |
-| 4 | Early bird | Il −30% vale anche sul prezzo membro e sul workshop? Fino a quando? È solo per i membri? | Logica dei prezzi |
-| 5 | Workshop | Quanti, con quanti posti, c'è un prezzo membro? | Capienza e prezzi |
-| 6 | Email | Chi fornisce la casella SMTP e quanti invii all'ora permette? | Coda delle email, eventuale fornitore UE |
-| 7 | Newsletter | Brevo o Mailchimp, c'è già un account? | Integrazione |
-| 8 | Check-in | Chi è il partner, che sistema usa, legge QR o un elenco, CSV o API? | Esportazione dei biglietti |
-| 9 | Video | Quante ore, dove sono oggi i file? | Servizio video e costi |
-| 10 | Codici sconto | Li gestisce il commerciale (proposta) o l'organizzatore? | Permessi in Filament |
-| 11 | Lingua | Inglese predefinito (proposta) o italiano? | Indirizzi e contenuti |
+| 1 | Last minute | Quanto costa il pass in last minute, per pubblico e membri? Da quando parte? | Prezzi e date della fascia |
+| 2 | Apertura vendite | Data realistica di apertura (vedi §18.3) e date esatte delle fasce early bird e regular? Va bene una pagina di preregistrazione nel frattempo? | Calendario, early bird |
+| 3 | Dominio | Chi compra `orthocongress.org` e quando? Chi gestisce i DNS? La casella `Website@orthocongress.org` esiste già su un altro dominio? | DNS, email, HTTPS, Stripe |
+| 4 | Accompagnatori ed espositori | Prezzo, cosa include l'accompagnatore (sessioni, area espositiva, eventi sociali), quanti per pass (proposta 1); espositori con codice d'invito per azienda (proposta) e quanti pass nel pacchetto sponsor? Servono all'apertura? | Tipi di biglietto, Fase 1 o 2 |
+| 5 | Hosting | Fornitore e paese; risultati della lista del §14.1 (PHP 8.4, estensioni, `proc_open`, `pcntl`, document root, `log_bin_trust_function_creators`, processi in parallelo) | Code, trigger, carico |
+| 6 | Omaggi | Gli speaker e lo staff devono avere il biglietto già all'apertura delle vendite? Quanti omaggi circa? | Fase 1 o 2, capienza |
+| 7 | Video | Quali ruoli vedono quali video (membri, partecipanti, speaker)? I piani Wistia e Vimeo hanno la restrizione di dominio? | Ruoli dei video |
+| 8 | Check-in | Formato del QR e del CSV che il partner legge? Userà l'API? | Export |
+| 9 | Workshop | I workshop consumano anche il posto del giorno o solo il loro? Si comprano senza pass? | Pool e regole di acquisto |
 
-Decise per default, salvo parere contrario di Simone: 24 ore di tolleranza sul rinnovo della membership, chi è in
-ritardo col pagamento resta membro durante i tentativi di Stripe, massimo 2 cambi di nominativo per biglietto, niente
-addebito SEPA per i biglietti (esito troppo lento), niente tabella `organizations` finché c'è un solo organizzatore,
-tagli del §18.
+Decise per default, salvo parere contrario di Simone: 24 ore di tolleranza sul rinnovo della membership; chi è in
+ritardo col pagamento resta membro durante i tentativi di Stripe; fasce per evento e non per tipo di biglietto;
+accompagnatore comprato dopo il pass, in un ordine separato; massimo 3 correzioni di refusi per biglietto, solo admin;
+Link di Stripe spento; niente tabella `organizations` finché c'è un solo organizzatore; tagli del §18.

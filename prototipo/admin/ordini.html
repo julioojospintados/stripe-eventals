@@ -21,7 +21,7 @@
       <a class="btn btn--primary" href="omaggi.html#h-nuovo"><svg class="ic" aria-hidden="true"><use href="#i-gift"></use></svg>Issue complimentary ticket</a>
     </div>
     <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-      <div>Card payments only, through Stripe (wallets included). Names on tickets are final: there is no name change, here or in the customer’s account. Complimentary tickets appear as €0 orders.</div></div>
+      <div>Card payments only, through Stripe (wallets included). Names on tickets are final for customers. An admin can only fix a typo (up to 3 times per ticket, logged). Complimentary tickets appear as €0 orders.</div></div>
 
     <section aria-labelledby="h-cerca">
       <h2 class="t-2 sr-only" id="h-cerca">Search</h2>
@@ -83,7 +83,7 @@
         (o.stato === 'paid' || o.stato === 'partial' ? '<button type="button" class="btn btn--block" data-az="rimborsa">Refund…</button>' : '') +
         (o.stato === 'review' ? '<button type="button" class="btn btn--primary btn--block" data-az="riconcilia">Mark as reconciled</button>' : '') +
         (o.stato === 'pending' ? '<button type="button" class="btn btn--secondary btn--block" data-az="ricontrolla">' + AD.icona('refresh') + 'Check again on Stripe</button>' : '') +
-        '</div><div class="avviso avviso--info">' + AD.icona('info') + '<div>Refund only from here. A refund made directly in the Stripe Dashboard is not linked to the tickets: the order goes to «To review» and must be fixed by hand. There is no name change: a ticket with a wrong name is refunded and bought again, only if the organiser agrees.</div></div>' +
+        '</div><div class="avviso avviso--info">' + AD.icona('info') + '<div>Refund only from here. A refund made directly in the Stripe Dashboard is not linked to the tickets: the order goes to «To review» and must be fixed by hand. There is no name change. An admin can fix a typo in the name (up to 3 times per ticket, logged); a different person needs a new ticket.</div></div>' +
         '</div></div><div id="rimborso"></div>';
       pannello.innerHTML = h;
       if (fuoco) $('#h-dett').focus();

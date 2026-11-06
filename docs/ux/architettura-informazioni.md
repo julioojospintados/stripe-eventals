@@ -495,7 +495,7 @@ Regole nel prototipo (`prototipo.js`, `DATA.fasce` e `DATA.listino`, unica fonte
 
 - Tolto ogni modulo di cambio nominativo da `account.html`; ogni biglietto ha il badge «Name final» e un avviso «Names are final… If you spot a typo, write to the organiser before the event».
 - Al checkout (`biglietti.html`): avviso in «Who the tickets are for», campo «Full name on the ticket» (come su un documento), passo **6. Check and confirm** con l'elenco dei nomi che finiranno sui biglietti (si aggiorna mentre si scrive, «Name missing» se vuoto) e la casella obbligatoria «I have checked the names. I understand that the name on a ticket cannot be changed after payment». Senza spunta: errore nel riepilogo in alto con link al campo.
-- Admin ordini: nota «There is no name change»; un nome sbagliato si risolve solo con rimborso e nuovo acquisto, se l'organizzatore è d'accordo (domanda 25).
+- Admin ordini: nota «There is no name change»; l'admin può solo correggere un refuso nel nome (massimo 3 volte per biglietto, con audit), come proposto in `docs/architettura.md`; per una persona diversa serve un biglietto nuovo (domanda 25).
 - Il nome resta fuori dal QR (capitolo 10).
 
 ### 12.4 Nuovi tipi di biglietto
