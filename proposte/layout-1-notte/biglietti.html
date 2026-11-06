@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<!-- Proposta di layout 1 · «Notte di Lisbona», pagina Tickets. Autore: Giulio Occhipinti. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tickets · EAS8 Lisbon · 8–10 April 2027</title>
+  <meta name="description" content="Tickets for EAS8 Lisbon, 8–10 April 2027: full pass, hands-on workshops and EAS membership.">
+  <meta name="theme-color" content="#202020">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><img src="assets/eas-logo.png" width="250" height="140" alt="EAS – European Aligner Society, home"></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="menu-toggle__bars" aria-hidden="true"></span><span>Menu</span>
+      </button>
+      <nav class="nav" id="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html#programme">Programme</a></li>
+          <li><a href="index.html#speakers">Speakers</a></li>
+          <li><a href="biglietti.html" aria-current="page">Tickets</a></li>
+          <li><a href="index.html#membership">Membership</a></li>
+          <li class="nav__login"><a href="#login">Login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="page-head">
+      <div class="wrap">
+        <h1>Tickets</h1>
+        <p>EAS8 · <span class="signature">Lisbon · 8–10 April 2027</span></p>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <section aria-labelledby="tiers-title">
+        <h2 id="tiers-title" class="sr-only">Price tiers</h2>
+        <ol class="tiers">
+          <li class="tier">
+            <h3>Early bird</h3>
+            <p>Members only · −30% · €276.50</p>
+            <span class="status status--off">Closed</span>
+          </li>
+          <li class="tier tier--active" aria-current="true">
+            <h3>Regular</h3>
+            <p>Public €695 · Member €395</p>
+            <span class="status status--on">Active now</span>
+          </li>
+          <li class="tier">
+            <h3>Last minute</h3>
+            <p>Price to be announced</p>
+            <span class="status status--off">Not started</span>
+          </li>
+        </ol>
+      </section>
+
+      <form class="checkout" id="order" action="#" novalidate>
+        <div>
+          <section class="step" aria-labelledby="s1">
+            <div class="step__head">
+              <span class="step__num" aria-hidden="true">1</span>
+              <div>
+                <h2 id="s1">Full pass</h2>
+                <p>All three days, all 12 rooms, about 120 sessions.</p>
+              </div>
+            </div>
+            <fieldset>
+              <legend class="sr-only">Choose your pass</legend>
+              <label class="option">
+                <input type="radio" name="pass" value="public" data-price="695" data-label="Full pass · public" checked>
+                <span class="option__label">Public pass<small>For non-members</small></span>
+                <span class="option__price">€695</span>
+              </label>
+              <label class="option">
+                <input type="radio" name="pass" value="member" data-price="395" data-label="Full pass · member">
+                <span class="option__label">Member pass<small>For EAS members: log in at checkout to confirm</small></span>
+                <span class="option__price">€395</span>
+              </label>
+              <label class="option">
+                <input type="radio" name="pass" value="join" data-price="395" data-member="200" data-label="Full pass · member">
+                <span class="option__label">Join EAS + member pass<small>Membership €200/year, active right after payment</small></span>
+                <span class="option__price">€595<small>€200 + €395</small></span>
+              </label>
+            </fieldset>
+            <p class="rule-note"><strong>One pass per person, in the attendee's name.</strong> The name cannot be changed after purchase.</p>
+          </section>
+
+          <section class="step" id="workshops" aria-labelledby="s2">
+            <div class="step__head">
+              <span class="step__num" aria-hidden="true">2</span>
+              <div>
+                <h2 id="s2">Hands-on workshops</h2>
+                <p>Optional. €100 each, same price for everyone. 20 seats per workshop.</p>
+              </div>
+            </div>
+            <fieldset>
+              <legend class="sr-only">Choose workshops</legend>
+              <div id="ws-list"></div>
+            </fieldset>
+            <p class="rule-note">Workshop names and seat counts on this page are placeholders.</p>
+          </section>
+
+          <section class="step" aria-labelledby="s3">
+            <div class="step__head">
+              <span class="step__num" aria-hidden="true">3</span>
+              <div>
+                <h2 id="s3">What membership gives you</h2>
+                <p>€200 per year. Choose «Join EAS + member pass» above to add it.</p>
+              </div>
+            </div>
+            <ul class="benefits">
+              <li><div><strong>Early access to the Early bird</strong><span>Members only, −30% on the member pass (€276.50).</span></div></li>
+              <li><div><strong>Member price</strong><span>Full pass €395 instead of €695.</span></div></li>
+              <li><div><strong>Member area</strong><span>Videos of past congresses.</span></div></li>
+            </ul>
+          </section>
+        </div>
+
+        <aside class="summary" id="summary" aria-labelledby="sum-title">
+          <h2 id="sum-title">Your order</h2>
+          <ul class="summary__lines" id="sum-lines"></ul>
+          <p class="summary__total"><span>Total</span><strong id="sum-total">€695</strong></p>
+          <button class="btn btn--gold btn--block btn--lg" type="submit">Continue to payment</button>
+          <p class="summary__fine">Card payment only, processed securely by Stripe.</p>
+          <p class="summary__msg" id="sum-msg" role="status" aria-live="polite"></p>
+        </aside>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="index.html"><img src="assets/eas-logo.png" width="250" height="140" alt="EAS – European Aligner Society, home"></a>
+          <p>EAS8 · <span class="signature">Lisbon · 8–10 April 2027</span></p>
+        </div>
+        <nav aria-label="Congress">
+          <h2>Congress</h2>
+          <ul>
+            <li><a href="index.html#programme">Programme</a></li>
+            <li><a href="index.html#speakers">Speakers</a></li>
+            <li><a href="biglietti.html">Tickets</a></li>
+            <li><a href="#call">Call for abstracts</a></li>
+            <li><a href="#road">Road to Lisbon</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Society">
+          <h2>Society</h2>
+          <ul>
+            <li><a href="index.html#membership">Membership</a></li>
+            <li><a href="#ebao">EBAO</a></li>
+            <li><a href="#events">Events</a></li>
+            <li><a href="#about">About us</a></li>
+          </ul>
+        </nav>
+        <div>
+          <h2>Contact</h2>
+          <address>
+            <a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a><br>
+            La Réserve – 2525 Route de Bandol<br>
+            83110 Sanary-sur-Mer, France
+          </address>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 EAS – European Aligner Society</p>
+        <ul>
+          <li><a href="#privacy">Privacy policy</a></li>
+          <li><a href="#cookies">Cookie policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <div class="buybar">
+    <div class="buybar__row">
+      <p class="buybar__total"><small>Total</small><strong id="bar-total">€695</strong></p>
+      <button class="btn btn--gold" type="submit" form="order">Continue to payment</button>
+    </div>
+  </div>
+
+  <script src="site.js"></script>
+</body>
+</html>

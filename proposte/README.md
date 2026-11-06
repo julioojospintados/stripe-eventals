@@ -1,35 +1,29 @@
-# Proposte da presentare dopo
+# Proposte di layout per EAS8
 
-Autore: Giulio Occhipinti.
+Autore: Giulio Occhipinti. 06/11/2026.
 
-## Versione migliorata dell'aspetto (promemoria)
+Il prototipo in [`prototipo/`](../prototipo/index.html) segue fedelmente lo stile di eas-aligners.com, come richiesto.
+Qui ci sono **tre direzioni visive alternative** per il sito dell'EAS8, da valutare insieme. Tutte usano il logo,
+i colori e i dati veri dell'EAS8; cambiano impaginazione, gerarchia e atmosfera.
 
-Il prototipo in [`prototipo/`](../prototipo/index.html) riprende l'aspetto di eas-aligners.com come chiesto dal cliente
-il 06/11/2026, anche dove è debole. Questa cartella tiene una direzione diversa da proporre dopo il lancio o quando il
-cliente è pronto.
+Ogni proposta ha due pagine: la home (`index.html`) e la pagina dei biglietti (`biglietti.html`). Per aprirle:
+`cd proposte && python3 -m http.server 8000`, poi `http://localhost:8000`.
 
-| Cartella | Cosa è |
-|---|---|
-| [`versione-migliorata/`](versione-migliorata/index.html) | il prototipo editoriale del 05/11/2026 (stile «programma di festival stampato»), completo di area personale, admin e check-in, rivisto due volte da `ux-reviewer` |
+| Proposta | Idea | Per chi è pensata |
+|---|---|---|
+| [1 · Notte di Lisbona](layout-1-notte/index.html) | Evoluzione dello stile attuale: scuro, immersivo, un solo colore d'azione (l'oro), l'arancio come firma di Lisbona e delle date, un motivo ispirato alle piastrelle azulejo | Chi vuole continuità con l'immagine di oggi, più ordinata |
+| [2 · Clinico](layout-2-clinico/index.html) | Chiaro e preciso, da congresso scientifico internazionale: verde acqua e blu notte, programma per giorno e sala in primo piano, ricerca nel programma | Chi mette al centro contenuti scientifici, crediti e programma |
+| [3 · Editoriale](layout-3-editoriale/index.html) | Come il programma stampato di un grande congresso: carta, filetti, numeri enormi per i giorni, titoli in serif | Chi vuole un'immagine riconoscibile e diversa dagli altri congressi |
 
-### Cosa migliora rispetto al sito attuale del cliente
+## Cosa hanno in comune
 
-Osservazioni sulla home di eas-aligners.com del 06/11/2026 (screenshot in [`docs/cliente/`](../docs/cliente/)):
+- Nome, date, luogo e bottone d'acquisto nella prima schermata anche su telefono.
+- Menu breve (Programme, Speakers, Tickets, Membership, Login); le altre voci nel footer.
+- Un solo colore per l'azione principale, così è sempre chiaro dove comprare.
+- Prezzi pubblico e membro e fascia attiva (Early bird solo membri, Regular, Last minute) leggibili senza confusione.
+- Accessibilità WCAG 2.2 AA: contrasto, dimensione dei bottoni, uso da tastiera.
 
-- 🔴 Su telefono i bottoni «Secure Your Ticket» ed «Explore the Agenda» escono dallo schermo e vanno a capo parola per
-  parola [sure, screenshot a 390 px].
-- 🔴 La sezione speaker mostra solo barre nere al posto dei nomi o delle foto [sure, screenshot a 1280 px].
-- 🟡 «Thanks to Our Sponsors» è grigio su blu scuro, poco leggibile, e la sezione è vuota [sure].
-- 🟡 Il menu ha 25 voci in 11 gruppi: chi vuole comprare un biglietto deve cercarlo.
-- 🟡 Cinque colori forti (arancio, oro, azzurro, blu notte, verde acqua) senza una gerarchia: nessuno dice «questa è
-  l'azione».
+## Dopo la scelta
 
-### Direzione proposta
-
-- Un solo colore d'azione (l'oro del bottone attuale) e l'arancio solo per date e luogo, come firma dell'evento.
-- Logo e font Inter del cliente, ma con una scala tipografica fissa al posto delle dimensioni libere di oggi.
-- Menu in quattro voci (Programma, Speaker, Biglietti, Membership) e il resto nel footer.
-- Prezzo del biglietto e bottone d'acquisto nella prima schermata anche su telefono.
-- Programma per sala e giorno come nel prototipo editoriale, con prezzi per ruolo nelle schede.
-
-Da riprendere quando il cliente chiede un restyling o dopo il primo evento, con i dati di vendita in mano.
+La proposta scelta si applica a tutto il sito (programma, speaker, area personale, pannello) mantenendo le stesse
+funzioni del prototipo. Si possono anche combinare elementi di proposte diverse.
