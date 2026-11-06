@@ -7,10 +7,12 @@ prezzi per fascia (early bird, regular, last minute) e per ruolo (pubblico e mem
 sconto, tutto incassato con Stripe. Primo evento: EAS8, Lisbona, 8–10 aprile 2027; Laravel + Filament su hosting
 condiviso con MySQL o MariaDB.
 
-Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è ancora.
+Fase attuale: **sviluppo della Fase 1**. L'applicazione Laravel è in [`sito/`](sito/README.md) (passo 1 di 3: schema,
+model, ruoli, pannello e test di schema).
 
 | File | Cosa contiene |
 |---|---|
+| [`sito/`](sito/README.md) | applicazione Laravel 13 + Filament 5: migrazioni della Fase 1 con i vincoli del database, model, seeder dell'EAS8, ruoli dello staff, pannello `/admin`, test Pest su MariaDB/MySQL; installazione e stato dei passi nel suo README |
 | [`docs/per-simone.md`](docs/per-simone.md) | riepilogo per il cliente: cosa è pronto, cosa serve da lui, decisioni |
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |
 | [`docs/cliente/`](docs/cliente/) | risposte del cliente (primo e secondo giro del 06/11/2026) |
