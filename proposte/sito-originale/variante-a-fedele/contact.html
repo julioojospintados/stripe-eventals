@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<!-- Variante A «Fedele» del sito European Aligner Society. Autore: Giulio Occhipinti. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact · European Aligner Society</title>
+  <meta name="description" content="Contact the European Aligner Society office in Sanary-sur-Mer, France: office@eas-aligners.com.">
+  <meta name="theme-color" content="#202020">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add("js");</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html"><img src="assets/eas-logo.png" width="250" height="140" alt="EAS – European Aligner Society, home"></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle__bars" aria-hidden="true"></span><span>Menu</span>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="congress.html">Congress</a></li>
+          <li><a href="membership.html">Membership</a></li>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html" aria-current="page">Contact</a></li>
+          <li class="nav-login"><a href="#"><!-- da collegare: area soci -->Login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="page-hero" aria-labelledby="page-title">
+      <div class="wrap">
+        <h1 id="page-title">Get in touch with EAS</h1>
+        <p class="lead">The European Aligner Society welcomes you to a community of all things “aligner”.</p>
+      </div>
+    </section>
+
+    <section class="band band--white" aria-labelledby="form-title">
+      <div class="wrap split">
+        <div>
+          <h2 id="form-title" class="h2" style="margin-bottom:var(--s5)">Write to us</h2>
+          <form class="form" action="#" data-demo="Thank you. This is a demo form: your message has not been sent. Please write to office@eas-aligners.com.">
+            <div class="field">
+              <label for="c-name">Full name</label>
+              <input id="c-name" name="name" type="text" autocomplete="name" required aria-describedby="c-name-error">
+              <p class="error" id="c-name-error" hidden>Enter your full name.</p>
+            </div>
+            <div class="field">
+              <label for="c-email">Email address</label>
+              <input id="c-email" name="email" type="email" autocomplete="email" required aria-describedby="c-email-error">
+              <p class="error" id="c-email-error" hidden>Enter a valid email address, for example name@example.com.</p>
+            </div>
+            <div class="field">
+              <label for="c-topic">Topic <span class="hint">(optional)</span></label>
+              <select id="c-topic" name="topic">
+                <option>EAS8 Congress</option>
+                <option>Membership</option>
+                <option>Sponsorship</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c-msg">Message</label>
+              <textarea id="c-msg" name="message" required aria-describedby="c-msg-error"></textarea>
+              <p class="error" id="c-msg-error" hidden>Write your message.</p>
+            </div>
+            <div><button class="btn btn--gold" type="submit">Send message</button></div>
+            <p class="form-status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+        <div class="panel">
+          <h3>EAS Office</h3>
+          <p><a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a></p>
+          <address style="font-style:normal">La Réserve – 2525 Route de Bandol<br>83110 Sanary-sur-Mer<br>France</address>
+          <p class="small muted">Registration cancellations must be sent in writing to this address.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <section class="footer-news" aria-labelledby="news-title" id="newsletter">
+      <div class="wrap">
+        <div>
+          <h2 id="news-title">Stay up to date</h2>
+          <p>Congress news, EAS9 announcements and member updates. No more than one email a month.</p>
+        </div>
+        <form class="news-form" action="#" data-demo="Thank you. This is a demo form: no data has been sent.">
+          <label for="news-email">Email address</label>
+          <div class="news-form__row">
+            <input id="news-email" name="email" type="email" autocomplete="email" required aria-describedby="news-email-error" placeholder="name@example.com">
+            <button class="btn btn--gold" type="submit">Subscribe</button>
+          </div>
+          <p class="error small" id="news-email-error" hidden>Enter a valid email address, for example name@example.com.</p>
+          <p class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <div class="footer-main">
+      <div class="wrap footer-grid">
+        <div class="footer-brand">
+          <a href="index.html"><img src="assets/eas-logo.png" width="250" height="140" alt="EAS – European Aligner Society, home"></a>
+          <p>Advancing the science and practice of aligner orthodontics.</p>
+        </div>
+        <nav aria-labelledby="f-congress">
+          <h2 id="f-congress">Congress</h2>
+          <ul>
+            <li><a href="congress.html">EAS8 Lisbon</a></li>
+            <li><a href="congress.html#programme">Agenda</a></li>
+            <li><a href="congress.html#information">Practical info</a></li>
+            <li><a href="events.html">All events</a></li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="f-society">
+          <h2 id="f-society">Society</h2>
+          <ul>
+            <li><a href="about.html">About EAS</a></li>
+            <li><a href="about.html#board">EAS Board</a></li>
+            <li><a href="#"><!-- da collegare -->EAS Ambassadors</a></li>
+            <li><a href="#"><!-- da collegare -->Sustainability</a></li>
+          </ul>
+        </nav>
+        <nav aria-labelledby="f-members">
+          <h2 id="f-members">Members</h2>
+          <ul>
+            <li><a href="membership.html">Join EAS</a></li>
+            <li><a href="#"><!-- da collegare -->EBAO</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="#"><!-- da collegare: area soci -->Login</a></li>
+          </ul>
+        </nav>
+        <div class="footer-contact">
+          <h2>Contact</h2>
+          <address>
+            <a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a><br>
+            La Réserve – 2525 Route de Bandol<br>
+            83110 Sanary-sur-Mer, France
+          </address>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-legal">
+      <div class="wrap">
+        <p>© 2026 EAS – European Aligner Society. All rights reserved.</p>
+        <ul class="social" aria-label="EAS on social media">
+          <li><a href="#" aria-label="EAS on Instagram"><!-- da collegare --><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a></li>
+          <li><a href="#" aria-label="EAS on LinkedIn"><!-- da collegare --><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4 9h3.5v11H4zM5.75 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM10 9h3.4v1.6h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.19 2.37 4.19 5.45V20h-3.5v-5.1c0-1.22-.02-2.78-1.7-2.78-1.7 0-1.95 1.32-1.95 2.69V20H10z"/></svg></a></li>
+          <li><a href="#" aria-label="EAS on Facebook"><!-- da collegare --><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.87.25-1.46 1.5-1.46h1.6V4.46A21 21 0 0 0 14.27 4.3c-2.3 0-3.87 1.4-3.87 3.98v2.22H7.8v3h2.6V21z"/></svg></a></li>
+        </ul>
+        <ul class="legal-links">
+          <li><a href="#"><!-- da collegare -->Privacy Policy</a></li>
+          <li><a href="#"><!-- da collegare -->Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>
