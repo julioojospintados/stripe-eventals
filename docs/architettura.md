@@ -725,7 +725,10 @@ Obiettivo: vendere l'EAS8 senza perdere soldi né posti, con uno staff senza tec
 
 ---
 
-## 19. Fisco e legale (non deciso)
+## 19. Fisco e legale (a cura del cliente, a lavoro ultimato)
+
+Decisione di Giulio del 06/11/2026: queste questioni non si affrontano adesso. Le gestiscono il cliente e il suo
+commercialista a lavoro ultimato; i punti sotto restano come promemoria e l'architettura non li presuppone risolti.
 
 **Non decido io: va alla catena legale-fiscale (`catena-legale-fiscale`) e al commercialista del cliente, prima dello
 sviluppo** (decisione di Giulio, confermata il 06/11/2026).
@@ -765,16 +768,24 @@ sviluppo** (decisione di Giulio, confermata il 06/11/2026).
 
 ## 21. Domande aperte
 
-1. **Server:** fornitore e paese, VPS o condiviso, sistema, accesso SSH e root, Postgres disponibile, chi lo gestisce e lo aggiorna dopo il lancio?
-2. **Stripe:** di che paese e di quale soggetto è l'account verificato? Cambia commissioni e fatture.
-3. **Evento:** 8–10 o 10–14 aprile 2027? Nome pubblico «EAS8» o «Orthodontic Congress»?
-4. **Early bird:** il −30% vale anche sul prezzo membro e sul workshop? Date della finestra? «Accesso early bird» come vantaggio della membership vuol dire che l'early bird è solo per i membri?
-5. **Workshop:** c'è un prezzo membro? Quanti workshop e con quanti posti?
-6. **Email:** chi fornisce la casella `Website@orthocongress.org` e con che limiti? Va bene un fornitore transazionale UE se non bastano?
-7. **Newsletter:** Brevo o Mailchimp (c'è già un account)?
-8. **Check-in:** chi è il partner, che sistema usa, legge QR firmati o solo un elenco, CSV o API?
-9. **Video:** quante ore, dove sono oggi i file, ci sono i permessi dei relatori?
-10. **Codici sconto:** li gestisce il commerciale (proposta) o l'organizzatore?
-11. **Lingua predefinita:** inglese (proposta) o italiano?
-12. **Fisco e legale** (§19): da avviare con la catena legale-fiscale e il commercialista, compresa la quota della membership non rimborsata.
-13. Restano dal 05/11/2026: tolleranza di 24 ore sul rinnovo, `past_due` vale come membro?, massimo 2 cambi di nominativo, esclusione dell'addebito SEPA per i biglietti, tabella `organizations`, tempi dell'app negli store, conferma dei tagli del §18.
+Ricalibrate il 06/11/2026: le questioni legali e fiscali non si chiedono adesso, le gestisce il cliente a lavoro
+ultimato (§19). Restano solo domande tecniche e di prodotto, tutte per Simone.
+
+| # | Tema | Domanda | Cosa cambia |
+|---|---|---|---|
+| 1 | Server | Fornitore e paese, VPS o condiviso, accesso SSH, Postgres o solo MySQL, chi lo aggiorna dopo il lancio? | Database, deploy, backup |
+| 2 | Stripe | In che paese è aperto l'account verificato e in che valuta incassa? | Commissioni e conversione di valuta |
+| 3 | Evento | 8–10 o 10–14 aprile 2027? Nome pubblico «EAS8» o «Orthodontic Congress»? | Testi, date di vendita |
+| 4 | Early bird | Il −30% vale anche sul prezzo membro e sul workshop? Fino a quando? È solo per i membri? | Logica dei prezzi |
+| 5 | Workshop | Quanti, con quanti posti, c'è un prezzo membro? | Capienza e prezzi |
+| 6 | Email | Chi fornisce la casella SMTP e quanti invii all'ora permette? | Coda delle email, eventuale fornitore UE |
+| 7 | Newsletter | Brevo o Mailchimp, c'è già un account? | Integrazione |
+| 8 | Check-in | Chi è il partner, che sistema usa, legge QR o un elenco, CSV o API? | Esportazione dei biglietti |
+| 9 | Video | Quante ore, dove sono oggi i file? | Servizio video e costi |
+| 10 | Codici sconto | Li gestisce il commerciale (proposta) o l'organizzatore? | Permessi in Filament |
+| 11 | Lingua | Inglese predefinito (proposta) o italiano? | Indirizzi e contenuti |
+
+Decise per default, salvo parere contrario di Simone: 24 ore di tolleranza sul rinnovo della membership, chi è in
+ritardo col pagamento resta membro durante i tentativi di Stripe, massimo 2 cambi di nominativo per biglietto, niente
+addebito SEPA per i biglietti (esito troppo lento), niente tabella `organizations` finché c'è un solo organizzatore,
+tagli del §18.

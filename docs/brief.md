@@ -26,7 +26,7 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 | Rimborsi | Nessun rimborso; cambio nominativo gratuito fino a 48 ore prima (da far confermare alla catena legale) |
 | Durata membership | 12 mesi dall'acquisto, rinnovo automatico annullabile dal portale clienti Stripe |
 | Su misura o pretix | Tutto su misura, niente pretix |
-| Legale e fisco | IVA, fattura elettronica, condizioni di vendita e rimborsi alla catena legale-fiscale dopo questa fase, prima dello sviluppo |
+| Legale e fisco | ~~IVA, fattura elettronica, condizioni di vendita e rimborsi alla catena legale-fiscale prima dello sviluppo~~ (superata il 06/11/2026) |
 
 ## Decisioni del 06/11/2026 (dopo le risposte del cliente)
 
@@ -35,7 +35,7 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 | Stack | Laravel + Filament sul server del cliente, dati in UE (al posto di Next.js + Supabase su Vercel) |
 | Evento | EAS8, Lisbona, 8–10 aprile 2027 (come il sito pubblico; il modulo diceva 10-14, da confermare) |
 | Aspetto | Coerente con eas-aligners.com; la versione migliorata resta in `proposte/` da proporre dopo |
-| Legale e fisco | Ancora rimandati a prima dello sviluppo, ma ora con evento in Portogallo e compratori internazionali |
+| Legale e fisco | Non si chiedono più a Giulio: li gestisce il cliente a lavoro ultimato |
 
 Dettagli delle risposte: [`docs/cliente/risposte-2026-11-06.md`](cliente/risposte-2026-11-06.md).
 
