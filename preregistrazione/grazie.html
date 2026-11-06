@@ -1,0 +1,74 @@
+<!doctype html>
+<!--
+  Autore: Giulio Occhipinti
+  EAS8 Lisbon - pagina di ringraziamento dopo l'invio del modulo di preregistrazione.
+  Ci si arriva dal redirect impostato in Mailchimp ("Signup thank you page" -> "send subscribers to another URL").
+  Con il double opt-in il contatto non e' ancora iscritto: deve cliccare il link nell'email di conferma.
+  Nessun cookie, nessuno script, nessuna risorsa esterna.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="robots" content="noindex">
+  <title>Check your inbox to confirm · EAS8 Lisbon</title>
+  <meta name="description" content="One more step: confirm your pre-registration for EAS8 Lisbon from the email we just sent you.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="./" aria-label="EAS8 Lisbon, pre-registration">
+      <img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society">
+      <span class="brand__testo" aria-hidden="true">EAS8 Lisbon</span>
+    </a>
+  </div>
+</header>
+
+<main id="contenuto" class="hero grazie">
+  <div class="wrap">
+    <div class="modulo">
+      <div>
+        <h1 class="t-display" style="font-size:clamp(2rem,1.4rem + 3vw,3.25rem);line-height:1.05">Check your inbox to confirm</h1>
+        <p style="margin-top:var(--s-4)">Thank you. We have sent you an email: your pre-registration for <strong>EAS8 Lisbon, 8–10 April 2027</strong> is complete only after you confirm it.</p>
+      </div>
+      <ol class="passi">
+        <li><span>Open the email from the European Aligner Society. It can take a few minutes to arrive.</span></li>
+        <li><span>Click the confirmation button in the email.</span></li>
+        <li><span>Done: you will be among the first to know when ticket sales open and, if you are a member, about early access to Early bird prices.</span></li>
+      </ol>
+      <div>
+        <h2 class="t-small" style="font-size:var(--fs-lg)">No email?</h2>
+        <p style="margin-top:var(--s-2)">Look in the spam or promotions folder. If it is not there, the address may contain a typo: <a href="./#preregister">pre-register again</a> with the correct address.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__griglia">
+    <div><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></div>
+    <div>
+      <h2>EAS8 Lisbon</h2>
+      <ul>
+        <li><a href="./">Pre-registration</a></li>
+        <li><a href="./#privacy-policy">Privacy policy</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Contact</h2>
+      <!-- SEGNAPOSTO: contatto da confermare con il cliente -->
+      <p><span class="segnaposto">Placeholder</span> Contact email to be provided by EAS</p>
+    </div>
+  </div>
+  <div class="wrap site-footer__sotto">
+    <p>© 2026 EAS – European Aligner Society. All rights reserved.</p>
+    <p>This page sets no cookies and uses no tracking.</p>
+  </div>
+</footer>
+</body>
+</html>

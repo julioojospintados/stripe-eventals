@@ -1,0 +1,593 @@
+<!doctype html>
+<!--
+  Autore: Giulio Occhipinti
+  EAS8 Lisbon - pagina di preregistrazione. Statica, senza backend: il modulo invia i dati all'embedded form di Mailchimp.
+  Nessun cookie, nessuno script di tracciamento, nessuna risorsa esterna (font, script, immagini: tutto in questa cartella).
+  Prima di metterla online sostituire i valori REPLACE_* (vedi README.md, lista di controllo).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Pre-register · EAS8 Lisbon, 8–10 April 2027</title>
+  <meta name="description" content="EAS8 Lisbon, the congress of the European Aligner Society, 8–10 April 2027. Tickets go on sale soon: pre-register to get the opening date first.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#preregister">Skip to the pre-registration form</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 15.500H3z"/><path d="M12 10v4.500M12 17v.2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.500l4.500 4.500L19 7.500"/></symbol>
+</defs></svg>
+
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="./" aria-label="EAS8 Lisbon, pre-registration">
+      <img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society">
+      <span class="brand__testo" aria-hidden="true">EAS8 Lisbon</span>
+    </a>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="hero" aria-labelledby="titolo-evento">
+    <div class="wrap hero__corpo">
+      <div class="hero__testo">
+        <h1 class="t-display" id="titolo-evento">EAS8 <span class="hero__citta">Lisbon</span></h1>
+        <p class="hero__data">8–10 April 2027</p>
+        <p class="hero__tagline"><strong>Mastering Clinical Challenges in Aligner Orthodontics</strong> — From Clinical Limitations to Predictable Outcomes</p>
+        <p class="hero__stato"><strong>Tickets go on sale soon.</strong> Pre-register to get the opening date first and, if you are a member, early access to Early bird prices.</p>
+        <!-- su telefono il modulo e' sotto: questa ancora e' nella prima schermata a 360x740; da 1024px il modulo e' gia' accanto e l'ancora si nasconde -->
+        <p class="hero__vai"><a class="btn btn--block" href="#preregister">Pre-register <svg class="ic" aria-hidden="true"><use href="#i-down"></use></svg></a></p>
+      </div>
+
+      <section class="modulo" id="preregister" aria-labelledby="titolo-modulo">
+        <div>
+          <h2 id="titolo-modulo">Pre-register</h2>
+          <p class="modulo__nota">Free, about one minute. Fields marked “optional” can be left empty.</p>
+        </div>
+
+        <!--
+          Embedded form di Mailchimp, senza il loro script (mc-validate.js): niente richieste a terzi prima dell'invio.
+          Sostituire REPLACE_DC (es. us21), REPLACE_U, REPLACE_ID, REPLACE_F con i valori dell'URL "action" del codice
+          dell'embedded form preso da Mailchimp (README.md, passo 5). Nomi dei campi:
+            EMAIL, FNAME, LNAME  campi standard di ogni audience
+            COUNTRY              campo di testo (merge tag da impostare a COUNTRY; Mailchimp di default lo chiamerebbe MMERGE3, ecc.)
+            PROF                 campo "Radio buttons" con le stesse 5 scelte, scritte identiche
+            MEMBER               campo di testo: arriva "Yes" se la casella e' spuntata, niente se non lo e'
+            gdpr[REPLACE_GDPR]   permesso di marketing "Email" dei campi GDPR di Mailchimp (valore Y)
+            tags                 ID numerico del tag "EAS8 pre-registration" (dal codice generato dal form builder)
+            b_REPLACE_U_REPLACE_ID  honeypot anti-bot di Mailchimp: deve restare vuoto
+          Senza JavaScript valgono i controlli nativi del browser (required, type=email); con JavaScript la validazione
+          qui sotto mostra i messaggi vicino ai campi e un riepilogo.
+        -->
+        <form id="preregistrazione" action="https://REPLACE_DC.list-manage.com/subscribe/post?u=REPLACE_U&amp;id=REPLACE_ID&amp;f_id=REPLACE_F" method="post" target="_self" accept-charset="UTF-8">
+          <div class="riepilogo-errori" id="riepilogo-errori" tabindex="-1" aria-labelledby="riepilogo-titolo" hidden>
+            <h3 id="riepilogo-titolo">There is a problem</h3>
+            <ul></ul>
+          </div>
+
+          <div class="campi">
+            <div class="campi campi--due">
+              <div class="campo">
+                <label for="mce-FNAME">First name</label>
+                <p class="campo__errore" id="mce-FNAME-errore" hidden></p>
+                <input class="input" type="text" id="mce-FNAME" name="FNAME" autocomplete="given-name" required>
+              </div>
+              <div class="campo">
+                <label for="mce-LNAME">Last name</label>
+                <p class="campo__errore" id="mce-LNAME-errore" hidden></p>
+                <input class="input" type="text" id="mce-LNAME" name="LNAME" autocomplete="family-name" required>
+              </div>
+            </div>
+
+            <div class="campo">
+              <label for="mce-EMAIL">Email</label>
+              <p class="campo__aiuto" id="mce-EMAIL-aiuto">We will send you an email: click the link inside to confirm.</p>
+              <p class="campo__errore" id="mce-EMAIL-errore" hidden></p>
+              <input class="input" type="email" id="mce-EMAIL" name="EMAIL" autocomplete="email" inputmode="email" spellcheck="false" aria-describedby="mce-EMAIL-aiuto" required>
+            </div>
+
+            <div class="campo">
+              <label for="mce-COUNTRY">Country <span class="facoltativo">(optional)</span></label>
+              <select class="select" id="mce-COUNTRY" name="COUNTRY" autocomplete="country-name">
+                <option value="">Select your country</option>
+          <option>Afghanistan</option>
+          <option>Åland Islands</option>
+          <option>Albania</option>
+          <option>Algeria</option>
+          <option>American Samoa</option>
+          <option>Andorra</option>
+          <option>Angola</option>
+          <option>Anguilla</option>
+          <option>Antarctica</option>
+          <option>Antigua and Barbuda</option>
+          <option>Argentina</option>
+          <option>Armenia</option>
+          <option>Aruba</option>
+          <option>Australia</option>
+          <option>Austria</option>
+          <option>Azerbaijan</option>
+          <option>Bahamas</option>
+          <option>Bahrain</option>
+          <option>Bangladesh</option>
+          <option>Barbados</option>
+          <option>Belarus</option>
+          <option>Belgium</option>
+          <option>Belize</option>
+          <option>Benin</option>
+          <option>Bermuda</option>
+          <option>Bhutan</option>
+          <option>Bolivia</option>
+          <option>Bosnia and Herzegovina</option>
+          <option>Botswana</option>
+          <option>Bouvet Island</option>
+          <option>Brazil</option>
+          <option>British Indian Ocean Territory</option>
+          <option>British Virgin Islands</option>
+          <option>Brunei</option>
+          <option>Bulgaria</option>
+          <option>Burkina Faso</option>
+          <option>Burundi</option>
+          <option>Cambodia</option>
+          <option>Cameroon</option>
+          <option>Canada</option>
+          <option>Cape Verde</option>
+          <option>Caribbean Netherlands</option>
+          <option>Cayman Islands</option>
+          <option>Central African Republic</option>
+          <option>Chad</option>
+          <option>Chile</option>
+          <option>China</option>
+          <option>Christmas Island</option>
+          <option>Cocos (Keeling) Islands</option>
+          <option>Colombia</option>
+          <option>Comoros</option>
+          <option>Congo</option>
+          <option>Congo (Democratic Republic)</option>
+          <option>Cook Islands</option>
+          <option>Costa Rica</option>
+          <option>Côte d’Ivoire</option>
+          <option>Croatia</option>
+          <option>Cuba</option>
+          <option>Curaçao</option>
+          <option>Cyprus</option>
+          <option>Czechia</option>
+          <option>Denmark</option>
+          <option>Djibouti</option>
+          <option>Dominica</option>
+          <option>Dominican Republic</option>
+          <option>Ecuador</option>
+          <option>Egypt</option>
+          <option>El Salvador</option>
+          <option>Equatorial Guinea</option>
+          <option>Eritrea</option>
+          <option>Estonia</option>
+          <option>Eswatini</option>
+          <option>Ethiopia</option>
+          <option>Falkland Islands</option>
+          <option>Faroe Islands</option>
+          <option>Fiji</option>
+          <option>Finland</option>
+          <option>France</option>
+          <option>French Guiana</option>
+          <option>French Polynesia</option>
+          <option>French Southern Territories</option>
+          <option>Gabon</option>
+          <option>Gambia</option>
+          <option>Georgia</option>
+          <option>Germany</option>
+          <option>Ghana</option>
+          <option>Gibraltar</option>
+          <option>Greece</option>
+          <option>Greenland</option>
+          <option>Grenada</option>
+          <option>Guadeloupe</option>
+          <option>Guam</option>
+          <option>Guatemala</option>
+          <option>Guernsey</option>
+          <option>Guinea</option>
+          <option>Guinea-Bissau</option>
+          <option>Guyana</option>
+          <option>Haiti</option>
+          <option>Heard and McDonald Islands</option>
+          <option>Honduras</option>
+          <option>Hong Kong</option>
+          <option>Hungary</option>
+          <option>Iceland</option>
+          <option>India</option>
+          <option>Indonesia</option>
+          <option>Iran</option>
+          <option>Iraq</option>
+          <option>Ireland</option>
+          <option>Isle of Man</option>
+          <option>Israel</option>
+          <option>Italy</option>
+          <option>Jamaica</option>
+          <option>Japan</option>
+          <option>Jersey</option>
+          <option>Jordan</option>
+          <option>Kazakhstan</option>
+          <option>Kenya</option>
+          <option>Kiribati</option>
+          <option>Kosovo</option>
+          <option>Kuwait</option>
+          <option>Kyrgyzstan</option>
+          <option>Laos</option>
+          <option>Latvia</option>
+          <option>Lebanon</option>
+          <option>Lesotho</option>
+          <option>Liberia</option>
+          <option>Libya</option>
+          <option>Liechtenstein</option>
+          <option>Lithuania</option>
+          <option>Luxembourg</option>
+          <option>Macao</option>
+          <option>Madagascar</option>
+          <option>Malawi</option>
+          <option>Malaysia</option>
+          <option>Maldives</option>
+          <option>Mali</option>
+          <option>Malta</option>
+          <option>Marshall Islands</option>
+          <option>Martinique</option>
+          <option>Mauritania</option>
+          <option>Mauritius</option>
+          <option>Mayotte</option>
+          <option>Mexico</option>
+          <option>Micronesia</option>
+          <option>Moldova</option>
+          <option>Monaco</option>
+          <option>Mongolia</option>
+          <option>Montenegro</option>
+          <option>Montserrat</option>
+          <option>Morocco</option>
+          <option>Mozambique</option>
+          <option>Myanmar</option>
+          <option>Namibia</option>
+          <option>Nauru</option>
+          <option>Nepal</option>
+          <option>Netherlands</option>
+          <option>New Caledonia</option>
+          <option>New Zealand</option>
+          <option>Nicaragua</option>
+          <option>Niger</option>
+          <option>Nigeria</option>
+          <option>Niue</option>
+          <option>Norfolk Island</option>
+          <option>North Korea</option>
+          <option>North Macedonia</option>
+          <option>Northern Mariana Islands</option>
+          <option>Norway</option>
+          <option>Oman</option>
+          <option>Pakistan</option>
+          <option>Palau</option>
+          <option>Palestine</option>
+          <option>Panama</option>
+          <option>Papua New Guinea</option>
+          <option>Paraguay</option>
+          <option>Peru</option>
+          <option>Philippines</option>
+          <option>Pitcairn Islands</option>
+          <option>Poland</option>
+          <option>Portugal</option>
+          <option>Puerto Rico</option>
+          <option>Qatar</option>
+          <option>Réunion</option>
+          <option>Romania</option>
+          <option>Russia</option>
+          <option>Rwanda</option>
+          <option>Saint Barthélemy</option>
+          <option>Saint Helena</option>
+          <option>Saint Kitts and Nevis</option>
+          <option>Saint Lucia</option>
+          <option>Saint Martin</option>
+          <option>Saint Pierre and Miquelon</option>
+          <option>Saint Vincent and Grenadines</option>
+          <option>Samoa</option>
+          <option>San Marino</option>
+          <option>São Tomé and Príncipe</option>
+          <option>Saudi Arabia</option>
+          <option>Senegal</option>
+          <option>Serbia</option>
+          <option>Seychelles</option>
+          <option>Sierra Leone</option>
+          <option>Singapore</option>
+          <option>Sint Maarten</option>
+          <option>Slovakia</option>
+          <option>Slovenia</option>
+          <option>Solomon Islands</option>
+          <option>Somalia</option>
+          <option>South Africa</option>
+          <option>South Georgia and South Sandwich Islands</option>
+          <option>South Korea</option>
+          <option>South Sudan</option>
+          <option>Spain</option>
+          <option>Sri Lanka</option>
+          <option>Sudan</option>
+          <option>Suriname</option>
+          <option>Svalbard and Jan Mayen</option>
+          <option>Sweden</option>
+          <option>Switzerland</option>
+          <option>Syria</option>
+          <option>Taiwan</option>
+          <option>Tajikistan</option>
+          <option>Tanzania</option>
+          <option>Thailand</option>
+          <option>Timor-Leste</option>
+          <option>Togo</option>
+          <option>Tokelau</option>
+          <option>Tonga</option>
+          <option>Trinidad and Tobago</option>
+          <option>Tunisia</option>
+          <option>Türkiye</option>
+          <option>Turkmenistan</option>
+          <option>Turks and Caicos Islands</option>
+          <option>Tuvalu</option>
+          <option>U.S. Outlying Islands</option>
+          <option>U.S. Virgin Islands</option>
+          <option>Uganda</option>
+          <option>Ukraine</option>
+          <option>United Arab Emirates</option>
+          <option>United Kingdom</option>
+          <option>United States</option>
+          <option>Uruguay</option>
+          <option>Uzbekistan</option>
+          <option>Vanuatu</option>
+          <option>Vatican City</option>
+          <option>Venezuela</option>
+          <option>Vietnam</option>
+          <option>Wallis and Futuna</option>
+          <option>Western Sahara</option>
+          <option>Yemen</option>
+          <option>Zambia</option>
+          <option>Zimbabwe</option>
+              </select>
+            </div>
+
+            <fieldset class="campo">
+              <legend>Profession <span class="facoltativo">(optional)</span></legend>
+              <div class="scelte scelte--due">
+                <label class="scelta"><input type="radio" name="PROF" value="Orthodontist"> Orthodontist</label>
+                <label class="scelta"><input type="radio" name="PROF" value="General dentist"> General dentist</label>
+                <label class="scelta"><input type="radio" name="PROF" value="Resident"> Resident</label>
+                <label class="scelta"><input type="radio" name="PROF" value="Industry"> Industry</label>
+                <label class="scelta"><input type="radio" name="PROF" value="Other"> Other</label>
+              </div>
+            </fieldset>
+
+            <div class="campo">
+              <label class="scelta"><input type="checkbox" id="mce-MEMBER" name="MEMBER" value="Yes"> <span>I am interested in EAS membership <span class="facoltativo">(optional)</span></span></label>
+            </div>
+
+            <div class="campo consenso">
+              <p class="campo__errore" id="mce-CONSENT-errore" hidden></p>
+              <label class="scelta scelta--alta"><input type="checkbox" id="mce-CONSENT" name="gdpr[REPLACE_GDPR]" value="Y" aria-describedby="mce-CONSENT-aiuto" required>
+                <span>I agree to receive emails from the European Aligner Society about EAS8: the opening of ticket sales and, for members, early access to Early bird prices.</span></label>
+              <!-- Privacy policy: testo legale a cura del cliente (EAS). Sostituire "#privacy-policy" con l'indirizzo della pagina vera. -->
+              <p class="campo__aiuto" id="mce-CONSENT-aiuto">Required to pre-register. You can unsubscribe from any email. Read the <a href="#privacy-policy">privacy policy</a>.</p>
+            </div>
+          </div>
+
+          <!-- tag "EAS8 pre-registration": REPLACE_TAG = ID numerico preso dal codice dell'embedded form (README.md, passo 4) -->
+          <div hidden><input type="hidden" name="tags" value="REPLACE_TAG"></div>
+          <!-- honeypot di Mailchimp: un bot lo riempie, una persona non lo vede (fuori schermo, fuori dal tab, nascosto ai lettori di schermo) -->
+          <div class="mc-trappola" aria-hidden="true"><input type="text" name="b_REPLACE_U_REPLACE_ID" tabindex="-1" value="" autocomplete="off"></div>
+
+          <p style="margin-top:var(--s-5)"><button type="submit" class="btn btn--block" id="invia">Pre-register</button></p>
+          <p class="modulo__nota">The form is handled by Mailchimp, the email service used by EAS. No payment is requested now.</p>
+        </form>
+      </section>
+    </div>
+  </section>
+
+  <section class="sezione" aria-labelledby="titolo-incluso">
+    <div class="wrap">
+      <h2 id="titolo-incluso">What's included</h2>
+      <!-- SEGNAPOSTO: tre punti da scrivere con il cliente (EAS). Non sono contenuti confermati. -->
+      <ul class="griglia-3">
+        <li class="colonna">
+          <span class="segnaposto">Placeholder</span>
+          <h3>Scientific programme</h3>
+          <p class="t-muted">Three days of sessions on aligner orthodontics. Final text to be provided by EAS.</p>
+        </li>
+        <li class="colonna">
+          <span class="segnaposto">Placeholder</span>
+          <h3>Hands-on workshops</h3>
+          <p class="t-muted">Workshops with limited seats, booked separately. Final text to be provided by EAS.</p>
+        </li>
+        <li class="colonna">
+          <span class="segnaposto">Placeholder</span>
+          <h3>Third highlight</h3>
+          <p class="t-muted">To be written by EAS (for example the exhibition area or the social programme).</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sezione bande" aria-labelledby="titolo-membro">
+    <div class="wrap membro">
+      <div class="misura">
+        <h2 id="titolo-membro">Become a member</h2>
+        <p style="margin-top:var(--s-4)">EAS membership will be available on the congress website when ticket sales open. Tick “I am interested in EAS membership” in the form and we will let you know.</p>
+        <p style="margin-top:var(--s-4)"><a href="#preregister">Go to the pre-registration form</a></p>
+      </div>
+      <div class="prezzo">
+        <p><span class="prezzo__valore">200 €</span> <span class="t-muted">per year</span></p>
+        <ul class="elenco-spunte">
+          <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span>Early access to Early bird prices</span></li>
+          <li><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><span>Member area with videos of past congresses</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sezione" aria-labelledby="titolo-contatti">
+    <div class="wrap">
+      <h2 id="titolo-contatti">Contact</h2>
+      <!-- SEGNAPOSTO: contatti da confermare con il cliente (indirizzo email del congresso, recapito dell'organizzatore). -->
+      <dl class="meta-lista misura">
+        <div><dt>Organiser</dt><dd>European Aligner Society</dd></div>
+        <div><dt>Email</dt><dd><span class="segnaposto">Placeholder</span> Contact email to be provided by EAS</dd></div>
+        <div><dt>Venue</dt><dd>Lisbon, venue to be announced</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sezione bande" id="privacy-policy" aria-labelledby="titolo-privacy" tabindex="-1">
+    <div class="wrap">
+      <h2 id="titolo-privacy">Privacy policy</h2>
+      <!-- Testo legale a cura del cliente (EAS): qui va la privacy policy vera, o il link alla sua pagina. Non scritto da noi. -->
+      <p class="misura"><span class="segnaposto">Placeholder</span> The privacy policy will be published here by the European Aligner Society.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__griglia">
+    <div><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></div>
+    <div>
+      <h2>EAS8 Lisbon</h2>
+      <ul>
+        <li><a href="#preregister">Pre-register</a></li>
+        <li><a href="#privacy-policy">Privacy policy</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Contact</h2>
+      <!-- SEGNAPOSTO: contatto da confermare con il cliente -->
+      <p><span class="segnaposto">Placeholder</span> Contact email to be provided by EAS</p>
+    </div>
+  </div>
+  <div class="wrap site-footer__sotto">
+    <p>© 2026 EAS – European Aligner Society. All rights reserved.</p>
+    <p>This page sets no cookies and uses no tracking.</p>
+  </div>
+</footer>
+
+<script>
+/* Validazione accessibile (miglioramento progressivo): senza JavaScript restano i controlli nativi del browser.
+   Errori vicino al campo (collegati con aria-describedby e aria-invalid), riepilogo in cima con i link ai campi,
+   fuoco sul riepilogo, titolo della pagina con "Error:". Nessuna richiesta di rete: l'invio resta il POST del form. */
+(function () {
+  'use strict';
+  var form = document.getElementById('preregistrazione');
+  if (!form || !form.querySelector || !document.addEventListener) return;
+  form.noValidate = true;
+
+  var riepilogo = document.getElementById('riepilogo-errori');
+  var lista = riepilogo.querySelector('ul');
+  var titoloRiepilogo = document.getElementById('riepilogo-titolo');
+  var bottone = document.getElementById('invia');
+  var titoloPagina = document.title;
+  var tentato = false, inviato = false;
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  var regole = {
+    'mce-FNAME': function (el) { return el.value.trim() ? '' : 'Enter your first name.'; },
+    'mce-LNAME': function (el) { return el.value.trim() ? '' : 'Enter your last name.'; },
+    'mce-EMAIL': function (el) {
+      var v = el.value.trim();
+      if (!v) return 'Enter your email address.';
+      return EMAIL_RE.test(v) ? '' : 'Enter an email address in the format name@example.com.';
+    },
+    'mce-CONSENT': function (el) { return el.checked ? '' : 'Tick the box to agree to receive emails about EAS8. Without it we cannot write to you.'; }
+  };
+
+  function descritto(el, id, aggiungi) {
+    var ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) { return x && x !== id; });
+    if (aggiungi) ids.unshift(id);
+    if (ids.length) el.setAttribute('aria-describedby', ids.join(' ')); else el.removeAttribute('aria-describedby');
+  }
+
+  function segna(el, testo) {
+    var err = document.getElementById(el.id + '-errore');
+    var campo = el.closest('.campo');
+    if (testo) {
+      err.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><span><span class="sr-only">Error: </span></span>';
+      err.lastChild.appendChild(document.createTextNode(testo));
+      err.hidden = false;
+      campo.classList.add('campo--errore');
+      el.setAttribute('aria-invalid', 'true');
+      descritto(el, err.id, true);
+    } else {
+      err.hidden = true;
+      err.textContent = '';
+      campo.classList.remove('campo--errore');
+      el.removeAttribute('aria-invalid');
+      descritto(el, err.id, false);
+    }
+  }
+
+  function controlla() {
+    var errori = [];
+    Object.keys(regole).forEach(function (id) {
+      var el = document.getElementById(id);
+      var testo = regole[id](el);
+      segna(el, testo);
+      if (testo) errori.push({ id: id, testo: testo });
+    });
+    return errori;
+  }
+
+  function mostraRiepilogo(errori) {
+    lista.innerHTML = '';
+    errori.forEach(function (e) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.href = '#' + e.id;
+      a.textContent = e.testo;
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var el = document.getElementById(e.id);
+        el.focus();
+        el.scrollIntoView({ block: 'center' });
+      });
+      li.appendChild(a);
+      lista.appendChild(li);
+    });
+    titoloRiepilogo.textContent = errori.length === 1 ? 'There is a problem' : 'There are ' + errori.length + ' problems';
+    riepilogo.hidden = false;
+    document.title = 'Error: ' + titoloPagina;
+    riepilogo.focus();
+  }
+
+  form.addEventListener('submit', function (ev) {
+    if (inviato) { ev.preventDefault(); return; }
+    tentato = true;
+    var errori = controlla();
+    if (errori.length) {
+      ev.preventDefault();
+      mostraRiepilogo(errori);
+      return;
+    }
+    riepilogo.hidden = true;
+    document.title = titoloPagina;
+    var email = document.getElementById('mce-EMAIL');
+    email.value = email.value.trim();
+    inviato = true;
+    bottone.setAttribute('aria-disabled', 'true');
+    bottone.textContent = 'Sending…';
+  });
+
+  // dopo il primo tentativo il messaggio del singolo campo si aggiorna mentre si corregge (il riepilogo resta fino al nuovo invio)
+  Object.keys(regole).forEach(function (id) {
+    var el = document.getElementById(id);
+    var aggiorna = function () { if (tentato) segna(el, regole[id](el)); };
+    el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', aggiorna);
+  });
+
+  // tornando indietro da Mailchimp (cache del browser) il bottone torna usabile
+  window.addEventListener('pageshow', function () {
+    inviato = false;
+    bottone.removeAttribute('aria-disabled');
+    bottone.textContent = 'Pre-register';
+  });
+})();
+</script>
+</body>
+</html>
