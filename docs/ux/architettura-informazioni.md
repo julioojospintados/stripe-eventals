@@ -3,13 +3,17 @@
 -->
 # Architettura delle informazioni e UX
 
-Autore: Giulio Occhipinti. Fase: progettazione. Aggiornato al 05/11/2026.
+Autore: Giulio Occhipinti. Fase: progettazione. Aggiornato al 06/11/2026.
 Riferimenti: `docs/brief.md` (decisioni di Giulio), prototipo cliccabile in `prototipo/` (apri `index.html`).
 
-Nome evento: **«Convegno 2027»** è un segnaposto. Persone, luoghi, date e prezzi del prototipo sono inventati e
-dichiarati tali nell'interfaccia. Quello che manca è scritto «da definire», non riempito.
+Nome evento (dal 06/11/2026): **EAS8 Lisbon**, 8–10 aprile 2027, Lisbona, 6.000 posti (risposte del cliente in
+`docs/cliente/risposte-2026-11-06.md`; date da confermare, vedi 11.3). Prezzi, membership e capienza sono quelli del cliente;
+speaker, sessioni, orari, sede, video e vendite sono segnaposto e dichiarati tali nell'interfaccia. Quello che manca è scritto «da definire», non riempito.
+I capitoli 1-10 sono stati scritti sul primo prototipo («Convegno 2027», prezzi inventati): dove i numeri differiscono vale il capitolo 11.
 
 ## 1. Direzione visiva
+
+> **Superata il 06/11/2026.** Il cliente vuole la coerenza con eas-aligners.com: vedi il capitolo 11 («Identità EAS e scostamenti per accessibilità»). La tabella qui sotto descrive la versione editoriale precedente, conservata in `proposte/versione-migliorata/`.
 
 | Scelta | Perché |
 |---|---|
@@ -77,17 +81,17 @@ Regola unica: **chi non è connesso vede tutti i prezzi con chi ne ha diritto; c
 
 | Chi guarda | Cosa vede | Esempio (pass intero) |
 |---|---|---|
-| Visitatore (non connesso) | Due righe: Pubblico, Membro «con la membership, sul tuo biglietto» | 150 € · 100 € (fascia early bird) |
-| Utente non membro | «Il tuo prezzo · Pubblico» grande; sotto «Altro prezzo» e link «Come ottenere il prezzo membro» | 150 € grande; Membro 100 € |
-| Membro | «Il tuo prezzo · Membro» grande, prezzo pubblico barrato, riga «vale sul tuo biglietto, chi viene con te paga il pubblico» | 100 € grande, 150 € barrato |
-| Ex membro | Prezzo pubblico grande, riga «membership scaduta: rinnova per tornare a 100 €» | 150 € grande |
+| Visitatore (non connesso) | Due righe: Pubblico, Membro «con la membership, sul tuo biglietto» | 486,50 € · 276,50 € (fascia early bird −30%) |
+| Utente non membro | «Il tuo prezzo · Pubblico» grande; sotto «Altro prezzo» e link «Come ottenere il prezzo membro» | 486,50 € grande; Membro 276,50 € |
+| Membro | «Il tuo prezzo · Membro» grande, prezzo pubblico barrato, riga «vale sul tuo biglietto, chi viene con te paga il pubblico» | 276,50 € grande, 486,50 € barrato |
+| Ex membro | Prezzo pubblico grande, riga «membership scaduta: rinnova per tornare a 276,50 €» | 486,50 € grande |
 
-Dove c'è una fascia di vendita (pass intero e giornaliero) una riga sotto il prezzo dice quale è aperta e quando finisce, con il prezzo che seguirà: «Fascia «Early bird» fino al 30/04/2027 · poi pubblico 180 €, membro 120 €». I prezzi dei pass vengono dalla fascia aperta alla data (nel prototipo simulata: 10/03/2027), quindi sito pubblico e admin mostrano sempre la stessa cifra. Se nessuna fascia è aperta lo si scrive.
+Dove c'è una fascia di vendita (pass intero) una riga sotto il prezzo dice quale è aperta e quando finisce, con il prezzo che seguirà: «Fascia «Early bird −30%» fino al 31/01/2027 (data di esempio) · poi pubblico 695 €, membro 395 €». I prezzi dei pass vengono dalla fascia aperta alla data (nel prototipo simulata: 06/11/2026), quindi sito pubblico e admin mostrano sempre la stessa cifra. Se nessuna fascia è aperta lo si scrive.
 
 Regole di contorno:
 
 - Il barrato ha un testo nascosto «Prezzo pubblico» per i lettori di schermo: non si affida alla sola riga barrata.
-- Nelle righe di elenco (programma, speaker) la versione compatta: visitatore «Pubblico 45 € · Membro 35 €» (nella griglia del programma «Membri 35 € · pubblico 45 €»: il ruolo è sempre scritto, mai un «da X €» senza dire per chi), connesso «Tuo prezzo · Membro 35 € (pubblico 45 €)».
+- Nelle righe di elenco (programma, speaker) la versione compatta: visitatore «Pubblico 395 € · Membro 276,50 €» (esempio sul pass; nella griglia del programma «Membri … · pubblico …»: il ruolo è sempre scritto, mai un «da X €» senza dire per chi), connesso «Tuo prezzo · Membro 276,50 € (pubblico 486,50 €)». **Workshop:** oggi 100 € per tutti, quindi la riga dice «100 € · prezzo unico: oggi uguale per pubblico e membro», senza barrati finti (vedi 11.3).
 - Nella pagina biglietti la tabella dei prezzi evidenzia la colonna del ruolo con fondo e con un'etichetta «Tu» (non solo colore).
 - Le sessioni incluse non hanno prezzo: hanno il badge pieno «Inclusa nel pass» (le a pagamento: badge con solo contorno «A pagamento»).
 - La membership si propone solo dove conviene: nel riepilogo compare «risparmio netto» se il risparmio supera la quota, altrimenti «per questo solo ordine non conviene». Mai pressione.
@@ -110,7 +114,7 @@ Convenzione: **Sistema** è ciò che risponde; **Se…** è un ramo di errore o 
 
 ### 4.2 Acquisto da membro con prezzo membro
 
-1. Il membro accede. L'intestazione dice «Vista: Membro»; la home già mostra 100 € grande con 150 € barrato (fascia early bird).
+1. Il membro accede. L'intestazione dice «Vista: Membro»; la home già mostra 276,50 € grande con 486,50 € barrato (fascia early bird).
 2. Passi 1-5 come sopra: il **primo biglietto dell'ordine** è intestato al membro (nome ed email dall'account, in sola lettura) e prende il prezzo membro; i biglietti degli altri partecipanti sono al prezzo pubblico. Una riga nella sezione «Per chi» lo spiega, anche con una persona sola («se aggiungi altre persone, loro pagano il prezzo pubblico»).
 3. Il riepilogo ha una riga per il Partecipante 1 (prezzo membro) e una per gli altri (prezzo pubblico), più la nota «Il prezzo membro è applicato solo al tuo biglietto»; nessuna proposta di membership. Le sessioni a pagamento vanno al Partecipante 1 e prendono il prezzo membro.
 4. Pagamento e ritorno come in 4.1.
@@ -227,7 +231,7 @@ Gli obiettivi sono ipotesi di lavoro, non misure.
 - Il ruolo e il pass si scelgono con il selettore in cima: nel sito vero vengono dall'account e da Stripe.
 - Pagine non fatte: accesso, area personale, admin, pagine legali.
 - Nella griglia per sala gli interventi interni non si espandono: restano nell'elenco e nella pagina sessione.
-- Il font è di sistema; la famiglia vera va scelta con licenza e ospitata in proprio.
+- Il font è Inter (come il sito del cliente), caricato da Google Fonts nel prototipo; in produzione va ospitato in proprio (11.2).
 
 ## 9. Domande aperte per Giulio
 
@@ -314,3 +318,131 @@ Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle 
 - Accesso admin con TOTP, registro audit consultabile, lista d'attesa e liquidazione dei biglietti in massa (evento annullato) non sono disegnati.
 - Il pannello admin non ha ancora una vista del registro delle azioni né dei lavori in coda.
 - Tutti i contrasti nuovi usano i token esistenti (avvisi e tinte già calcolati); non misurati sulla build.
+
+## 11. Identità EAS e scostamenti per accessibilità
+
+Autore: Giulio Occhipinti. Prototipo rivestito il 06/11/2026 con l'identità di eas-aligners.com (misurata dal CSS e dagli stili calcolati della
+pagina pubblica; robots.txt consente `/`). Il cliente vuole coerenza col suo sito «anche dove è fatto male»: stessa aria, senza rompere WCAG 2.2 AA.
+I contrasti sono calcolati a mano con la formula WCAG 2.x (elenco in testa a `prototipo/styles.css`); la misura sulla build la fa `ux-reviewer`.
+La versione editoriale precedente resta in `proposte/versione-migliorata/`, non toccata.
+
+### 11.1 Cosa è stato preso dal sito del cliente
+
+| Elemento | Valore | Dove |
+|---|---|---|
+| Font | Inter (Google Fonts, 100..900): titoli 600, parole chiave dell'hero 900, corpo 400 | tutto |
+| Hero, barra di navigazione | #202020, testo #f5f5f5, filetto sottile; logo PNG bianco 84×47 a sinistra, menu, Login a destra | header di ogni pagina |
+| Hero della home | «EAS8» bianco 900, «Lisbon» arancio #f28e1c 900, date arancio, tagline in inglese (`lang="en"`), CTA oro e bianca | `index.html` |
+| CTA principale | oro #fdc30c, testo #111111, raggio 6px; secondaria #f5f5f5 con testo #111111 | bottoni |
+| Fascia speaker | azzurro #3d8fc9 | home |
+| Fascia sponsor | blu notte #14364b, titolo grigio-azzurro | home (elenco sponsor: da fornire) |
+| Footer | #080b0c: logo, link, contatti (office@eas-aligners.com e indirizzo pubblici del loro sito), newsletter | tutte le pagine pubbliche |
+| Variabili | stessi nomi del loro CSS (`--eas-primary`, `--eas-gold`, …) dove esistono | `styles.css` |
+| Contenuti lunghi (programma, biglietti, account, admin) | fondo #f5f5f5, testo #111111, come i loro moduli | tutte le pagine tranne hero/nav/footer |
+
+Il sito del cliente è solo scuro. Qui hero, navigazione e footer sono scuri sempre (anche con il sistema in modo chiaro); il tema scuro di
+sistema per i contenuti è stato tolto. Telefono: barra in basso a quattro voci (Programma, Speaker, Biglietti, Membership) su fondo scuro, pagina corrente con barra acqua (#2ec3c0) e grassetto.
+Menu del nostro sito: Programma, Speaker, Biglietti, Membership, Login (diventa «Account» da connessi). Le altre voci del loro menu (Call for Abstracts, Road to Lisbon, EBAO, Events, FAQ, About Us, Contact Us) non sono nostre e non compaiono.
+
+### 11.2 Scostamenti dall'identità, con il motivo
+
+| # | Loro | Qui | Motivo (contrasto calcolato) |
+|---|---|---|---|
+| 1 | Corpo del testo Inter 200 (`--eas-font-weight`) | Inter 400 | 200 è troppo sottile a 17px: illeggibile, specie su telefono |
+| 2 | Arancio #f28e1c anche su chiaro (possibile) | arancio solo su fondo scuro | 6,7:1 su #202020 e 5,2:1 su #14364b; su #f5f5f5 sarebbe 2,2:1 |
+| 3 | Titolo sponsor #667b83 su #14364b | #7b9097, solo per il titolo grande | #667b83 = 2,85:1 (sotto 3:1 anche per testo grande); #7b9097 = 3,8:1. Il testo corrente è #f5f5f5 (11,6:1) |
+| 4 | Testi secondari #667b83 | #4f6775 (`--eas-blue-jeans`) | #667b83 su #f5f5f5 = 4,1:1 (< 4,5:1); #4f6775 = 5,5:1 |
+| 5 | Pulsante Login grigio #667b83, testo bianco | #4f6775 con #f5f5f5 | 4,1:1 contro 5,5:1 |
+| 6 | Titolo bianco su azzurro #3d8fc9 | tenuto, ma solo per il titolo grande (≥ 24px) | 3,2:1: passa solo per testo grande. Il testo dentro la fascia è #111111 (5,4:1) |
+| 7 | Bottone oro senza bordo | sulle parti chiare bordo 2px #111111 | oro su #f5f5f5 = 1,5:1: il bottone non si distinguerebbe dallo sfondo (1.4.11). Sul fondo scuro resta senza bordo visibile |
+| 8 | Rosso #e53835 / verde #2e7d31 per i testi di stato | #9b1c1c e #0b5d2e su tinta chiara | #2e7d31 su tinta verde = 4,4:1 (< 4,5:1); il rosso su tinta rosa non arriva a 4,5:1. Restano solo come colori decorativi |
+| 9 | Raggio 1.5rem per gli elementi | 1rem per le schede, 6px per i bottoni | con 1rem di spazio interno il testo non tocca l'angolo arrotondato |
+| 10 | Menu con molte voci, sottomenu, riga social in alto | 4 voci + Login; niente riga social | Bersagli ≥ 44px e nessuno scorrimento orizzontale a 360px; i link ai profili social vanno chiesti al cliente (non inventati) |
+| 11 | Bottoni affiancati che a telefono vanno a capo parola per parola (visibile nel loro screenshot mobile) | bottoni uno sotto l'altro, a tutta larghezza, `white-space: nowrap`, CTA nella prima schermata a 360×740 | A 360px nel loro hero il testo dei bottoni si spezza; qui stima: barra prototipo 47px + intestazione 65px + hero fino ai bottoni ≈ 555px, sopra la barra in basso (680px). **Non misurato in un browser** |
+| 12 | Testo bianco e arancio solo scuro | focus visibile: oro #fdc30c su scuro (10,1:1), #14364b su chiaro (11,6:1), #111111 sulla fascia azzurra | 2.4.7 e 2.4.11 |
+| 13 | Google Fonts caricato dal loro sito | stesso nel prototipo | In produzione Inter va ospitato in proprio: una richiesta a Google da un browser UE è un problema di privacy (da far vedere alla catena legale) |
+
+Stati mai solo a colore: invariati dal capitolo 6 (forma delle tracce, icona e testo degli avvisi, sottolineatura dei link, grassetto e barra della pagina corrente).
+
+### 11.3 Dati veri e segnaposto (06/11/2026)
+
+| Dato | Valore | Stato |
+|---|---|---|
+| Evento | EAS8 Lisbon, Lisbona | vero (cliente) |
+| Date | 8–10 aprile 2027 | **da confermare**: il modulo dice 10-14 aprile, il sito pubblico 8–10. Si usa 8–10; la nota «date da confermare» sta solo nella barra del prototipo (summary e testo) |
+| Posti | 6.000 | vero (cliente) |
+| Pass intero | 695 € pubblico · 395 € membro | vero |
+| Early bird | −30% → 486,50 € · 276,50 € | percentuale vera; **fascia di esempio fino al 31/01/2027** (data inventata, inizio 01/11/2026 pure) |
+| Workshop a pagamento | 100 € | vero. **Stesso prezzo per il membro** finché il cliente non ne indica uno diverso: l'interfaccia lo dichiara («prezzo unico: oggi uguale per pubblico e membro») e non mostra barrati o risparmi finti |
+| Membership | 200 € all'anno; vantaggi: accesso early bird, member area con i video dei congressi passati | vero |
+| Sede | «Sede da confermare» | da fornire |
+| Speaker, sessioni, orari, sale, tracce, video, ordini, membri, vendite, capienze delle sale | inventati, con l'etichetta «segnaposto» (speaker con nomi evidentemente fittizi) | segnaposto |
+| Sponsor, social | non forniti | da chiedere |
+
+**Pass giornaliero: non offerto per ora.** Il cliente ha scritto «giornaliero non indicato». È stato tolto da tutta l'interfaccia (biglietti, membership, account, admin, sconti, check-in). Se tornasse: un tipo di pass in più, un pool di posti per giorno, fasce e prezzi propri, e il pass intero tornerebbe a consumare un posto in ciascun giorno (come nel primo prototipo). La capienza di 6.000 posti vale oggi per il pass intero; se serve una capienza per giorno va chiesta.
+**«Accesso early bird» come vantaggio della membership** è ambiguo: nel prototipo la fascia early bird è aperta a tutti e il membro ha il suo prezzo (276,50 €). Se invece l'early bird fosse riservato ai membri per un periodo, cambia la logica di vendita. Domanda per il cliente.
+**Masterclass** non esiste più come tipo: restano keynote, panel, talk e workshop (a pagamento).
+
+### 11.4 Lingua: italiano e inglese
+
+Il sito sarà in italiano e in inglese; il prototipo resta in italiano.
+
+- **Nel prototipo:** selettore «IT/EN» nell'intestazione (etichetta «Lingua / Language»). Cambia solo l'attributo `lang` della pagina e mostra un avviso («versione inglese simulata»). Non salva la scelta. Mettere `lang="en"` su testo italiano è scorretto per i lettori di schermo: vale solo per il prototipo. Il tagline del hero è già in inglese e ha `lang="en"` anche nella pagina italiana.
+- **Come si gestiranno le traduzioni (proposta, da confermare con la scelta dello stack):**
+  - testi dell'interfaccia: file di traduzione di Laravel (`lang/it`, `lang/en`), una chiave per frase, mai testo scritto dentro i template;
+  - contenuti dell'evento (titoli e descrizioni di sessioni, bio degli speaker, vantaggi della membership): campi traducibili nel database, compilabili da Filament in due lingue; se manca l'inglese si mostra l'italiano con l'etichetta «solo in italiano», mai un campo vuoto [uncertain: esistono plugin Filament per i campi traducibili, da verificare versione e manutenzione];
+  - indirizzi distinti per lingua (`/it/…`, `/en/…`) con `hreflang`, `<html lang>` vero e titolo di pagina tradotto;
+  - la lingua scelta si ricorda nel profilo (per chi è connesso) o in un cookie tecnico; email e ricevute partono nella lingua dell'utente; Stripe Checkout riceve la lingua;
+  - importi, date e numeri formattati per lingua (`486,50 €` in italiano, `€486.50` in inglese);
+  - chi traduce: l'organizzatore dal pannello; testi legali tradotti solo dopo la revisione della catena legale;
+  - stringhe corte e senza frasi spezzate in più pezzi, perché l'inglese cambia l'ordine delle parole.
+
+### 11.5 Ruoli dell'admin (Laravel + Filament)
+
+Selettore «Vedi come ruolo» in cima a ogni pagina admin: nasconde le voci di menu, le sezioni del cruscotto e le pagine non permesse (una pagina vietata mostra solo l'avviso). Nel sito vero i permessi sono policy di Laravel e il pannello non ha il selettore.
+
+| Voce | Admin | Commerciale (pagamenti e fatture) | Organizzatore (biglietti, tier, date) |
+|---|---|---|---|
+| Cruscotto: «Da fare», vendite, ultimi ordini | sì | sì | no |
+| Cruscotto: posti rimasti, check-in con il partner | sì | no | sì |
+| Programma e speaker (date, sale, sessioni) | sì | no | sì |
+| Biglietti e prezzi (fasce early bird = «tier», capienze) | sì | no | sì |
+| Codici sconto | sì | sì | no (ipotesi: da confermare con il cliente) |
+| Ordini e fatture, rimborsi | sì | sì | no |
+| Membri | sì | sì | no |
+| Esporta biglietti validi per il partner (CSV) | sì | no | sì |
+
+La fatturazione vera (Stripe + Xero) non è prototipata: «Ordini e fatture» mostra gli ordini, le fatture sono da definire.
+**Check-in:** lo fa un partner sul posto, che scansiona i biglietti digitali dalla member area. `checkin.html` resta come riferimento (con un avviso in cima). Nel pannello c'è «Esporta biglietti validi per il partner (CSV)», **simulata**: non crea file. Colonne proposte: codice breve, nominativo, tipo, sessione (workshop); niente email né importi (minimizzazione). Solo biglietti di ordini pagati e non rimborsati. Aperti: formato vero che il partner accetta (CSV o API), aggiornamento dopo rimborsi o cambi di nominativo (un CSV scaricato prima non li vede: serve un'API o un nuovo invio), e un accordo sul trattamento dei dati con il partner (alla catena legale). Il QR del biglietto è firmato (capitolo 10): il partner deve poterlo verificare.
+
+### 11.6 Member area: video dei congressi
+
+Nuova scheda «Video dei congressi» in `account.html` (elenco segnaposto di quattro video).
+
+| Chi guarda | Cosa vede |
+|---|---|
+| Membro | Elenco con anteprima, titolo, edizione, durata e pulsante «Guarda» (nel prototipo mostra un avviso: non c'è un lettore) |
+| Utente non membro | Elenco **bloccato**: icona lucchetto, badge «Bloccato · solo membri», nessun pulsante; avviso «Riservato ai membri» con «Diventa membro» (200 € all'anno) |
+| Ex membro | Come sopra, con «Rinnova la membership» |
+| Visitatore | Scheda dietro l'accesso, come tutta l'area personale |
+
+Regole per i video veri: nessun avvio automatico, mai audio senza un tocco; sottotitoli (obbligatori per l'accessibilità di contenuti preregistrati, 1.2.2) e trascrizione dove possibile; modalità risparmio dati (non caricare il video finché non lo si avvia); controlli da tastiera; `prefers-reduced-motion` rispettato. Serve un servizio di video con accesso protetto (link firmati, scadenza); non è previsto dal piano attuale e va stimato (costo e dati in UE, vincolo del cliente). I diritti sui video dei congressi passati (relatori, partner) vanno verificati dalla catena legale prima di metterli online.
+
+### 11.7 Domande aperte nate da questo giro
+
+| # | Domanda | Per chi |
+|---|---|---|
+| 15 | Date: 8–10 aprile (sito) o 10-14 aprile (modulo)? | cliente |
+| 16 | «Accesso early bird» per i membri: fascia riservata o prezzo membro già scontato? Date vere di inizio e fine della fascia | cliente |
+| 17 | Prezzo membro dei workshop: uguale (100 €) o diverso? | cliente |
+| 18 | Pass giornaliero: mai, o più avanti? Capienza per giorno? | cliente |
+| 19 | Sede, elenco sponsor, profili social, relatori veri e foto | cliente |
+| 20 | Hosting di Inter in proprio e nessuna richiesta a Google Fonts | Giulio / catena legale |
+| 21 | Export per il partner: formato, accordo sul trattamento dei dati | cliente / catena legale |
+| 22 | Video dei congressi: servizio di hosting, diritti, sottotitoli | Giulio / catena legale |
+
+### 11.8 Limiti di questo giro
+
+- Il prototipo non è stato aperto in un browser: contrasti calcolati a mano, 360×740 stimato, nessuna prova con screen reader o tastiera. Serve il giro di `ux-reviewer`.
+- Header e footer sono scritti da `prototipo.js` (nel sito vero sono parti Blade); senza JavaScript il footer mostra una sola riga e il selettore di lingua non c'è.
+- Il QR del biglietto è un segnaposto non leggibile; le anteprime dei video sono riquadri a righe.

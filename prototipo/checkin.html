@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Check-in · Staff · Convegno 2027</title>
+  <title>Check-in · Staff · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,13 +13,14 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="checkin.html">Check-in · Convegno 2027</a>
+    <a class="brand" href="checkin.html" aria-label="EAS8 Lisbon, check-in"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Check-in</span></a>
     <span class="badge badge--info"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Staff</span>
   </div>
 </header>
 
 <main id="contenuto" class="wrap checkin-main" style="padding-top:var(--s-4)">
   <h1 class="sr-only">Check-in</h1>
+  <div class="avviso avviso--info" role="note" style="margin-bottom:var(--s-3)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div><b>Schermata di riferimento.</b> Il check-in lo fa un partner sul posto con i biglietti digitali. L’organizzazione gli passa l’elenco dei biglietti validi dal pannello admin («Esporta biglietti validi per il partner»).</div></div>
 
   <div class="stato-rete" id="rete" role="status" aria-live="polite"></div>
   <label class="scelta" style="margin-top:var(--s-2)"><input type="checkbox" id="offline"><span>Prototipo: simula di essere offline</span></label>
@@ -28,7 +29,7 @@
     <summary>Varco, giorno e modo<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
     <div class="acc__corpo stack">
       <div class="grid-3">
-        <div class="campo"><label for="varco">Varco</label><select class="select" id="varco"><option>Varco A</option><option>Varco B</option><option>Sala Grande</option></select></div>
+        <div class="campo"><label for="varco">Varco</label><select class="select" id="varco"><option>Varco A</option><option>Varco B</option><option>Sala Plenaria</option></select></div>
         <div class="campo"><label for="giorno">Giorno di oggi</label><select class="select" id="giorno"></select></div>
         <div class="campo"><label for="modo">Che cosa controlli</label><select class="select" id="modo"><option value="evento">Ingresso all’evento</option><option value="sala">Ingresso a una sessione</option></select></div>
       </div>
@@ -88,14 +89,15 @@
     var T = [
       { code: 'K7M2QX4P', nome: 'Alessia Demo', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
       { code: 'R3T9WB6N', nome: 'Marco Prova', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
-      { code: 'D5H8LC2Y', nome: 'Alessia Demo', tipo: 'Workshop · Progettare un servizio culturale', g: ['g1'], sess: 's03', uso: {} },
+      { code: 'D5H8LC2Y', nome: 'Alessia Demo', tipo: 'Workshop · Attachments e biomeccanica', g: ['g1'], sess: 's03', uso: {} },
       { code: 'H4J8NZ3C', nome: 'Carla Prova', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
-      { code: 'M9B2TF7E', nome: 'Bruno Esempio', tipo: 'Pass giornaliero · Venerdì 15', g: ['g2'], uso: {} },
-      { code: 'Z3V7RP2S', nome: 'Davide Nuovo', tipo: 'Pass giornaliero · Sabato 16', g: ['g3'], uso: {} },
+      { code: 'M9B2TF7E', nome: 'Bruno Esempio', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {} },
+      { code: 'Z3V7RP2S', nome: 'Elena Fittizia', tipo: 'Workshop · Pianificare un caso difficile con il software', g: ['g3'], sess: 's15', uso: {} },
       { code: 'Q6X5KD8L', nome: 'Giada Segnaposto', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: { g1: '09:41 · Varco B' } },
-      { code: 'W2Y6PV9A', nome: 'Nora Esempio', tipo: 'Pass giornaliero · Venerdì 15', g: ['g2'], uso: {}, rimborsato: true }
+      { code: 'W2Y6PV9A', nome: 'Nora Esempio', tipo: 'Pass intero', g: ['g1', 'g2', 'g3'], uso: {}, rimborsato: true }
     ];
-    var coda = 0, entrati = 187, attesi = 212, log = [], ultimo = null;
+    // numeri inventati (6.000 posti); il check-in vero lo fa un partner sul posto: questa schermata e' solo un riferimento
+    var coda = 0, entrati = 1842, attesi = 2140, log = [], ultimo = null;
     var ORA = function () { var n = new Date(); return (n.getHours() < 10 ? '0' : '') + n.getHours() + ':' + (n.getMinutes() < 10 ? '0' : '') + n.getMinutes(); };
 
     $('#giorno').innerHTML = D.giorni.map(function (g) { return '<option value="' + g.id + '">' + g.lungo + '</option>'; }).join('');
@@ -183,7 +185,7 @@
       nonlista: function () {
         esito('warn', 'alert', 'Non in lista', '<b>Davide Nuovo</b><small>Il QR è autentico ma il biglietto è stato comprato dopo l’ultima sincronizzazione. Controlla un documento, poi accetta.</small>',
           '<button type="button" class="btn btn--primary btn--grande" id="accetta">Documento controllato: fai entrare</button>', true);
-        $('#accetta').addEventListener('click', function () { registra({ nome: 'Davide Nuovo', tipo: 'Pass giornaliero · da verificare', uso: {} }); esito('ok', 'check', 'Entrato', '<b>Davide Nuovo</b><small>Registrato come «non in lista, controllato a mano».</small>', null, false); });
+        $('#accetta').addEventListener('click', function () { registra({ nome: 'Davide Nuovo', tipo: 'Pass intero · da verificare', uso: {} }); esito('ok', 'check', 'Entrato', '<b>Davide Nuovo</b><small>Registrato come «non in lista, controllato a mano».</small>', null, false); });
       }
     };
     $$('[data-sim]').forEach(function (b) {

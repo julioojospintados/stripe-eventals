@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Membri · Admin · Convegno 2027</title>
+  <title>Membri · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
     <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
   </div>
 </header>
@@ -68,7 +68,7 @@
       p.innerHTML = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">' + m.nome + '</h2>' + badge(m.stato) + '</div>' +
         '<dl class="meta-lista misura"><div><dt>Email</dt><dd>' + m.email + '</dd></div><div><dt>Fine periodo</dt><dd>' + m.fine + '</dd></div><div><dt>Rinnovo</dt><dd>' + m.rinnovo + '</dd></div>' +
         '<div><dt>Prezzo oggi</dt><dd>' + (vale ? 'Membro' : 'Pubblico (non vale come membro)') + (vale ? ' (solo sul biglietto di chi compra)' : '') + '</dd></div>' +
-        '<div><dt>Ultimo avviso Stripe</dt><dd>' + (m.stato === 'past_due' ? 'invoice.payment_failed, 10/03/2027' : 'invoice.paid, ' + (m.stato === 'expired' ? '30/09/2025' : '12/03/2027')) + '</dd></div></dl>' +
+        '<div><dt>Ultimo avviso Stripe</dt><dd>' + (m.stato === 'past_due' ? 'invoice.payment_failed, 03/11/2026' : 'invoice.paid, ' + (m.stato === 'expired' ? '30/09/2025' : '05/11/2026')) + '</dd></div></dl>' +
         '<div class="azioni-riga" style="margin-top:var(--s-4)"><button type="button" class="btn btn--secondary" data-az="stripe">' + AD.icona('external') + 'Apri il cliente su Stripe</button>' +
         (m.stato === 'past_due' ? '<button type="button" class="btn btn--primary" data-az="mail">Rimanda l’email per aggiornare il pagamento</button>' : '') + '</div><div id="st" role="status" aria-live="polite" style="margin-top:var(--s-3)"></div>';
       $('#h-dett').focus();

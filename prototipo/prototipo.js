@@ -1,133 +1,147 @@
 /*
   Autore: Giulio Occhipinti
-  Convegno 2027 (nome segnaposto) - codice condiviso del prototipo.
-  Contiene: dati inventati (sessioni, persone, prezzi), stato "vedi come" (ruolo e pass, salvato
-  nel browser), componente prezzo per ruolo, icone, funzioni di disegno riusate dalle pagine.
-  JavaScript semplice, nessuna libreria, nessuna build. Nel sito vero questi dati vengono dal database
-  e il ruolo dall'account: qui servono solo a mostrare come cambia l'interfaccia.
+  EAS8 Lisbon - codice condiviso del prototipo.
+  Contiene: dati (evento, prezzi e capienza veri dal modulo del cliente del 06/11/2026; speaker e sessioni
+  inventati, "segnaposto"), stato "vedi come" (ruolo e pass, salvato nel browser), componente prezzo per ruolo,
+  intestazione con selettore IT/EN finto, footer, icone, funzioni di disegno riusate dalle pagine.
+  JavaScript semplice, nessuna libreria, nessuna build. Nel sito vero (Laravel + Filament) questi dati vengono dal
+  database, il ruolo dall'account, header e footer sono parti Blade.
 */
 (function (w, d) {
   'use strict';
 
-  /* ------------------------------------------------------------------ dati (tutto inventato) */
+  /* ------------------------------------------------------------------ dati */
+  // VERI (modulo del cliente, risposte del 06/11/2026): nome, date pubbliche, citta', posti, prezzi, early bird, membership.
+  // INVENTATI (segnaposto): sede, speaker, sessioni, orari, capienze delle sale, tracce.
+  function ws() { return { pub: 100, mem: 100 }; }   // workshop 100 €: stesso prezzo per il membro finche' il cliente non ne dice uno diverso
   var DATA = {
-    evento: { nome: 'Convegno 2027', luogo: 'Centro Congressi dei Navigli (segnaposto), Milano' },
+    evento: {
+      nome: 'EAS8 Lisbon', citta: 'Lisbona', date: '8–10 aprile 2027', posti: 6000,
+      sede: 'Sede da confermare', societa: 'European Aligner Society',
+      tagline: 'Mastering Clinical Challenges in Aligner Orthodontics', tagline2: 'From Clinical Limitations to Predictable Outcomes'
+    },
     giorni: [
-      { id: 'g1', breve: 'Gio 14', lungo: 'Giovedì 14 ottobre' },
-      { id: 'g2', breve: 'Ven 15', lungo: 'Venerdì 15 ottobre' },
-      { id: 'g3', breve: 'Sab 16', lungo: 'Sabato 16 ottobre' }
+      { id: 'g1', breve: 'Gio 8', lungo: 'Giovedì 8 aprile' },
+      { id: 'g2', breve: 'Ven 9', lungo: 'Venerdì 9 aprile' },
+      { id: 'g3', breve: 'Sab 10', lungo: 'Sabato 10 aprile' }
     ],
     sale: [
-      { id: 'grande', nome: 'Sala Grande', nota: 'plenaria' },
-      { id: 'lanterna', nome: 'Sala Lanterna', nota: 'panel e talk' },
-      { id: 'officina', nome: 'Sala Officina', nota: 'workshop' },
-      { id: 'studio', nome: 'Aula Studio', nota: 'masterclass' }
+      { id: 'grande', nome: 'Sala Plenaria', nota: 'plenaria' },
+      { id: 'lanterna', nome: 'Sala Clinica', nota: 'panel e talk' },
+      { id: 'officina', nome: 'Sala Workshop', nota: 'workshop' },
+      { id: 'studio', nome: 'Sala Digital', nota: 'workshop' }
     ],
     tracce: [
-      { id: 't1', nome: 'Città e paesaggio' },
-      { id: 't2', nome: 'Archivi e memoria' },
-      { id: 't3', nome: 'Mestieri della cultura' },
-      { id: 't4', nome: 'Tecnologia e società' }
+      { id: 't1', nome: 'Pianificazione digitale' },
+      { id: 't2', nome: 'Biomeccanica e movimenti' },
+      { id: 't3', nome: 'Casi clinici complessi' },
+      { id: 't4', nome: 'Tecnologia e IA' }
     ],
-    tipi: { keynote: 'Keynote', panel: 'Panel', talk: 'Talk', workshop: 'Workshop', masterclass: 'Masterclass' },
-    oggi: '2027-03-10',   // data simulata del prototipo: decide quale fascia di vendita e' aperta
-    // Fasce di vendita dei pass (early bird e standard): unica fonte, usata dal sito e dall'admin.
+    tipi: { keynote: 'Keynote', panel: 'Panel', talk: 'Talk', workshop: 'Workshop' },
+    oggi: '2026-11-06',   // data simulata del prototipo (oggi): decide quale fascia di vendita e' aperta
+    // Fasce di vendita del pass intero: unica fonte, usata dal sito e dall'admin. Il pass di un solo giorno NON e' offerto (cliente: «non indicato»).
+    // Early bird -30%: 695 x 0,70 = 486,50 · 395 x 0,70 = 276,50. Date della fascia: ESEMPIO (fine 31/01/2027), da confermare.
     fasce: [
-      { id: 'f1', nome: 'Early bird', tipo: 'intero', dal: '2027-02-01', al: '2027-04-30', pub: 150, mem: 100 },
-      { id: 'f2', nome: 'Standard', tipo: 'intero', dal: '2027-05-01', al: '2027-10-14', pub: 180, mem: 120 },
-      { id: 'f3', nome: 'Early bird', tipo: 'giornaliero', dal: '2027-02-01', al: '2027-04-30', pub: 65, mem: 45 },
-      { id: 'f4', nome: 'Standard', tipo: 'giornaliero', dal: '2027-05-01', al: '2027-10-14', pub: 80, mem: 55 }
+      { id: 'f1', nome: 'Early bird', tipo: 'intero', dal: '2026-11-01', al: '2027-01-31', pub: 486.5, mem: 276.5, sconto: 30, esempio: true },
+      { id: 'f2', nome: 'Standard', tipo: 'intero', dal: '2027-02-01', al: '2027-04-10', pub: 695, mem: 395 }
     ],
     prezzi: {
       intero: { pub: 0, mem: 0 },        // prezzi della fascia aperta oggi: calcolati dai dati subito sotto
-      giornaliero: { pub: 0, mem: 0 },
       workshop: { pub: 0, mem: 0 },      // "da": calcolato dai dati subito sotto
-      membership: 40
+      membership: 200                    // 200 €/anno
     },
+    vantaggiMembership: ['Accesso early bird', 'Member area con i video dei congressi passati'],
     speakers: [
-      { id: 'sp1', nome: 'Marta Valsecchi', cognome: 'Valsecchi', ruolo: 'Storica dell’architettura', ente: 'Università di Esempia', tono: 1,
-        bio: ['Studia da vent’anni il rapporto tra edifici pubblici e vita di quartiere. Ha curato mostre e guide urbane in sei città.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp2', nome: 'Davide Ferrante', cognome: 'Ferrante', ruolo: 'Curatore di archivi sonori', ente: 'Fonoteca Civica di Esempia', tono: 2,
-        bio: ['Recupera e cataloga registrazioni su nastro: interviste, concerti di quartiere, radio locali.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp3', nome: 'Ilaria Bonomi', cognome: 'Bonomi', ruolo: 'Designer di servizi culturali', ente: 'Studio Bonomi Lazzari', tono: 3,
-        bio: ['Progetta percorsi di accesso per teatri, biblioteche e festival. Conduce workshop con équipe di piccoli enti.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp4', nome: 'Tommaso Rinaldi', cognome: 'Rinaldi', ruolo: 'Urbanista', ente: 'Laboratorio Città Lente', tono: 1,
-        bio: ['Lavora su mobilità dolce e spazi pubblici. Ha ideato un format di passeggiate collettive per leggere i quartieri.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp5', nome: 'Chiara Dell’Orto', cognome: 'Dell’Orto', ruolo: 'Editrice', ente: 'Edizioni del Ponte', tono: 4,
-        bio: ['Dirige una casa editrice indipendente di saggistica. Scrive di filiera del libro e di diritti d’autore.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp6', nome: 'Samuele Okafor-Bianchi', cognome: 'Okafor-Bianchi', ruolo: 'Ricercatore in linguistica computazionale', ente: 'Istituto di Esempia', tono: 4,
-        bio: ['Studia come i modelli linguistici trattano l’italiano e le sue varietà regionali.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp7', nome: 'Luca Zanetti', cognome: 'Zanetti', ruolo: 'Giornalista dei dati', ente: 'Redazione Dati Aperti', tono: 2,
-        bio: ['Racconta il territorio con dati pubblici. Tiene corsi di inchiesta e visualizzazione per redazioni locali.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp8', nome: 'Giovanna Pastore', cognome: 'Pastore', ruolo: 'Restauratrice di materiale cartaceo', ente: 'Archivio di Stato di Esempia', tono: 3,
-        bio: ['Si occupa di conservazione di carte fragili: mappe, registri, manifesti.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp9', nome: 'Noemi Carbone', cognome: 'Carbone', ruolo: 'Mediatrice culturale e sindacalista', ente: 'Rete Lavoratori della Cultura', tono: 3,
-        bio: ['Segue contratti, compensi e tutele di chi lavora nel settore culturale.', 'Biografia inventata per il prototipo.'] },
-      { id: 'sp10', nome: 'Paolo Gentilini', cognome: 'Gentilini', ruolo: 'Consulente per bandi e fondazioni', ente: 'Gentilini & Associati', tono: 4,
-        bio: ['Aiuta enti culturali a scrivere progetti finanziabili e a rendicontarli.', 'Biografia inventata per il prototipo.'] }
+      { id: 'sp1', nome: 'Anna Esempio', cognome: 'Esempio', ruolo: 'Ortodontista', ente: 'Studio Segnaposto', tono: 1,
+        bio: ['Si occupa di pianificazione digitale dei trattamenti con allineatori e di casi con movimenti complessi.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp2', nome: 'Bruno Modello', cognome: 'Modello', ruolo: 'Docente di ortodonzia', ente: 'Università di Esempia', tono: 2,
+        bio: ['Insegna biomeccanica e ancoraggio. Lavora su casi con estrazioni e su movimenti difficili con allineatori.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp3', nome: 'Chiara Prova', cognome: 'Prova', ruolo: 'Ortodontista e formatrice', ente: 'Centro Formazione Segnaposto', tono: 3,
+        bio: ['Tiene corsi pratici su attachments, pianificazione e gestione del flusso clinico.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp4', nome: 'Dario Bozza', cognome: 'Bozza', ruolo: 'Responsabile pianificazione digitale', ente: 'Laboratorio Digitale Segnaposto', tono: 1,
+        bio: ['Segue il flusso digitale dalla scansione al piano di trattamento e alla verifica dei risultati.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp5', nome: 'Elena Campione', cognome: 'Campione', ruolo: 'Ricercatrice in biomeccanica', ente: 'Istituto di Esempia', tono: 4,
+        bio: ['Studia le forze applicate dagli allineatori e la loro prevedibilità clinica.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp6', nome: 'Franco Segnale', cognome: 'Segnale', ruolo: 'Ingegnere clinico', ente: 'Centro Ricerche Segnaposto', tono: 4,
+        bio: ['Lavora su modelli di intelligenza artificiale per la pianificazione e il controllo dei casi.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp7', nome: 'Gaia Inesistente', cognome: 'Inesistente', ruolo: 'Ortodontista', ente: 'Clinica Segnaposto', tono: 2,
+        bio: ['Integra la scansione intraorale e il flusso digitale nella pratica quotidiana dello studio.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp8', nome: 'Luca Ipotetico', cognome: 'Ipotetico', ruolo: 'Ortodontista, libera professione', ente: 'Studio Ipotetico', tono: 3,
+        bio: ['Si occupa di contenzione e stabilità a lungo termine dopo il trattamento con allineatori.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp9', nome: 'Nadia Fantasia', cognome: 'Fantasia', ruolo: 'Presidente di una società scientifica', ente: 'Associazione di Esempia', tono: 3,
+        bio: ['Coordina gruppi di lavoro sulla formazione e sulle linee guida cliniche.', 'Biografia segnaposto, inventata per il prototipo.'] },
+      { id: 'sp10', nome: 'Paolo Sintetico', cognome: 'Sintetico', ruolo: 'Specialista in casi complessi', ente: 'Ospedale di Esempia', tono: 4,
+        bio: ['Segue casi di recidiva, ritrattamento e trattamenti multidisciplinari.', 'Biografia segnaposto, inventata per il prototipo.'] }
     ],
     sessioni: [
-      { id: 's01', g: 'g1', da: '09:30', a: '10:30', sala: 'grande', t: 't1', tipo: 'keynote', titolo: 'Costruire il paesaggio che verrà', sp: ['sp1'],
-        desc: 'Apertura del convegno. Un percorso tra città, edifici e memoria collettiva per capire che cosa vale la pena custodire e che cosa si può lasciare cambiare.',
+      { id: 's01', g: 'g1', da: '09:30', a: '10:30', sala: 'grande', t: 't1', tipo: 'keynote', titolo: 'Dal piano digitale al risultato prevedibile', sp: ['sp1'],
+        desc: 'Apertura del congresso (sessione segnaposto). Un percorso dal piano digitale al risultato clinico: che cosa si può prevedere con gli allineatori e che cosa no.',
         posti: { libero: true }, subs: [] },
-      { id: 's02', g: 'g1', da: '11:00', a: '12:30', sala: 'lanterna', t: 't2', tipo: 'panel', titolo: 'Archivi vivi: chi custodisce la memoria collettiva', sp: ['sp2', 'sp5', 'sp4'],
-        desc: 'Quattro esperienze di archivi nati fuori dalle istituzioni: nastri di quartiere, fondi d’impresa, edizioni indipendenti. Con discussione finale.',
-        posti: { tot: 120, res: 34 },
-        subs: [ { ora: '11:00', titolo: 'Apertura e presentazione dei casi', chi: 'Davide Ferrante' },
-                { ora: '11:15', titolo: 'Il fondo sonoro del quartiere', chi: 'Davide Ferrante' },
-                { ora: '11:40', titolo: 'Edizioni e archivi d’impresa', chi: 'Chiara Dell’Orto' },
+      { id: 's02', g: 'g1', da: '11:00', a: '12:30', sala: 'lanterna', t: 't2', tipo: 'panel', titolo: 'Movimenti difficili: quando l’allineatore non basta', sp: ['sp2', 'sp5', 'sp4'],
+        desc: 'Panel segnaposto su rotazioni, estrusioni e movimenti radicolari: limiti clinici, ausiliari e strategie. Con discussione finale.',
+        posti: { tot: 600, res: 214 },
+        subs: [ { ora: '11:00', titolo: 'Apertura e presentazione dei casi', chi: 'Bruno Modello' },
+                { ora: '11:15', titolo: 'Forze e prevedibilità dei movimenti', chi: 'Elena Campione' },
+                { ora: '11:40', titolo: 'Dal limite clinico alla strategia', chi: 'Dario Bozza' },
                 { ora: '12:05', titolo: 'Discussione con il pubblico', chi: 'Tutti i relatori' } ] },
-      { id: 's03', g: 'g1', da: '11:00', a: '13:00', sala: 'officina', t: 't3', tipo: 'workshop', titolo: 'Progettare un servizio culturale in due ore', sp: ['sp3'], pagamento: { pub: 45, mem: 35 },
-        desc: 'Laboratorio pratico: si parte da un problema reale di accesso e si arriva a un prototipo di servizio. Portare un portatile o carta e pennarelli.',
-        posti: { tot: 24, res: 6 },
-        subs: [ { ora: '11:00', titolo: 'Mappare il pubblico', chi: 'Ilaria Bonomi' },
-                { ora: '11:45', titolo: 'Prototipare in gruppo', chi: 'Ilaria Bonomi' },
-                { ora: '12:30', titolo: 'Restituzione e confronto', chi: 'Ilaria Bonomi' } ] },
-      { id: 's04', g: 'g1', da: '14:30', a: '15:30', sala: 'grande', t: 't4', tipo: 'talk', titolo: 'Che cosa sa davvero un modello linguistico dell’italiano', sp: ['sp6'],
-        desc: 'Esempi concreti di errori, pregiudizi e punti di forza dei modelli linguistici sull’italiano, con le varietà regionali.',
+      { id: 's03', g: 'g1', da: '11:00', a: '13:00', sala: 'officina', t: 't3', tipo: 'workshop', titolo: 'Attachments e biomeccanica: pianificare in due ore', sp: ['sp3'], pagamento: ws(),
+        desc: 'Laboratorio pratico segnaposto: si parte da un caso reale anonimizzato e si arriva a un piano con attachments. Portare un portatile.',
+        posti: { tot: 40, res: 9 },
+        subs: [ { ora: '11:00', titolo: 'Leggere il caso', chi: 'Chiara Prova' },
+                { ora: '11:45', titolo: 'Pianificare in gruppo', chi: 'Chiara Prova' },
+                { ora: '12:30', titolo: 'Restituzione e confronto', chi: 'Chiara Prova' } ] },
+      { id: 's04', g: 'g1', da: '14:30', a: '15:30', sala: 'grande', t: 't4', tipo: 'talk', titolo: 'Che cosa sa davvero l’IA della pianificazione dei casi', sp: ['sp6'],
+        desc: 'Esempi segnaposto di errori, limiti e punti di forza dell’intelligenza artificiale nella pianificazione con allineatori.',
         posti: { libero: true }, subs: [] },
-      { id: 's05', g: 'g1', da: '15:00', a: '17:00', sala: 'studio', t: 't2', tipo: 'masterclass', titolo: 'Restauro del suono: dal nastro al file', sp: ['sp2'], pagamento: { pub: 60, mem: 50 },
-        desc: 'Masterclass sul riversamento di nastri magnetici deteriorati: pulizia, lettura, digitalizzazione e catalogazione.',
-        posti: { tot: 16, res: 0 }, subs: [] },
-      { id: 's06', g: 'g1', da: '16:00', a: '17:30', sala: 'lanterna', t: 't1', tipo: 'panel', titolo: 'Quartieri e musei: chi abita la città culturale', sp: ['sp4', 'sp9'],
-        desc: 'Come i luoghi della cultura entrano, o non entrano, nella vita delle persone che abitano intorno a loro.',
+      { id: 's05', g: 'g1', da: '15:00', a: '17:00', sala: 'studio', t: 't2', tipo: 'workshop', titolo: 'Ancoraggio e mini-impianti: laboratorio pratico', sp: ['sp2'], pagamento: ws(),
+        desc: 'Workshop segnaposto su ancoraggio scheletrico abbinato agli allineatori: indicazioni, pianificazione, gestione.',
+        posti: { tot: 30, res: 0 }, subs: [] },
+      { id: 's06', g: 'g1', da: '16:00', a: '17:30', sala: 'lanterna', t: 't1', tipo: 'panel', titolo: 'Pianificazione digitale: chi decide il trattamento', sp: ['sp4', 'sp9'],
+        desc: 'Panel segnaposto sul rapporto tra clinico, software e laboratorio nelle decisioni di trattamento.',
         posti: { nd: true }, subs: [] },
-      { id: 's07', g: 'g2', da: '09:30', a: '10:30', sala: 'grande', t: 't3', tipo: 'keynote', titolo: 'Il lavoro culturale è lavoro', sp: ['sp9'],
-        desc: 'Compensi, contratti e tutele: che cosa è cambiato negli ultimi anni e che cosa manca ancora.',
+      { id: 's07', g: 'g2', da: '09:30', a: '10:30', sala: 'grande', t: 't3', tipo: 'keynote', titolo: 'Casi complessi: dai limiti clinici agli esiti prevedibili', sp: ['sp9'],
+        desc: 'Keynote segnaposto sul percorso dai limiti clinici di un caso a un piano con esiti prevedibili.',
         posti: { libero: true }, subs: [] },
-      { id: 's08', g: 'g2', da: '11:00', a: '12:30', sala: 'lanterna', t: 't4', tipo: 'talk', titolo: 'Tre storie di editoria indipendente', sp: ['sp5', 'sp10', 'sp1'],
-        desc: 'Tre case editrici raccontano come sostengono i propri progetti tra bandi, vendite dirette e comunità di lettori.',
-        posti: { tot: 120, res: 8 },
-        subs: [ { ora: '11:00', titolo: 'Una collana che regge da dieci anni', chi: 'Chiara Dell’Orto' },
-                { ora: '11:30', titolo: 'Vivere di bandi senza dipenderne', chi: 'Paolo Gentilini' },
-                { ora: '12:00', titolo: 'Libri e architettura: un catalogo di nicchia', chi: 'Marta Valsecchi' } ] },
-      { id: 's09', g: 'g2', da: '11:00', a: '13:00', sala: 'officina', t: 't4', tipo: 'workshop', titolo: 'Dati aperti per il giornalismo locale', sp: ['sp7'], pagamento: { pub: 45, mem: 35 },
-        desc: 'Dalla ricerca del dato alla pubblicazione di una piccola inchiesta territoriale. Servono un portatile e un browser aggiornato.',
-        posti: { tot: 24, res: 11 }, subs: [] },
-      { id: 's10', g: 'g2', da: '14:30', a: '16:30', sala: 'officina', t: 't3', tipo: 'masterclass', titolo: 'Scrivere un bando culturale che si possa finanziare', sp: ['sp10'], pagamento: { pub: 70, mem: 55 },
-        desc: 'Struttura di un progetto, budget credibile, indicatori di risultato: si lavora su bandi reali anonimizzati.',
-        posti: { tot: 18, res: 9 }, subs: [] },
-      { id: 's11', g: 'g2', da: '14:30', a: '16:00', sala: 'grande', t: 't4', tipo: 'panel', titolo: 'Intelligenze artificiali e diritto d’autore: stato dell’arte', sp: ['sp6', 'sp7'],
-        desc: 'Che cosa dicono, e che cosa non dicono ancora, le regole su opere, dati di addestramento e uso dei contenuti.',
+      { id: 's08', g: 'g2', da: '11:00', a: '12:30', sala: 'lanterna', t: 't4', tipo: 'talk', titolo: 'Tre approcci alla gestione dello spazio', sp: ['sp5', 'sp10', 'sp1'],
+        desc: 'Tre colleghi (segnaposto) mostrano come gestiscono lo spazio: stripping, espansione, distalizzazione.',
+        posti: { tot: 600, res: 38 },
+        subs: [ { ora: '11:00', titolo: 'Stripping: quando e quanto', chi: 'Elena Campione' },
+                { ora: '11:30', titolo: 'Distalizzazione con allineatori', chi: 'Paolo Sintetico' },
+                { ora: '12:00', titolo: 'Spazio e piano digitale', chi: 'Anna Esempio' } ] },
+      { id: 's09', g: 'g2', da: '11:00', a: '13:00', sala: 'officina', t: 't4', tipo: 'workshop', titolo: 'Flusso digitale in studio: dalla scansione al piano', sp: ['sp7'], pagamento: ws(),
+        desc: 'Workshop segnaposto: dalla scansione intraorale al piano di trattamento. Servono un portatile e un browser aggiornato.',
+        posti: { tot: 40, res: 18 }, subs: [] },
+      { id: 's10', g: 'g2', da: '14:30', a: '16:30', sala: 'officina', t: 't3', tipo: 'workshop', titolo: 'Recidiva e ritrattamento: casi dal vivo', sp: ['sp10'], pagamento: ws(),
+        desc: 'Workshop segnaposto su casi di recidiva e ritrattamento con allineatori, a partire da casi anonimizzati.',
+        posti: { tot: 40, res: 22 }, subs: [] },
+      { id: 's11', g: 'g2', da: '14:30', a: '16:00', sala: 'grande', t: 't4', tipo: 'panel', titolo: 'Intelligenza artificiale e responsabilità clinica', sp: ['sp6', 'sp7'],
+        desc: 'Panel segnaposto su chi risponde delle decisioni prese con il supporto di software e modelli di IA.',
         posti: { libero: true }, subs: [] },
-      { id: 's12', g: 'g2', da: '16:30', a: '17:30', sala: 'studio', t: 't2', tipo: 'talk', titolo: 'La carta che resiste: conservare i fondi fragili', sp: ['sp8'],
-        desc: 'Un viaggio nei laboratori di restauro: umidità, inchiostri, interventi minimi.',
-        posti: { tot: 40, res: 40 }, subs: [] },
-      { id: 's13', g: 'g3', da: '10:00', a: '11:00', sala: 'grande', t: 't1', tipo: 'keynote', titolo: 'Camminare la città', sp: ['sp4'],
-        desc: 'Il cammino come metodo di ricerca: che cosa si vede a piedi e non da un mezzo.',
+      { id: 's12', g: 'g2', da: '16:30', a: '17:30', sala: 'studio', t: 't2', tipo: 'talk', titolo: 'Contenzione e stabilità a lungo termine', sp: ['sp8'],
+        desc: 'Talk segnaposto sulla stabilità dei risultati dopo gli allineatori: protocolli di contenzione e controlli.',
+        posti: { tot: 80, res: 80 }, subs: [] },
+      { id: 's13', g: 'g3', da: '10:00', a: '11:00', sala: 'grande', t: 't1', tipo: 'keynote', titolo: 'Il futuro dell’ortodonzia con allineatori', sp: ['sp4'],
+        desc: 'Keynote segnaposto: tecnologie e metodi che cambieranno la pianificazione nei prossimi anni.',
         posti: { libero: true }, subs: [] },
-      { id: 's14', g: 'g3', da: '11:30', a: '13:00', sala: 'lanterna', t: 't2', tipo: 'panel', titolo: 'Lingue minoritarie e archivi digitali', sp: ['sp2', 'sp6', 'sp8'],
-        desc: 'Come documentare e rendere accessibili lingue parlate da poche persone, tra audio, testo e tecnologie del linguaggio.',
-        posti: { tot: 120, res: 57 }, subs: [] },
-      { id: 's15', g: 'g3', da: '11:30', a: '13:30', sala: 'officina', t: 't1', tipo: 'workshop', titolo: 'Mappe partecipate: leggere il quartiere con chi ci vive', sp: ['sp3', 'sp4'], pagamento: { pub: 40, mem: 30 },
-        desc: 'Si esce, si cammina, si disegna: un workshop sul campo per costruire una mappa condivisa.',
-        posti: { tot: 20, res: 3 },
-        subs: [ { ora: '11:30', titolo: 'Preparazione e consegne', chi: 'Ilaria Bonomi' },
-                { ora: '12:00', titolo: 'Uscita sul campo', chi: 'Tommaso Rinaldi' },
-                { ora: '13:00', titolo: 'Mappa comune', chi: 'Ilaria Bonomi, Tommaso Rinaldi' } ] },
-      { id: 's16', g: 'g3', da: '15:00', a: '16:30', sala: 'grande', t: 't3', tipo: 'keynote', titolo: 'Chiusura e passaggio di testimone', sp: ['sp1', 'sp9'],
-        desc: 'Sintesi dei tre giorni e annuncio della prossima edizione.',
+      { id: 's14', g: 'g3', da: '11:30', a: '13:00', sala: 'lanterna', t: 't2', tipo: 'panel', titolo: 'Evidenze cliniche: che cosa dice la letteratura', sp: ['sp2', 'sp6', 'sp8'],
+        desc: 'Panel segnaposto sulle evidenze disponibili sull’efficacia e sui limiti degli allineatori.',
+        posti: { tot: 600, res: 301 }, subs: [] },
+      { id: 's15', g: 'g3', da: '11:30', a: '13:30', sala: 'officina', t: 't1', tipo: 'workshop', titolo: 'Pianificare un caso difficile con il software', sp: ['sp3', 'sp4'], pagamento: ws(),
+        desc: 'Workshop segnaposto: si porta un caso difficile e si costruisce il piano con il software, passo per passo.',
+        posti: { tot: 40, res: 5 },
+        subs: [ { ora: '11:30', titolo: 'Preparazione e consegne', chi: 'Chiara Prova' },
+                { ora: '12:00', titolo: 'Costruire il piano', chi: 'Dario Bozza' },
+                { ora: '13:00', titolo: 'Confronto sui piani', chi: 'Chiara Prova, Dario Bozza' } ] },
+      { id: 's16', g: 'g3', da: '15:00', a: '16:30', sala: 'grande', t: 't3', tipo: 'keynote', titolo: 'Chiusura e appuntamento al prossimo congresso', sp: ['sp1', 'sp9'],
+        desc: 'Sintesi dei tre giorni e annuncio della prossima edizione (segnaposto).',
         posti: { libero: true }, subs: [] }
+    ],
+    // Member area: video dei congressi passati. TUTTI segnaposto: titoli, anni e durate sono inventati.
+    video: [
+      { id: 'v1', titolo: 'Plenaria di apertura', edizione: 'Congresso precedente · segnaposto', durata: '48 min' },
+      { id: 'v2', titolo: 'Gestione dello spazio con gli allineatori', edizione: 'Congresso precedente · segnaposto', durata: '35 min' },
+      { id: 'v3', titolo: 'Casi clinici difficili: tavola rotonda', edizione: 'Congresso precedente · segnaposto', durata: '62 min' },
+      { id: 'v4', titolo: 'Pianificazione digitale: dal flusso al piano', edizione: 'Congresso precedente · segnaposto', durata: '41 min' }
     ]
   };
 
@@ -143,7 +157,7 @@
   function fasciaDopo(f) {   // la fascia che segue quella aperta, per dire "poi X"
     return DATA.fasce.filter(function (x) { return x.tipo === f.tipo && x.dal > f.al; }).sort(function (a, b) { return a.dal < b.dal ? -1 : 1; })[0] || null;
   }
-  ['intero', 'giornaliero'].forEach(function (t) {
+  ['intero'].forEach(function (t) {
     var f = fasciaAperta(t);
     if (f) { DATA.prezzi[t].pub = f.pub; DATA.prezzi[t].mem = f.mem; DATA.prezzi[t].fascia = f; }
   });
@@ -177,7 +191,8 @@
   function qs(s, r) { return (r || d).querySelector(s); }
   function qa(s, r) { return Array.prototype.slice.call((r || d).querySelectorAll(s)); }
   function param(n) { try { return new URLSearchParams(w.location.search).get(n); } catch (e) { return null; } }
-  function euro(n) { return n.toLocaleString('it-IT') + ' €'; }
+  // 486,50 € ma 695 €: i decimali compaiono solo quando servono
+  function euro(n) { var dec = Math.round(n) === n ? 0 : 2; return n.toLocaleString('it-IT', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + ' €'; }
   function ic(n) { return '<svg class="ic" aria-hidden="true" focusable="false"><use href="#i-' + n + '"></use></svg>'; }
   function giorno(id) { return DATA.giorni.filter(function (x) { return x.id === id; })[0]; }
   function sala(id) { return DATA.sale.filter(function (x) { return x.id === id; })[0]; }
@@ -199,9 +214,15 @@
 
   /* ------------------------------------------------------------------ componente prezzo per ruolo */
   // Visitatore: tutti i prezzi con chi ne ha diritto. Connesso: il suo prezzo in evidenza, gli altri in piccolo.
+  // Se pubblico e membro costano uguale (workshop per ora) si dichiara un prezzo unico, senza barrati finti.
   function prezzoHTML(p, o) {
     o = o || {};
     var k = CHIAVE[stato.ruolo], r = stato.ruolo, altri, html;
+    if (p.pub === p.mem) {
+      if (o.inline) return '<span class="prezzi prezzi--inline"><b class="prezzo-valore">' + euro(p.pub) + '</b> <span class="prezzo-barrato">prezzo unico: oggi uguale per pubblico e membro</span></span>';
+      return '<div class="prezzi"><p><span class="prezzo-valore prezzo-valore--grande">' + euro(p.pub) + '</span></p>' +
+        '<p class="prezzo-altri">Prezzo unico: oggi è uguale per pubblico e membro. Un prezzo membro diverso è da definire con l’organizzatore.</p></div>';
+    }
     if (!k) {
       if (o.inline) {
         return '<span class="prezzi prezzi--inline"><span>Pubblico <b class="prezzo-valore">' + euro(p.pub) + '</b></span><span class="sep" aria-hidden="true">·</span>' +
@@ -234,9 +255,9 @@
 
   // Nota sulla fascia di vendita aperta (early bird) per un pass; vuota se la fascia aperta e' l'ultima.
   function fasciaHTML(tipo, conNome) {
-    var f = DATA.prezzi[tipo].fascia, n = f && fasciaDopo(f), nome = conNome ? { intero: 'Pass intero', giornaliero: 'Pass giornaliero' }[tipo] + ': ' : '';
+    var f = DATA.prezzi[tipo].fascia, n = f && fasciaDopo(f), nome = conNome ? { intero: 'Pass intero' }[tipo] + ': ' : '';
     if (!f) return '<span class="t-small t-muted fascia-nota">' + nome + (conNome ? 'o' : 'O') + 'ggi nessuna fascia di vendita è aperta: il pass non si può comprare.</span>';
-    return '<span class="t-small t-muted fascia-nota">' + nome + '<b>' + (conNome ? 'fascia' : 'Fascia') + ' «' + f.nome + '» fino al ' + dataIt(f.al) + '</b>' +
+    return '<span class="t-small t-muted fascia-nota">' + nome + '<b>' + (conNome ? 'fascia' : 'Fascia') + ' «' + f.nome + (f.sconto ? ' −' + f.sconto + '%' : '') + '» fino al ' + dataIt(f.al) + (f.esempio ? ' (data di esempio)' : '') + '</b>' +
       (n ? ' · poi pubblico ' + euro(n.pub) + ', membro ' + euro(n.mem) : '') + '</span>';
   }
 
@@ -277,10 +298,10 @@
   function speakerCard(p) {
     return '<a class="speaker-card" href="speaker-dettaglio.html?id=' + p.id + '">' +
       '<span class="ritratto" data-tono="' + p.tono + '" aria-hidden="true">' + iniziali(p.nome) + '</span>' +
-      '<span><span class="speaker-card__nome">' + p.nome + '</span><span class="speaker-card__ruolo">' + p.ruolo + ', ' + p.ente + '</span></span></a>';
+      '<span><span class="speaker-card__nome">' + p.nome + '</span><span class="speaker-card__ruolo">' + p.ruolo + ', ' + p.ente + '</span><span class="speaker-card__ruolo"><i>Profilo segnaposto</i></span></span></a>';
   }
 
-  /* ------------------------------------------------------------------ icone, barra prototipo, ruolo */
+  /* ------------------------------------------------------------------ icone, barra prototipo, intestazione, footer */
   var SPRITE = '<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>' +
     '<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>' +
     '<symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-4 3.600-6 7-6s6.200 2 7 6"/></symbol>' +
@@ -307,6 +328,7 @@
     '<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.200-5.100M19 5v4.500h-4.500"/></symbol>' +
     '<symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></symbol>' +
     '<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>' +
+    '<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.500v13l11-6.500z"/></symbol>' +
     '</defs></svg>';
 
   // QR SEGNAPOSTO: modello deterministico dal testo, NON e' leggibile da un lettore. Sempre nero su bianco.
@@ -341,10 +363,12 @@
     var ruolo = area ? '' : '<div class="proto-bar__controlli"><label for="proto-ruolo">Vedi come</label>' +
       '<select id="proto-ruolo" class="select">' + opz + '</select>' +
       '<label class="scelta scelta--inline"><input type="checkbox" id="proto-pass"> <span>Ho già un pass</span></label></div>';
-    var h = SPRITE + '<details class="proto-bar"><summary>Prototipo' + (area ? '' : ' · Vedi come: <b data-ruolo-label>Visitatore</b>') +
+    // la nota sulle date sta SOLO qui: il sito pubblico dice 8–10 aprile, il modulo del cliente 10-14 aprile
+    var h = SPRITE + '<details class="proto-bar"><summary><span>Prototipo · date da confermare' + (area ? '' : ' · <b data-ruolo-label>Visitatore</b>') + '</span>' +
       '<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary><div class="proto-bar__corpo">' +
-      '<p>Persone, luoghi, prezzi e date sono inventati.</p>' + ruolo +
-      '<nav class="proto-bar__nav" aria-label="Aree del prototipo"><a href="' + BASE + 'index.html">Sito pubblico</a><a href="' + BASE + 'accesso.html">Accesso</a><a href="' + BASE + 'account.html">Area personale</a><a href="' + BASE + 'admin/index.html">Admin</a><a href="' + BASE + 'checkin.html">Check-in</a></nav></div></details>';
+      '<p><b>Date da confermare:</b> il modulo del cliente dice 10-14 aprile 2027, il sito pubblico eas-aligners.com dice 8–10 aprile 2027 (usate qui).</p>' +
+      '<p>Dati veri (06/11/2026): nome, città, posti, prezzi, membership. Segnaposto: sede, speaker, sessioni, orari, video, vendite e ordini.</p>' + ruolo +
+      '<nav class="proto-bar__nav" aria-label="Aree del prototipo"><a href="' + BASE + 'index.html">Sito pubblico</a><a href="' + BASE + 'accesso.html">Accesso</a><a href="' + BASE + 'account.html">Area personale</a><a href="' + BASE + 'admin/index.html">Admin</a><a href="' + BASE + 'checkin.html">Check-in (riferimento)</a></nav></div></details>';
     var skip = qs('.skip-link');
     if (skip) skip.insertAdjacentHTML('afterend', h); else d.body.insertAdjacentHTML('afterbegin', h);
     if (!area) {
@@ -353,6 +377,48 @@
       qs('#proto-ruolo').addEventListener('change', function (e) { setStato({ ruolo: e.target.value }); });
       qs('#proto-pass').addEventListener('change', function (e) { setStato({ pass: e.target.checked }); });
     }
+  }
+
+  // Selettore IT/EN FINTO nell'intestazione pubblica: cambia solo l'attributo lang e mostra un avviso.
+  // (lang="en" su testo italiano e' scorretto per i lettori di schermo: vale solo per il prototipo.)
+  function lingua() {
+    var dx = qs('.site-header__destra'), hd = qs('.site-header');
+    if (!dx || !hd || qs('#lang')) return;
+    dx.insertAdjacentHTML('afterbegin', '<label class="sr-only" for="lang">Lingua / Language</label>' +
+      '<select id="lang" class="select select--lang"><option value="it" selected>IT</option><option value="en">EN</option></select>');
+    hd.insertAdjacentHTML('afterend', '<div class="wrap lang-avviso" id="lang-avviso" role="status" aria-live="polite"></div>');
+    qs('#lang').addEventListener('change', function (e) {
+      d.documentElement.lang = e.target.value;
+      var box = qs('#lang-avviso');
+      if (e.target.value === 'en') {
+        box.innerHTML = '<div class="avviso avviso--info">' + ic('info') + '<div><b>Versione inglese simulata.</b> Nel prototipo cambia solo l’attributo <code>lang</code> della pagina: i testi restano in italiano. ' +
+          '<span lang="en">English version is simulated: only the page <code>lang</code> attribute changes, the text stays in Italian.</span></div></div>';
+      } else box.innerHTML = '';
+    });
+  }
+
+  // Footer scuro come quello di eas-aligners.com: logo, link, contatti, newsletter. Contatti e indirizzo sono quelli pubblici del loro sito.
+  // Social omessi: gli indirizzi dei profili vanno chiesti al cliente (niente link inventati).
+  function piede() {
+    var f = qs('.site-footer');
+    if (!f) return;
+    f.innerHTML = '<div class="wrap site-footer__griglia">' +
+      '<div><a href="' + BASE + 'index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="' + BASE + 'assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a></div>' +
+      '<div><h2>EAS8 Lisbon</h2><ul><li><a href="' + BASE + 'index.html">Home</a></li><li><a href="' + BASE + 'agenda.html">Programma</a></li><li><a href="' + BASE + 'speaker.html">Speaker</a></li>' +
+      '<li><a href="' + BASE + 'biglietti.html">Biglietti</a></li><li><a href="' + BASE + 'membership.html">Membership</a></li></ul></div>' +
+      '<div><h2>Contatti</h2><p><a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a></p>' +
+      '<p>European Aligner Society<br>La Réserve – 2525 Route de Bandol<br>83110 Sanary-sur-Mer, France</p></div>' +
+      '<div><h2>Resta aggiornato</h2><form id="news" novalidate><div class="campo"><label for="news-email">La tua email</label>' +
+      '<input class="input" id="news-email" type="email" autocomplete="email" aria-describedby="news-aiuto"><p class="campo__aiuto" id="news-aiuto">Newsletter: iscrizione simulata, nessun dato viene inviato.</p></div>' +
+      '<p style="margin-top:var(--s-2)"><button type="submit" class="btn btn--primary">Iscriviti</button></p><div id="news-esito" role="status" aria-live="polite"></div></form></div></div>' +
+      '<div class="wrap site-footer__sotto"><p>© 2026 EAS – European Aligner Society. Tutti i diritti riservati.</p>' +
+      '<p>Privacy e cookie: pagine in preparazione. Prototipo: speaker, sessioni e disponibilità sono segnaposto.</p></div>';
+    qs('#news').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var v = qs('#news-email').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(v)) { msg(qs('#news-esito'), 'err', 'Controlla l’email: manca la chiocciola o il dominio.'); qs('#news-email').focus(); return; }
+      msg(qs('#news-esito'), 'ok', 'Iscrizione simulata. Nel sito vero si collega al servizio di newsletter.');
+    });
   }
 
   // Mostra/nasconde gli elementi con data-ruoli / data-pass e riempie i segnaposto di testo e prezzo.
@@ -368,6 +434,12 @@
     });
     qa('[data-solo-pass]').forEach(function (el) { el.hidden = (el.getAttribute('data-solo-pass') === 'si') !== stato.pass; });
     qa('[data-ruolo-label]').forEach(function (el) { el.textContent = BREVE[stato.ruolo]; el.setAttribute('data-ruolo', stato.ruolo); });
+    // voce Login / Account nell'intestazione
+    qa('.site-header__destra .header-link').forEach(function (a) {
+      var v = stato.ruolo === 'visitatore', file = v ? 'accesso.html' : 'account.html';
+      a.textContent = v ? 'Login' : 'Account'; a.setAttribute('href', BASE + file);
+      if ((w.location.pathname.split('/').pop() || 'index.html') === file) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
     qa('[data-prezzo]').forEach(function (el) {
       var v = el.getAttribute('data-prezzo').split(',');
       el.innerHTML = prezzoHTML({ pub: +v[0], mem: +v[1] }, { inline: el.getAttribute('data-var') === 'inline' });
@@ -383,8 +455,8 @@
       if (typeof x === 'number') el.textContent = euro(x);
     });
     qa('[data-risparmio]').forEach(function (el) {
-      var p = DATA.prezzi[el.getAttribute('data-risparmio')];
-      el.textContent = euro(p.pub - p.mem);
+      var p = DATA.prezzi[el.getAttribute('data-risparmio')], r = p.pub - p.mem;
+      el.textContent = r > 0 ? euro(r) : 'nessuno (prezzo unico)';
     });
     qa('[data-colonna-tua]').forEach(function (el) { el.classList.toggle('is-tuo', CHIAVE[stato.ruolo] === el.getAttribute('data-colonna-tua')); });
   }
@@ -398,5 +470,5 @@
     sessioneRiga: sessioneRiga, speakerCard: speakerCard, qrSvg: qrSvg, msg: msg, BASE: BASE, BREVE: BREVE
   };
 
-  ready(function () { barra(); applica(); });
+  ready(function () { barra(); lingua(); piede(); applica(); });
 }(window, document));

@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Il mio account · Convegno 2027</title>
+  <title>Il mio account · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
     <nav class="nav-main" aria-label="Principale">
       <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
       <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
@@ -48,6 +48,7 @@
           <button class="tab" role="tab" id="tab-biglietti" aria-controls="p-biglietti" aria-selected="true" data-p="biglietti">I miei biglietti</button>
           <button class="tab" role="tab" id="tab-agenda" aria-controls="p-agenda" aria-selected="false" tabindex="-1" data-p="agenda">La mia agenda</button>
           <button class="tab" role="tab" id="tab-membership" aria-controls="p-membership" aria-selected="false" tabindex="-1" data-p="membership">Membership</button>
+          <button class="tab" role="tab" id="tab-video" aria-controls="p-video" aria-selected="false" tabindex="-1" data-p="video">Video dei congressi</button>
           <button class="tab" role="tab" id="tab-ordini" aria-controls="p-ordini" aria-selected="false" tabindex="-1" data-p="ordini">Ordini e ricevute</button>
         </div>
 
@@ -98,6 +99,14 @@
           </div>
         </section>
 
+        <!-- Member area: video dei congressi passati (solo membri; bloccata per gli altri) -->
+        <section role="tabpanel" id="p-video" aria-labelledby="tab-video" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Video dei congressi</h2>
+          <div id="stato-video" class="stack"></div>
+          <div id="st-video" role="status" aria-live="polite"></div>
+          <div id="lista-video"></div>
+        </section>
+
         <!-- Ordini -->
         <section role="tabpanel" id="p-ordini" aria-labelledby="tab-ordini" tabindex="0" class="tabpanel stack" hidden>
           <h2 class="t-2">Ordini e ricevute</h2>
@@ -116,8 +125,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
-    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
   </div>
 </footer>
 
@@ -150,10 +158,10 @@
 
     /* ---------------- biglietti ---------------- */
     var T = [
-      { id: 't1', tipo: 'Pass intero', nome: 'Alessia Demo', tu: true, giorni: 'Tutti e tre i giorni', code: 'K7M2QX4P', prezzo: D.prezzi.intero, stato: 'valido', cambi: 0, ver: 1 },
-      { id: 't2', tipo: 'Pass intero', nome: 'Marco Prova', email: 'marco.prova@example.test', giorni: 'Tutti e tre i giorni', code: 'R3T9WB6N', prezzo: { pub: D.prezzi.intero.pub, mem: D.prezzi.intero.pub }, stato: 'valido', cambi: 0, ver: 1 },
-      { id: 't3', tipo: 'Workshop · Progettare un servizio culturale in due ore', nome: 'Alessia Demo', tu: true, giorni: 'Giovedì 14 ottobre, 11:00–13:00, Sala Officina', code: 'D5H8LC2Y', prezzo: CV.sessione('s03').pagamento, stato: 'valido', cambi: 0, ver: 1 },
-      { id: 't4', tipo: 'Pass giornaliero · Venerdì 15 ottobre', nome: 'Nora Esempio', email: 'nora.esempio@example.test', giorni: 'Venerdì 15 ottobre', code: 'W2Y6PV9A', prezzo: { pub: D.prezzi.giornaliero.pub, mem: D.prezzi.giornaliero.pub }, stato: 'rimborsato', cambi: 0, ver: 1, rimborso: D.prezzi.giornaliero.pub + ' € il 25/02/2027' }
+      { id: 't1', tipo: 'Pass intero', nome: 'Alessia Demo', tu: true, giorni: 'Tutti e tre i giorni (8–10 aprile 2027)', code: 'K7M2QX4P', prezzo: D.prezzi.intero, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't2', tipo: 'Pass intero', nome: 'Marco Prova', email: 'marco.prova@example.test', giorni: 'Tutti e tre i giorni (8–10 aprile 2027)', code: 'R3T9WB6N', prezzo: { pub: D.prezzi.intero.pub, mem: D.prezzi.intero.pub }, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't3', tipo: 'Workshop · ' + CV.sessione('s03').titolo, nome: 'Alessia Demo', tu: true, giorni: 'Giovedì 8 aprile, 11:00–13:00, Sala Workshop', code: 'D5H8LC2Y', prezzo: CV.sessione('s03').pagamento, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't4', tipo: 'Pass intero', nome: 'Nora Esempio', email: 'nora.esempio@example.test', giorni: 'Tutti e tre i giorni (8–10 aprile 2027)', code: 'W2Y6PV9A', prezzo: { pub: D.prezzi.intero.pub, mem: D.prezzi.intero.pub }, stato: 'rimborsato', cambi: 0, ver: 1, rimborso: CV.euro(D.prezzi.intero.pub) + ' il 04/11/2026' }
     ];
     var MAXCAMBI = 2;
     function pagato(t) {
@@ -267,17 +275,17 @@
 
     /* ---------------- ordini ---------------- */
     var ORD = [
-      { id: 'CV-1042', d: '12/03/2027', c: 'Pass intero e un workshop', v: 135, s: 'paid' },
-      { id: 'CV-1043', d: '12/03/2027', c: 'Due pass giornalieri', v: 130, s: 'processing' },
-      { id: 'CV-1031', d: '01/03/2027', c: 'Pass intero', v: 150, s: 'failed' },
-      { id: 'CV-1020', d: '28/02/2027', c: 'Un workshop', v: 40, s: 'expired' },
-      { id: 'CV-1011', d: '20/02/2027', c: 'Pass giornaliero', v: 65, s: 'refunded' }
+      { id: 'CV-1042', d: '05/11/2026', c: 'Pass intero e un workshop', v: 376.5, s: 'paid' },
+      { id: 'CV-1043', d: '05/11/2026', c: 'Due pass interi', v: 973, s: 'processing' },
+      { id: 'CV-1031', d: '03/11/2026', c: 'Pass intero', v: 486.5, s: 'failed' },
+      { id: 'CV-1020', d: '02/11/2026', c: 'Un workshop', v: 100, s: 'expired' },
+      { id: 'CV-1011', d: '01/11/2026', c: 'Pass intero', v: 486.5, s: 'refunded' }
     ];
     var STATO = {
       paid: ['ok', 'check', 'Pagato'], processing: ['info', 'clock', 'In elaborazione'], failed: ['err', 'alert', 'Non riuscito'],
       expired: ['warn', 'clock', 'Scaduto'], refunded: ['err', 'x', 'Rimborsato']
     };
-    var NOTA = { processing: 'Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.', failed: 'Nessun addebito. Puoi riprovare.', expired: 'La sessione di pagamento è scaduta: nessun addebito.', refunded: 'Rimborsati 65 € il 25/02/2027.' };
+    var NOTA = { processing: 'Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.', failed: 'Nessun addebito. Puoi riprovare.', expired: 'La sessione di pagamento è scaduta: nessun addebito.', refunded: 'Rimborsati 486,50 € il 04/11/2026.' };
     function ordini() {
       $('#righe-ordini').innerHTML = ORD.map(function (o) {
         var s = STATO[o.s];
@@ -292,10 +300,31 @@
       CV.msg($('#st-ordini'), 'ok', 'Ricevuta dell’ordine ' + b.getAttribute('data-ric') + ' pronta (simulata). Nel sito vero è la ricevuta di Stripe; la fattura è da definire.');
     });
 
+    /* ---------------- video dei congressi (member area) ---------------- */
+    // Solo i membri con membership attiva (ruolo «Membro») li guardano. Gli altri vedono l'elenco bloccato e come sbloccarlo.
+    function video() {
+      var r = CV.stato.ruolo, socio = r === 'membro';
+      $('#stato-video').innerHTML = socio
+        ? '<p class="t-muted misura">Member area: i video dei congressi passati, inclusi nella tua membership. Titoli, edizioni e durate sono segnaposto.</p>'
+        : '<div class="avviso avviso--info">' + CV.ic('lock') + '<div><p><b>Riservato ai membri.</b> I video dei congressi passati sono un vantaggio della membership (' + CV.euro(D.prezzi.membership) + ' all’anno).' +
+          (r === 'membro-scaduto' ? ' La tua membership è scaduta: rinnovala per sbloccarli.' : '') + '</p>' +
+          '<p><a class="btn btn--primary" href="membership.html">' + (r === 'membro-scaduto' ? 'Rinnova la membership' : 'Diventa membro') + '</a></p></div></div>';
+      $('#lista-video').innerHTML = D.video.map(function (v) {
+        return '<article class="video-riga" aria-labelledby="vt-' + v.id + '"><div class="video-riga__anteprima" aria-hidden="true">' + CV.ic(socio ? 'play' : 'lock') + '</div>' +
+          '<div class="video-riga__corpo"><h3 class="t-3" id="vt-' + v.id + '">' + v.titolo + '</h3><p class="t-small t-muted">' + v.edizione + ' · ' + v.durata + '</p><p>' +
+          (socio ? '<button type="button" class="btn btn--secondary btn--piccolo" data-video="' + v.id + '">' + CV.ic('play') + 'Guarda<span class="sr-only"> ' + v.titolo + '</span></button>'
+                 : '<span class="badge badge--warn">' + CV.ic('lock') + 'Bloccato · solo membri</span>') + '</p></div></article>';
+      }).join('');
+    }
+    $('#lista-video').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-video]'); if (!b) return;
+      CV.msg($('#st-video'), 'info', 'Simulato: qui si apre il lettore. Nel sito vero il video parte solo con un tocco, senza audio automatico, con i sottotitoli, e non scarica dati finché non lo avvii.');
+    });
+
     /* ---------------- avvio e cambi di ruolo ---------------- */
     function inizia() {
       $('#sim-mem').value = memDaRuolo[CV.stato.ruolo] || 'nessuna';
-      biglietti(); agenda(); membership(); ordini();
+      biglietti(); agenda(); membership(); video(); ordini();
     }
     inizia();
     document.addEventListener('cv:stato', function () {

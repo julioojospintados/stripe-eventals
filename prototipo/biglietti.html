@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Biglietti · Convegno 2027</title>
+  <title>Biglietti · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
     <nav class="nav-main" aria-label="Principale">
       <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
       <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
@@ -60,12 +60,7 @@
             <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="intero.mem"></span></td>
           </tr>
           <tr>
-            <th scope="row">Pass giornaliero, un giorno</th>
-            <td class="num" data-label="Pubblico" data-colonna-tua="pub"><span data-euro="giornaliero.pub"></span></td>
-            <td class="num" data-label="Membro" data-colonna-tua="mem"><span data-euro="giornaliero.mem"></span></td>
-          </tr>
-          <tr>
-            <th scope="row">Workshop e masterclass, a sessione, da</th>
+            <th scope="row">Workshop, a sessione (membro: stesso prezzo per ora)</th>
             <td class="num" data-label="Pubblico" data-colonna-tua="pub" id="da-pub"></td>
             <td class="num" data-label="Membro" data-colonna-tua="mem" id="da-mem"></td>
           </tr>
@@ -73,7 +68,6 @@
       </table>
       <div class="stack" style="--stack:var(--s-1);margin-top:var(--s-3)">
         <div data-fascia="intero" data-con-nome="1"></div>
-        <div data-fascia="giornaliero" data-con-nome="1"></div>
       </div>
       <p class="t-small t-muted misura" id="nota-da"></p>
       <p class="t-small t-muted misura">Le sessioni incluse nel pass non costano altro. Il prezzo esatto di ogni workshop è nella sua pagina.</p>
@@ -87,7 +81,7 @@
       <div id="avviso-modo"></div>
       <div class="avviso avviso--info" data-solo-pass="si" style="margin-bottom:var(--s-4)" role="note">
         <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-        <div><b>Hai già un pass.</b> Per un workshop o una masterclass scegli «Solo sessioni a pagamento»: si aggiungono al tuo pass.</div>
+        <div><b>Hai già un pass.</b> Per un workshop scegli «Solo workshop (sessioni a pagamento)»: si aggiungono al tuo pass.</div>
       </div>
 
       <div id="errori" hidden class="riepilogo-errori" role="alert" style="margin-bottom:var(--s-5)"></div>
@@ -100,14 +94,8 @@
             <div class="stack" style="--stack:var(--s-3)">
               <label class="opzione"><input type="radio" name="tipo" value="intero" checked>
                 <span class="opzione__corpo"><span class="opzione__titolo">Pass intero</span><span class="t-small">Tre giorni, tutte le sessioni incluse.</span><span data-prezzo-tipo="intero" data-var="inline"></span><span data-fascia="intero"></span></span></label>
-              <label class="opzione"><input type="radio" name="tipo" value="giornaliero">
-                <span class="opzione__corpo"><span class="opzione__titolo">Pass giornaliero</span><span class="t-small">Un giorno a scelta, con le sessioni incluse di quel giorno.</span><span data-prezzo-tipo="giornaliero" data-var="inline"></span><span data-fascia="giornaliero"></span></span></label>
               <label class="opzione"><input type="radio" name="tipo" value="sessioni">
-                <span class="opzione__corpo"><span class="opzione__titolo">Solo sessioni a pagamento</span><span class="t-small">Workshop e masterclass scelti qui sotto, senza pass. Prezzo per sessione.</span></span></label>
-            </div>
-            <div class="campo" id="campo-giorno" hidden style="margin-top:var(--s-3)">
-              <label for="giorno">Quale giorno</label>
-              <select class="select" id="giorno"></select>
+                <span class="opzione__corpo"><span class="opzione__titolo">Solo workshop (sessioni a pagamento)</span><span class="t-small">Workshop scelti qui sotto, senza pass. Prezzo per sessione.</span></span></label>
             </div>
           </fieldset>
 
@@ -182,7 +170,7 @@
       <div class="grid-2">
         <div class="colonna-testo">
           <h3 class="t-2">Membro</h3>
-          <p>La membership annuale costa <b data-membership></b> e dà il prezzo membro su pass e sessioni a pagamento.</p>
+          <p>La membership annuale costa <b data-membership></b> e dà il prezzo membro sul pass intero, l’accesso early bird e la member area con i video dei congressi passati. I workshop costano lo stesso per pubblico e membro, finché non è definito un prezzo diverso.</p>
           <p>Il prezzo membro vale <b>solo sul biglietto del membro che compra</b>. Se compri anche per altre persone, loro pagano il prezzo pubblico.</p>
           <div class="avviso avviso--ok" data-ruoli="membro"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>Sei già membro.</div></div>
           <div class="avviso avviso--warn" data-ruoli="membro-scaduto"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div>La tua membership è scaduta: rinnovala per riavere il prezzo membro.</div></div>
@@ -191,7 +179,7 @@
 
         <div class="colonna-testo">
           <h3 class="t-2">Chi compra per altri</h3>
-          <p>Nell’ordine il <b>primo biglietto</b> è intestato a chi compra, e solo quello prende il prezzo membro. Gli altri biglietti sono nominativi e costano il prezzo pubblico. Il prezzo membro vale una volta per evento per ciascun tipo (un pass intero, un giornaliero per giorno, una volta per ogni sessione a pagamento), anche su ordini diversi, e il biglietto a prezzo membro non si cede.</p>
+          <p>Nell’ordine il <b>primo biglietto</b> è intestato a chi compra, e solo quello prende il prezzo membro. Gli altri biglietti sono nominativi e costano il prezzo pubblico. Il prezzo membro vale una volta per evento (un pass intero), anche su ordini diversi, e il biglietto a prezzo membro non si cede.</p>
           <p>Un amico membro che vuole il prezzo membro compra con il proprio account.</p>
           <div class="avviso avviso--info" data-ruoli="visitatore">
             <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
@@ -205,8 +193,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
-    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
   </div>
 </footer>
 
@@ -214,7 +201,7 @@
 <script>
   CV.ready(function () {
     var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
-    var S = { tipo: 'intero', giorno: 'g1', n: 1, sessioni: [], codice: null, nomi: [], email: [] };
+    var S = { tipo: 'intero', n: 1, sessioni: [], codice: null, nomi: [], email: [] };
     var pagamento = D.sessioni.filter(function (s) { return s.pagamento; });
 
     /* riga "da" della tabella e quota membership */
@@ -223,11 +210,11 @@
       $('#da-' + k).textContent = CV.euro(Math.min.apply(null, pagamento.map(function (s) { return s.pagamento[k]; })));
     });
     var meno = pagamento.slice().sort(function (a, b) { return a.pagamento.pub - b.pagamento.pub; })[0];
-    $('#nota-da').textContent = 'Le sessioni a pagamento sono ' + pagamento.length + ', da ' + CV.euro(meno.pagamento.pub) + ' a ' +
-      CV.euro(Math.max.apply(null, pagamento.map(function (s) { return s.pagamento.pub; }))) + ' al prezzo pubblico. La più economica: «' + meno.titolo + '».';
+    var piu = Math.max.apply(null, pagamento.map(function (s) { return s.pagamento.pub; }));
+    $('#nota-da').textContent = meno.pagamento.pub === piu
+      ? 'I workshop a pagamento sono ' + pagamento.length + ', tutti a ' + CV.euro(piu) + '. Per ora il prezzo membro è uguale al pubblico: un prezzo diverso è da definire con l’organizzatore.'
+      : 'I workshop a pagamento sono ' + pagamento.length + ', da ' + CV.euro(meno.pagamento.pub) + ' a ' + CV.euro(piu) + ' al prezzo pubblico. Il più economico: «' + meno.titolo + '».';
     $$('[data-membership]').forEach(function (e) { e.textContent = CV.euro(D.prezzi.membership) + ' all’anno'; });
-
-    $('#giorno').innerHTML = D.giorni.map(function (g) { return '<option value="' + g.id + '">' + g.lungo + '</option>'; }).join('');
 
     /* arrivo da una pagina sessione */
     var pre = CV.sessione(CV.param('sessione')), modo = CV.param('modo');
@@ -286,7 +273,7 @@
       var righe = [], sub = 0, risp = 0, p, mio, tipo = S.tipo, n = tipo === 'sessioni' ? 1 : S.n;
       if (tipo !== 'sessioni') {
         p = D.prezzi[tipo];
-        var nome = tipo === 'intero' ? 'Pass intero' : 'Pass giornaliero · ' + CV.giorno(S.giorno).lungo;
+        var nome = 'Pass intero';
         mio = CV.prezzoMio(p);
         // solo il primo biglietto (intestato a chi compra) prende il prezzo del suo ruolo; gli altri pagano il pubblico
         righe.push({ t: nome + ' · Partecipante 1 (tu) · ' + (mio < p.pub ? 'prezzo membro' : 'prezzo pubblico'), v: mio });
@@ -297,7 +284,7 @@
         var s = CV.sessione(id); mio = CV.prezzoMio(s.pagamento);
         righe.push({ t: s.titolo + ' · Partecipante 1' + (mio < s.pagamento.pub ? ' · prezzo membro' : ''), v: mio }); sub += mio; risp += s.pagamento.pub - s.pagamento.mem;
       });
-      var sc = S.codice ? Math.round(sub * S.codice.pc / 100) : 0;
+      var sc = S.codice ? Math.round(sub * S.codice.pc) / 100 : 0;   // arrotondato al centesimo
       return { righe: righe, sub: sub, sconto: sc, totale: sub - sc, risp: risp };
     }
 
@@ -330,7 +317,6 @@
 
     function aggiornaTipo() {
       S.tipo = $('input[name="tipo"]:checked').value;
-      $('#campo-giorno').hidden = S.tipo !== 'giornaliero';
       $('#campo-qta').hidden = S.tipo === 'sessioni';
       if (S.tipo === 'sessioni') S.n = 1;
       $('#qta').textContent = S.n;
@@ -339,7 +325,6 @@
 
     /* ---- eventi ---- */
     $$('input[name="tipo"]').forEach(function (r) { r.addEventListener('change', aggiornaTipo); });
-    $('#giorno').addEventListener('change', function (e) { S.giorno = e.target.value; riepilogo(); });
     function qta(d) {
       S.n = Math.max(1, Math.min(6, S.n + d));
       $('#qta').textContent = S.n; $('#meno').disabled = S.n === 1; $('#piu').disabled = S.n === 6;
@@ -357,7 +342,7 @@
         $('#togli').addEventListener('click', function () { S.codice = null; $('#codice').value = ''; m.innerHTML = ''; riepilogo(); $('#codice').focus(); });
       } else if (v === 'SCADUTO24') {
         S.codice = null;
-        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Il codice SCADUTO24 è scaduto il 31/12/2026. Prova un altro codice.</p>';
+        m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Il codice SCADUTO24 è scaduto il 31/10/2026. Prova un altro codice.</p>';
       } else {
         S.codice = null;
         m.innerHTML = '<p class="campo__errore">' + CV.ic('alert') + 'Codice non riconosciuto. Controlla di averlo scritto giusto: lettere e numeri, senza spazi.</p>';

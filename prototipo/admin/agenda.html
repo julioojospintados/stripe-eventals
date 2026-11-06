@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Programma · Admin · Convegno 2027</title>
+  <title>Programma · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
     <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
   </div>
 </header>
@@ -68,7 +68,7 @@
     var copia = function (x) { return JSON.parse(JSON.stringify(x)); };
     var S = copia(D.sessioni), SALE = copia(D.sale), TR = copia(D.tracce), GG = copia(D.giorni);
     var giorno = 'g1', aperta = null, nuovo = 0, nSub = 0;
-    var DATE = { g1: '2027-10-14', g2: '2027-10-15', g3: '2027-10-16' };
+    var DATE = { g1: '2027-04-08', g2: '2027-04-09', g3: '2027-04-10' };   // date da confermare (modulo: 10-14 aprile)
 
     var ORE = []; for (var m = 540; m <= 1080; m += 30) ORE.push((Math.floor(m / 60) < 10 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00'));
     function opt(lista, sel, v, l) { return lista.map(function (x) { var val = v ? x[v] : x; return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + (l ? x[l] : x) + '</option>'; }).join(''); }
@@ -135,7 +135,7 @@
         '<div class="campo" data-cap' + (acc === 'libero' ? ' hidden' : '') + '><label for="f-' + id + '-cap">Capienza</label><input class="input input--num" id="f-' + id + '-cap" type="number" min="0" step="1" value="' + (s.posti.tot || '') + '" aria-describedby="h-' + id + '-cap">' +
         '<p class="campo__aiuto" id="h-' + id + '-cap">' + (v ? 'Già venduti o prenotati: ' + v + '. Non si può scendere sotto questo numero.' : 'Nessun posto ancora venduto.') + '</p></div>' +
         '<fieldset class="campo" data-prezzi' + (acc === 'pagamento' ? '' : ' hidden') + '><legend class="etichetta">Prezzi per ruolo (€)</legend><div class="grid-3">' +
-        ['pub|Pubblico', 'mem|Membro'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="1" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
+        ['pub|Pubblico', 'mem|Membro'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="0.01" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
         '<fieldset class="campo"><legend class="etichetta">Speaker</legend><div class="grid-2">' + D.speakers.map(function (p) {
           return '<label class="scelta"><input type="checkbox" value="' + p.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + ' data-sp><span>' + p.nome + '</span></label>'; }).join('') + '</div></fieldset>' +
         '<fieldset class="campo"><legend class="etichetta">Interventi (sottosezioni)</legend>' +
@@ -163,7 +163,7 @@
     }
 
     /* schede dei giorni */
-    $('#tabs-g').innerHTML = GG.map(function (g, i) { return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '" data-g="' + g.id + '">' + g.breve + '<small>ottobre</small></button>'; }).join('');
+    $('#tabs-g').innerHTML = GG.map(function (g, i) { return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '" data-g="' + g.id + '">' + g.breve + '<small>aprile</small></button>'; }).join('');
     var tabs = $$('.tab');
     function scegli(t, sposta) {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t); x.tabIndex = x === t ? 0 : -1; });

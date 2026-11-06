@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Pagamento · Convegno 2027</title>
+  <title>Pagamento · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
     <nav class="nav-main" aria-label="Principale">
       <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
       <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
@@ -34,8 +34,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
-    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
   </div>
 </footer>
 
@@ -103,7 +102,7 @@
       h = titolo('Pagamento su Stripe') +
         '<p class="t-muted misura" style="margin:var(--s-3) 0 var(--s-5)">Nel sito vero qui si apre Stripe Checkout, una pagina ospitata da Stripe dove si inseriscono i dati della carta. Il riquadro sotto lo simula: scegli come deve andare.</p>' +
         '<div class="stripe-box"><div class="stripe-box__testa">Pagina ospitata da Stripe · simulazione, nessun pagamento reale</div><div class="stripe-box__corpo">' +
-        '<div><p class="t-small" style="color:#4a5068">Paga Convegno 2027</p><p style="font:800 2rem/1.1 var(--font-display)">' + CV.euro(ord.totale) + '</p></div>' +
+        '<div><p class="t-small" style="color:#4a5068">Paga EAS8 Lisbon</p><p style="font:800 2rem/1.1 var(--font-display)">' + CV.euro(ord.totale) + '</p></div>' +
         ord.righe.map(function (r) { return '<div class="riepilogo__riga"><span>' + r.t + '</span><span>' + CV.euro(r.v) + '</span></div>'; }).join('') +
         (ord.sconto ? '<div class="riepilogo__riga"><span>Codice ' + ord.codice + '</span><span>−' + CV.euro(ord.sconto) + '</span></div>' : '') +
         '<p class="t-small" style="color:#4a5068">Qui Stripe chiede carta, email e dati di fatturazione. Il prototipo non ha campi di pagamento.</p>' +
@@ -113,7 +112,7 @@
         '<a class="btn btn--quiet btn--block" href="?stato=annullato">Torna al sito senza pagare</a>' +
         '</div></div>';
     }
-    document.title = titoloPagina + ' · Convegno 2027';
+    document.title = titoloPagina + ' · EAS8 Lisbon';
     box.innerHTML = h;
     var t = $('#h-esito'); if (t) t.focus();
   });

@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>Cruscotto · Admin · Convegno 2027</title>
+  <title>Cruscotto · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -13,7 +13,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
     <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
   </div>
 </header>
@@ -26,12 +26,12 @@
       <p class="t-small t-muted">Dati d’esempio, inventati.</p>
     </div>
 
-    <section aria-labelledby="h-fare">
+    <section aria-labelledby="h-fare" data-admin="admin,commerciale">
       <h2 class="t-2" id="h-fare">Da fare</h2>
       <ul class="elenco-pulito" id="da-fare"></ul>
     </section>
 
-    <section aria-labelledby="h-vendite">
+    <section aria-labelledby="h-vendite" data-admin="admin,commerciale">
       <h2 class="t-2" id="h-vendite">Vendite per tipo e ruolo</h2>
       <table class="tabella tabella--stack">
         <caption class="sr-only">Biglietti venduti per tipo e per ruolo di prezzo, con importo a prezzo di listino</caption>
@@ -42,11 +42,11 @@
       <p class="t-small t-muted misura">Numero di biglietti e, sotto, l’importo a prezzo di listino: non tiene conto di sconti e rimborsi. Le membership sono vendute a parte: <b id="n-mem"></b> attive.</p>
     </section>
 
-    <section aria-labelledby="h-posti">
+    <section aria-labelledby="h-posti" data-admin="admin,organizzatore">
       <h2 class="t-2" id="h-posti">Posti rimasti</h2>
       <table class="tabella tabella--stack">
-        <caption>Pass, per giorno</caption>
-        <thead><tr><th scope="col">Giorno</th><th scope="col" class="num">Capienza</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col">Rimasti</th></tr></thead>
+        <caption>Pass intero (6.000 posti)</caption>
+        <thead><tr><th scope="col">Pass</th><th scope="col" class="num">Capienza</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col">Rimasti</th></tr></thead>
         <tbody id="pool-giorni"></tbody>
       </table>
       <p class="t-small t-muted misura" id="nota-pass"></p>
@@ -57,7 +57,14 @@
       </table>
     </section>
 
-    <section aria-labelledby="h-ultimi">
+    <section aria-labelledby="h-partner" data-admin="admin,organizzatore">
+      <h2 class="t-2" id="h-partner">Check-in con il partner</h2>
+      <p class="t-muted misura">Il check-in all’ingresso lo fa un partner sul posto, che scansiona i biglietti digitali dei partecipanti. Qui si esporta l’elenco dei biglietti validi (solo ordini pagati e non rimborsati). La pagina <a href="../checkin.html">Check-in</a> resta come riferimento di come funzionerebbe.</p>
+      <p><button type="button" class="btn btn--primary" id="esporta"><svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>Esporta biglietti validi per il partner (CSV)</button></p>
+      <div id="st-esporta" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="h-ultimi" data-admin="admin,commerciale">
       <h2 class="t-2" id="h-ultimi">Ultimi ordini</h2>
       <table class="tabella tabella--stack">
         <caption class="sr-only">Ultimi ordini</caption>
@@ -83,7 +90,8 @@
       '<li class="azioni-riga"><span class="badge badge--info">' + AD.icona('clock') + el + ' in elaborazione</span><span>Pagamenti in attesa di conferma da Stripe</span><a class="btn btn--secondary btn--piccolo" href="ordini.html?id=CV-1043">Apri l’ordine</a></li>';
 
     /* vendite */
-    var V = [['Pass intero', { pub: 107, mem: 61 }, D.prezzi.intero], ['Pass giornaliero', { pub: 51, mem: 22 }, D.prezzi.giornaliero], ['Workshop e masterclass (prezzo minimo)', { pub: 45, mem: 27 }, D.prezzi.workshop]];
+    // vendite d'esempio (inventate): 3.240 pass + 136 workshop; i prezzi sono quelli veri (fascia aperta oggi)
+    var V = [['Pass intero', { pub: 2410, mem: 830 }, D.prezzi.intero], ['Workshop (prezzo unico)', { pub: 82, mem: 54 }, D.prezzi.workshop]];
     var tot = { pub: 0, mem: 0 }, imp = { pub: 0, mem: 0 }, h = '';
     V.forEach(function (r) {
       var n = r[1].pub + r[1].mem, i = 0, c = '';
@@ -93,22 +101,32 @@
     $('#vendite').innerHTML = h;
     var n = tot.pub + tot.mem, iT = imp.pub + imp.mem;
     $('#vendite-tot').innerHTML = '<tr><th scope="row">Totale</th>' + ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + tot[k] + '<br><span class="t-small">' + e(imp[k]) + '</span></td>'; }).join('') + '<td class="num" data-label="Totale">' + n + '<br><span class="t-small">' + e(iT) + '</span></td></tr>';
-    $('#n-mem').textContent = 58;
+    $('#n-mem').textContent = 905;
 
     /* posti */
     function riga(nome, cap, conf, held) {
       var ri = cap - conf - held, pc = Math.round((conf + held) / cap * 100), cl = ri === 0 ? ' barra--finito' : (ri <= cap * 0.2 ? ' barra--poco' : '');
-      return '<tr><th scope="row">' + nome + '</th><td class="num" data-label="Capienza">' + cap + '</td><td class="num" data-label="Venduti">' + conf + '</td><td class="num" data-label="In riserva">' + held + '</td>' +
-        '<td data-label="Rimasti"><b>' + ri + '</b>' + (ri === 0 ? ' · esaurita' : '') + ' <span class="barra' + cl + '"><span style="width:' + pc + '%"></span></span> <span class="t-small t-muted">' + pc + '% occupato</span></td></tr>';
+      var f = function (x) { return x.toLocaleString('it-IT'); };
+      return '<tr><th scope="row">' + nome + '</th><td class="num" data-label="Capienza">' + f(cap) + '</td><td class="num" data-label="Venduti">' + f(conf) + '</td><td class="num" data-label="In riserva">' + held + '</td>' +
+        '<td data-label="Rimasti"><b>' + f(ri) + '</b>' + (ri === 0 ? ' · esaurita' : '') + ' <span class="barra' + cl + '"><span style="width:' + pc + '%"></span></span> <span class="t-small t-muted">' + pc + '% occupato</span></td></tr>';
     }
-    var G = [['Giovedì 14', 300, 212, 6], ['Venerdì 15', 300, 190, 4], ['Sabato 16', 300, 145, 0]];
+    // capienza vera: 6.000 posti; venduti e in riserva: inventati
+    var G = [['Pass intero (8–10 aprile)', D.evento.posti, 3240, 35]];
     $('#pool-giorni').innerHTML = G.map(function (g) { return riga(g[0], g[1], g[2], g[3]); }).join('');
     var rim = G.map(function (g) { return g[1] - g[2] - g[3]; });
-    $('#nota-pass').textContent = 'Pass intero: ' + Math.min.apply(null, rim) + ' rimasti, perché consuma un posto in ogni giorno e conta il giorno più pieno. Un pass giornaliero consuma solo il suo giorno. Venduti più in riserva non superano mai la capienza: lo garantisce il database.';
+    $('#nota-pass').textContent = 'Pass intero: ' + Math.min.apply(null, rim).toLocaleString('it-IT') + ' rimasti su ' + D.evento.posti.toLocaleString('it-IT') + '. Un pass intero vale per i tre giorni e consuma un solo posto di questa capienza. Venduti più in riserva non superano mai la capienza: lo garantisce il database.';
     var held = { s03: 1, s09: 0, s10: 2, s15: 0, s05: 0 };
     $('#pool-sessioni').innerHTML = D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) {
       var hh = held[s.id] || 0; return riga(s.titolo + ' (' + CV.giorno(s.g).breve + ')', s.posti.tot, s.posti.tot - s.posti.res - hh, hh);
     }).join('');
+
+    /* esportazione per il partner: simulata, nessun file viene creato */
+    $('#esporta').addEventListener('click', function () {
+      var x = AD.bigliettiValidi(), oggi = D.oggi;
+      CV.msg($('#st-esporta'), 'ok', '<b>CSV pronto (simulato):</b> <span class="t-num">biglietti-validi-eas8-' + oggi + '.csv</span>, ' + x.righe.length + (x.righe.length === 1 ? ' riga' : ' righe') +
+        ' (esempio: solo gli ordini d’esempio pagati). Colonne: <code>' + x.colonne.join(', ') + '</code>. Niente email né importi: al partner serve solo per far entrare le persone.' +
+        '<br>Prima di mandarlo serve un accordo sul trattamento dei dati con il partner (da verificare con la catena legale). Nel sito vero l’esportazione finisce nel registro audit.');
+    });
 
     /* ultimi ordini */
     $('#ultimi').innerHTML = AD.ordini.slice(0, 6).map(function (o) {

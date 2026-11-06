@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Convegno 2027 · 14-16 ottobre 2027, Milano</title>
-  <meta name="description" content="Convegno 2027 (nome segnaposto): tre giorni di sessioni, workshop e incontri. Prototipo con dati inventati.">
+  <meta name="color-scheme" content="light">
+  <title>EAS8 Lisbon · 8–10 aprile 2027, Lisbona</title>
+  <meta name="description" content="EAS8 Lisbon, congresso della European Aligner Society: 8–10 aprile 2027, Lisbona. Prototipo con speaker e sessioni segnaposto.">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -14,7 +14,7 @@
 <a class="skip-link" href="#contenuto">Vai al contenuto</a>
 <header class="site-header">
   <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
     <nav class="nav-main" aria-label="Principale">
       <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
       <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
@@ -29,21 +29,23 @@
   <section class="hero" aria-labelledby="titolo-evento">
     <div class="wrap hero__corpo">
       <div class="hero__sopra">
-        <h1 class="t-display" id="titolo-evento">Convegno 2027</h1>
-        <p class="hero__luogo">14–16 ottobre 2027 · Centro Congressi dei Navigli (segnaposto), Milano</p>
-        <!-- CTA subito dopo le date: nella prima schermata a 360x740, sopra la tab bar -->
+        <h1 class="t-display" id="titolo-evento">EAS8 <span class="hero__citta">Lisbon</span></h1>
+        <p class="hero__data">8–10 aprile 2027</p>
+        <p class="hero__luogo">Lisbona · 6.000 posti</p>
+        <p class="hero__tagline" lang="en"><strong>Mastering Clinical Challenges in Aligner Orthodontics</strong> — From Clinical Limitations to Predictable Outcomes</p>
+        <!-- CTA nella prima schermata a 360x740, sopra la barra in basso: i bottoni vanno uno sotto l'altro, a tutta larghezza -->
         <div class="btn-gruppo">
-          <a class="btn btn--on-hero" href="biglietti.html">Compra i biglietti</a>
-          <a class="btn" href="agenda.html">Sfoglia il programma</a>
+          <a class="btn btn--primary" href="biglietti.html">Acquista il biglietto</a>
+          <a class="btn btn--on-hero" href="agenda.html">Esplora il programma</a>
         </div>
         <ol class="hero__giorni" aria-label="I tre giorni">
-          <li><b>14</b><span>Giovedì · plenaria di apertura, panel sugli archivi, primo workshop</span></li>
-          <li><b>15</b><span>Venerdì · lavoro culturale, editoria, intelligenza artificiale e diritto</span></li>
-          <li><b>16</b><span>Sabato · camminate in città, lingue minoritarie, chiusura</span></li>
+          <li><b>8</b><span>Giovedì · plenaria di apertura, panel sui movimenti difficili, primo workshop</span></li>
+          <li><b>9</b><span>Venerdì · casi complessi, flusso digitale, intelligenza artificiale e responsabilità clinica</span></li>
+          <li><b>10</b><span>Sabato · evidenze cliniche, workshop di pianificazione, chiusura</span></li>
         </ol>
       </div>
       <div class="hero__prezzi">
-        <h2 class="t-small" style="font-weight:700;margin-bottom:var(--s-2)">Pass intero, tre giorni</h2>
+        <h2 class="t-small" style="font-weight:600;margin-bottom:var(--s-2)">Pass intero, tre giorni</h2>
         <div data-prezzo-tipo="intero"></div>
         <div data-fascia="intero" style="margin-top:var(--s-2)"></div>
       </div>
@@ -53,15 +55,16 @@
   <section class="sezione" aria-labelledby="titolo-highlights">
     <div class="wrap">
       <h2 class="t-1" id="titolo-highlights">Da non perdere</h2>
-      <p class="t-muted misura">Quattro appuntamenti per farsi un’idea. Il programma completo ha sedici sessioni su tre giorni.</p>
+      <p class="t-muted misura">Quattro appuntamenti per farsi un’idea. Il programma completo ha sedici sessioni su tre giorni (sessioni segnaposto).</p>
       <div id="highlights"></div>
       <p><a class="btn btn--secondary" href="agenda.html">Tutto il programma <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
     </div>
   </section>
 
-  <section class="sezione bande" aria-labelledby="titolo-speaker">
+  <section class="sezione bande bande--speaker" aria-labelledby="titolo-speaker">
     <div class="wrap">
       <h2 class="t-1" id="titolo-speaker">Speaker in evidenza</h2>
+      <p class="misura">Profili segnaposto: i relatori veri arrivano dall’organizzatore.</p>
       <div class="griglia-speaker" id="speaker-evidenza"></div>
       <p><a class="btn btn--secondary" href="speaker.html">Tutti gli speaker <svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></a></p>
     </div>
@@ -78,15 +81,16 @@
           <div data-fascia="intero"></div>
         </div>
         <div class="colonna-testo">
-          <h3 class="t-3">Pass giornaliero</h3>
-          <p class="t-muted">Le sessioni incluse di un solo giorno, a scelta.</p>
-          <div data-prezzo-tipo="giornaliero" data-var="inline"></div>
-          <div data-fascia="giornaliero"></div>
+          <h3 class="t-3">Workshop</h3>
+          <p class="t-muted">Si pagano a parte, sessione per sessione. Il prezzo è indicato nel programma.</p>
+          <div data-prezzo-tipo="workshop" data-var="inline"></div>
+          <p><a href="agenda.html">Vedi i workshop</a></p>
         </div>
         <div class="colonna-testo">
-          <h3 class="t-3">Workshop e masterclass</h3>
-          <p class="t-muted">Si pagano a parte, sessione per sessione. Il prezzo è indicato nel programma.</p>
-          <p><a href="agenda.html">Vedi le sessioni a pagamento</a></p>
+          <h3 class="t-3">Membership</h3>
+          <p class="t-muted">Accesso early bird e member area con i video dei congressi passati.</p>
+          <p><b class="prezzo-valore" data-euro="membership"></b> <span class="t-muted">all’anno</span></p>
+          <p><a href="membership.html">Scopri la membership</a></p>
         </div>
       </div>
       <p class="misura">Due prezzi: pubblico e membro. Il prezzo membro vale sul biglietto del membro che compra; chi viene con lui paga il prezzo pubblico. <a href="biglietti.html#prezzi-ridotti">Come diventare membro</a>.</p>
@@ -97,21 +101,27 @@
     <div class="wrap">
       <h2 class="t-1" id="titolo-info">Informazioni pratiche</h2>
       <dl class="meta-lista misura">
-        <div><dt>Date</dt><dd>14, 15 e 16 ottobre 2027</dd></div>
-        <div><dt>Luogo</dt><dd>Centro Congressi dei Navigli (segnaposto), Milano</dd></div>
+        <div><dt>Date</dt><dd>8, 9 e 10 aprile 2027</dd></div>
+        <div><dt>Luogo</dt><dd>Lisbona (sede da confermare)</dd></div>
+        <div><dt>Posti</dt><dd>6.000</dd></div>
+        <div><dt>Lingue</dt><dd>Italiano e inglese</dd></div>
         <div><dt>Orari porte</dt><dd>Da definire</dd></div>
         <div><dt>Accessibilità</dt><dd>Informazioni sulla sede da confermare</dd></div>
-        <div><dt>Contatti</dt><dd>Da definire</dd></div>
+        <div><dt>Contatti</dt><dd class="cella-testo">office@eas-aligners.com</dd></div>
       </dl>
+    </div>
+  </section>
+
+  <section class="sezione bande bande--notte" aria-labelledby="titolo-sponsor">
+    <div class="wrap">
+      <h2 class="t-1 titolo-sponsor" id="titolo-sponsor">Grazie ai nostri sponsor</h2>
+      <p class="misura" style="margin-inline:auto;text-align:center">Elenco degli sponsor da fornire dal cliente.</p>
     </div>
   </section>
 </main>
 
 <footer class="site-footer">
-  <div class="wrap">
-    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
-    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
-  </div>
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p></div>
 </footer>
 
 <script src="prototipo.js"></script>
