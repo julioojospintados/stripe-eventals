@@ -1,3 +1,6 @@
+-- ARCHIVIO (06/11/2026): riferimento storico, non più usato. Lo stack è passato a Laravel + Filament;
+-- il modello attuale è in db/modello-dati.md e le migrazioni di esempio in db/migrazioni-bozza/.
+--
 -- Schema dati di stripe-eventals (bozza)
 -- Autore: Giulio Occhipinti
 -- Aggiornato al: 05/11/2026
