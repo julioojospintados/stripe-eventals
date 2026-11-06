@@ -134,8 +134,8 @@ massimo per persona e per ordine (proposta: 2 per ordine)? Una persona può comp
 
 - **Perché serve:** con il modulo di Mailchimp la pagina di preregistrazione si fa in pochi giorni e i contatti non
   passano dal nostro server.
-- **Nel frattempo:** modulo nostro con il consenso registrato nel database ed export CSV da importare in Mailchimp:
-  più lento da preparare.
+- **Nel frattempo:** la pagina è già pronta in `preregistrazione/` con valori segnaposto (`REPLACE_…`); senza
+  l'indirizzo del modulo non può andare online.
 
 ## 12. Contatti e testo della pagina di preregistrazione
 
@@ -144,5 +144,5 @@ luogo, cosa succede quando si aprono le vendite, il vantaggio dell'early bird pe
 contatto pubblica, il link alla pagina privacy che usate già, il logo in SVG o PNG ad alta risoluzione.
 
 - **Perché serve:** è l'unica pagina che può andare online prima della Fase 1.
-- **Nel frattempo:** prepariamo noi una bozza dai testi e dai colori di eas-aligners.com, da approvare;
-  contatto `Website@orthocongress.org`.
+- **Nel frattempo:** la bozza è già pronta in `preregistrazione/` con i testi e i colori di eas-aligners.com, da
+  approvare; i segnaposto (privacy, contatti, «What's included») sono marcati.

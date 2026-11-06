@@ -323,7 +323,7 @@ Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle 
 ## 11. Identità EAS e scostamenti per accessibilità
 
 Autore: Giulio Occhipinti. Prototipo rivestito il 06/11/2026 con l'identità di eas-aligners.com (misurata dal CSS e dagli stili calcolati della
-pagina pubblica; robots.txt consente `/`). Il cliente vuole coerenza col suo sito «anche dove è fatto male»: stessa aria, senza rompere WCAG 2.2 AA.
+pagina pubblica; robots.txt consente `/`). Il cliente vuole coerenza col suo sito: stessa aria, senza rompere WCAG 2.2 AA.
 I contrasti sono calcolati a mano con la formula WCAG 2.x (elenco in testa a `prototipo/styles.css`); la misura sulla build la fa `ux-reviewer`.
 La versione editoriale precedente resta in `proposte/versione-migliorata/`, non toccata.
 

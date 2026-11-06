@@ -11,6 +11,7 @@ Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è anc
 
 | File | Cosa contiene |
 |---|---|
+| [`docs/per-simone.md`](docs/per-simone.md) | riepilogo per il cliente: cosa è pronto, cosa serve da lui, decisioni |
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |
 | [`docs/cliente/`](docs/cliente/) | risposte del cliente (primo e secondo giro del 06/11/2026) |
 | [`docs/architettura.md`](docs/architettura.md) | stack Laravel + Filament, MySQL / MariaDB, Stripe solo carta, fasce di prezzo, ruoli, capienza, code con cron, hosting condiviso, sicurezza, costi, Fase 1 e Fase 2 con stima, domande aperte |
