@@ -632,11 +632,11 @@ cliente** (Francia o Portogallo? domanda aperta 2).
 
 | Voce | Prezzo usato | Fonte |
 |---|---|---|
-| Carta standard SEE | 1,5% + 0,25 € | `[likely]` [support.stripe.com](https://support.stripe.com/questions/pricing-updates-for-businesses-based-in-the-european-economic-area-(eea)) (via ricerca) |
-| Carta premium SEE | 1,9% + 0,25 € | `[uncertain]` siti terzi ([writeupp](https://help.writeupp.com/en/article/what-rate-will-i-pay-with-a-stripe-unified-account-19nqogt/)) |
-| Carta del Regno Unito | 2,5% + 0,25 € | `[uncertain]` stessi siti |
-| Carta extra SEE | 3,25% + 0,25 € | `[likely]` support.stripe.com (via ricerca) |
-| Conversione di valuta | +2% solo se si incassa in una valuta diversa da quella di accredito; con prezzi solo in euro non si applica | `[uncertain]` |
+| Carta standard SEE | 1,5% + 0,25 € | `[sure]` [stripe.com/en-pt/pricing](https://stripe.com/en-pt/pricing) e [stripe.com/fr/pricing](https://stripe.com/fr/pricing), letti il 06/11/2026 |
+| Carta premium SEE | 2,8% + 0,25 € | `[sure]` stesse pagine (prima stimato 1,9% da siti terzi: era sbagliato) |
+| Carta del Regno Unito | 2,5% + 0,25 € | `[sure]` stesse pagine |
+| Carta extra SEE | 3,15% + 0,25 € | `[sure]` stesse pagine (prima stimato 3,25%) |
+| Conversione di valuta | +2% se serve la conversione | `[sure]` stesse pagine; con prezzi solo in euro di solito non si applica `[likely]` |
 | Stripe Billing (membership) | 0,7% del volume ricorrente | `[likely]` ([flexprice.io](https://flexprice.io/blog/stripe-pricing-breakdown-2026) e altri) |
 | Stripe Invoicing Starter | 0,4% per fattura pagata | `[likely]` support.stripe.com (via ricerca) |
 | Stripe Tax, se adottato | 0,5% per transazione | `[uncertain]` |
@@ -652,16 +652,16 @@ prima dell'apertura delle vendite `[likely]`.
 - 30% dei partecipanti è membro; metà dei pass venduti in early bird; prezzo medio del pass **514,25 €**.
 - Il 20% compra un workshop nello stesso ordine.
 - Un ordine per partecipante (ipotesi prudente: più ordini = più quote fisse) + un pagamento di membership per membro.
-- Carte: 60% standard SEE, 15% premium SEE, 5% Regno Unito, 20% extra SEE → **1,96%** + 0,25 € di media.
+- Carte: 60% standard SEE, 15% premium SEE, 5% Regno Unito, 20% extra SEE → **2,075%** + 0,25 € di media (ricalcolato il 06/11/2026 con i listini ufficiali; prima 1,96%).
 
 ### 16.3 Stima annuale di Stripe
 
 | Voce | 150 partecipanti | 1.000 | 6.000 (posti dell'EAS8) | 10.000 (partecipanti l'anno) |
 |---|---|---|---|---|
 | Incasso lordo (pass + workshop + membership) | 89.138 € | 594.250 € | 3.565.500 € | 5.942.500 € |
-| Commissioni carta (mix sopra) | 1.796 € | 11.972 € | 71.834 € | 119.723 € |
+| Commissioni carta (mix sopra) | 1.899 € | 12.655 € | 75.934 € | 126.557 € |
 | Stripe Billing 0,7% sulle membership | 63 € | 420 € | 2.520 € | 4.200 € |
-| **Totale Stripe base** | **1.859 €** (2,09%) | **12.392 €** (2,09%) | **74.354 €** (2,09%) | **123.923 €** (2,09%) |
+| **Totale Stripe base** | **1.962 €** (2,2%) | **13.075 €** (2,2%) | **78.454 €** (2,2%) | **130.757 €** (2,2%) |
 | Se tutte le carte fossero standard SEE (solo carta) | 1.386 € | 9.239 € | 55.432 € | 92.388 € |
 | + Invoicing 0,4% su biglietti e workshop, se si usa | + 321 € | + 2.137 € | + 12.822 € | + 21.370 € |
 | + Stripe Tax 0,5%, se si adotta | + 446 € | + 2.971 € | + 17.828 € | + 29.712 € |
