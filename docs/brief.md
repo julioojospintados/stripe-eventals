@@ -28,11 +28,22 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 | Su misura o pretix | Tutto su misura, niente pretix |
 | Legale e fisco | IVA, fattura elettronica, condizioni di vendita e rimborsi alla catena legale-fiscale dopo questa fase, prima dello sviluppo |
 
+## Decisioni del 06/11/2026 (dopo le risposte del cliente)
+
+| Tema | Scelta |
+|---|---|
+| Stack | Laravel + Filament sul server del cliente, dati in UE (al posto di Next.js + Supabase su Vercel) |
+| Evento | EAS8, Lisbona, 8–10 aprile 2027 (come il sito pubblico; il modulo diceva 10-14, da confermare) |
+| Aspetto | Coerente con eas-aligners.com; la versione migliorata resta in `proposte/` da proporre dopo |
+| Legale e fisco | Ancora rimandati a prima dello sviluppo, ma ora con evento in Portogallo e compratori internazionali |
+
+Dettagli delle risposte: [`docs/cliente/risposte-2026-11-06.md`](cliente/risposte-2026-11-06.md).
+
 ## Fuori ambito per ora
 
 Codice dell'applicazione. Questa fase produce solo architettura informatica e UX/UI (documenti, schema dei dati,
 prototipo cliccabile in HTML statico).
 
-## Stack di partenza suggerito
+## Stack
 
-Lo stesso che Giulio usa già in Eventy (Next.js su Vercel, Supabase), salvo motivi forti per cambiare.
+Laravel + Filament dal 06/11/2026 (prima: Next.js su Vercel e Supabase, come Eventy).
