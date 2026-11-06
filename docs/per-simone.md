@@ -69,8 +69,8 @@ rimborso rifiutato da Stripe, riconciliazione notturna, contestazioni, lingua ne
 | 1 | Lanciare lo script di verifica sull'hosting via SSH e mandarci il riepilogo che stampa | `strumenti/verifica-hosting/README.md` | 10 minuti |
 | 2 | Mandarci l'indirizzo del modulo Mailchimp per la preregistrazione (*Audience → Signup forms → Embedded forms*, l'indirizzo dopo `action=`) e dirci se la doppia conferma è attiva. **Non mandare la chiave API** | `preregistrazione/README.md` | 10 minuti |
 | 3 | Comprare `orthocongress.org` e dirci chi gestisce i DNS | — | Quando potete: senza dominio niente pagina online né email affidabili |
-| 5 | Provare l'applicazione in locale con le chiavi Stripe **di test** del vostro account e dirci cosa non va | `sito/README.md` | Mezza giornata |
 | 4 | Iniziare a raccogliere i contenuti nei modelli: prima tipi di biglietto, fasce e prezzi, poi sale, speaker e sessioni | `contenuti/modelli/README.md` | Il programma serve più avanti, i prezzi subito |
+| 5 | Provare l'applicazione in locale con le chiavi Stripe **di test** del vostro account e dirci cosa non va | `sito/README.md` | Mezza giornata |
 
 Se lo script segnala un problema con i **trigger** del database, stampa anche un breve testo in inglese da girare
 all'assistenza dell'hosting: di solito lo risolvono in poco tempo.
