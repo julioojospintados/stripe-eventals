@@ -1,0 +1,268 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti. Proposta di layout 2 «Clinico» per il sito EAS8. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>EAS8 Lisbon · 8–10 April 2027</title>
+  <meta name="description" content="EAS8, the 8th congress of the European Aligner Society. Lisbon, 8–10 April 2027.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap masthead__bar">
+    <a class="brand" href="index.html" aria-label="EAS, European Aligner Society: home">
+      <img src="assets/eas-logo.png" alt="" width="250" height="140">
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <span class="menu-toggle__icon" aria-hidden="true"></span><span>Menu</span>
+    </button>
+    <nav id="site-nav" class="nav" aria-label="Main">
+      <ul>
+        <li><a href="#programme">Programme</a></li>
+        <li><a href="#speakers">Speakers</a></li>
+        <li><a href="biglietti.html">Tickets</a></li>
+        <li><a href="#membership">Membership</a></li>
+      </ul>
+      <a class="nav__login" href="#login">Log in</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Prima schermata: nome, date, luogo, acquisto, ricerca nel programma -->
+  <section class="hero" aria-labelledby="h-hero">
+    <div class="wrap hero__grid">
+      <div class="hero__main">
+        <p class="eyebrow">8th Congress of the European Aligner Society</p>
+        <h1 id="h-hero" class="hero__title">EAS8 <span>Lisbon</span></h1>
+        <dl class="facts">
+          <div><dt>Dates</dt><dd><span class="date-mark" aria-hidden="true"></span><time datetime="2027-04-08">Thu 8</time>–<time datetime="2027-04-10">Sat 10 April 2027</time></dd></div>
+          <div><dt>Place</dt><dd>Lisbon, Portugal <span class="muted">· venue to be announced</span></dd></div>
+        </dl>
+        <p class="hero__theme"><strong>Mastering Clinical Challenges in Aligner Orthodontics</strong> — From Clinical Limitations to Predictable Outcomes</p>
+        <div class="hero__actions" id="hero-cta">
+          <a class="btn btn--primary" href="biglietti.html">Buy tickets</a>
+          <p class="hero__price">Full pass from <b class="num">€276.50</b> <span class="muted">members, early bird</span> · <span class="num">€695</span> <span class="muted">public</span></p>
+        </div>
+      </div>
+
+      <form class="search" role="search" action="#programme" aria-labelledby="l-search">
+        <label id="l-search" for="q" class="search__label">Search the programme</label>
+        <div class="search__row">
+          <input id="q" name="q" type="search" autocomplete="off" placeholder="Topic, speaker, room" aria-describedby="search-help">
+          <button class="btn btn--ink" type="submit">Search</button>
+        </div>
+        <p id="search-help" class="search__help">Try “Class II”, “Room 4” or “retention”. Demo sessions.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Numeri chiave -->
+  <section class="keys" aria-label="EAS8 in numbers">
+    <div class="wrap">
+      <ul class="keys__list">
+        <li><b class="num">3</b><span>days</span></li>
+        <li><b class="num">12</b><span>rooms in parallel</span></li>
+        <li><b class="num">120</b><span>sessions, approx.</span></li>
+        <li><b class="num">30</b><span>speakers, approx.</span></li>
+        <li><b class="num">6,000</b><span>seats</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Programma per giorno e sala -->
+  <section class="section" id="programme" aria-labelledby="h-prog">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="kicker">Programme</p>
+        <h2 id="h-prog">Three days, twelve rooms</h2>
+        <p class="lead">Selected sessions by day and room. The full programme of about 120 sessions is published as speakers confirm. Continuing education credits per session: <b>to be announced</b>.</p>
+      </header>
+
+      <div class="days" role="tablist" aria-label="Congress days">
+        <button role="tab" id="tab-d1" aria-controls="day-1" aria-selected="true" type="button"><span class="days__dow">Thu</span> <span class="num">8 Apr</span></button>
+        <button role="tab" id="tab-d2" aria-controls="day-2" aria-selected="false" tabindex="-1" type="button"><span class="days__dow">Fri</span> <span class="num">9 Apr</span></button>
+        <button role="tab" id="tab-d3" aria-controls="day-3" aria-selected="false" tabindex="-1" type="button"><span class="days__dow">Sat</span> <span class="num">10 Apr</span></button>
+      </div>
+      <p class="filter-status" id="filter-status" role="status" aria-live="polite"></p>
+
+      <div class="day" id="day-1" role="tabpanel" aria-labelledby="tab-d1" tabindex="0">
+        <table class="prog">
+          <caption><span class="date-mark" aria-hidden="true"></span>Thursday 8 April 2027 <span class="muted">· selected sessions, demo</span></caption>
+          <thead><tr><th scope="col">Time</th><th scope="col">Session</th><th scope="col">Room</th></tr></thead>
+          <tbody>
+            <tr><td class="num">08:30</td><td><span class="tag">Opening</span><span class="prog__title">Opening ceremony and EAS address</span><span class="prog__who">EAS Board</span></td><td>Room 1</td></tr>
+            <tr><td class="num">09:15</td><td><span class="tag tag--plenary">Plenary</span><span class="prog__title">Placeholder lecture: predictable Class II correction</span><span class="prog__who">Dr. Speaker Placeholder 01</span></td><td>Room 1</td></tr>
+            <tr><td class="num">11:00</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: anterior open bite with aligners</span><span class="prog__who">Dr. Speaker Placeholder 02</span></td><td>Room 2</td></tr>
+            <tr><td class="num">11:00</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: digital set-up and staging limits</span><span class="prog__who">Dr. Speaker Placeholder 03</span></td><td>Room 4</td></tr>
+            <tr><td class="num">14:00</td><td><span class="tag tag--ws">Workshop</span><span class="prog__title">W01 · Placeholder hands-on: attachment design</span><span class="prog__who">Dr. Speaker Placeholder 04</span></td><td>Room 9</td></tr>
+            <tr><td class="num">16:30</td><td><span class="tag">Panel</span><span class="prog__title">Placeholder panel: when aligners are not enough</span><span class="prog__who">Panel of placeholder speakers</span></td><td>Room 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="day" id="day-2" role="tabpanel" aria-labelledby="tab-d2" tabindex="0" hidden>
+        <table class="prog">
+          <caption><span class="date-mark" aria-hidden="true"></span>Friday 9 April 2027 <span class="muted">· selected sessions, demo</span></caption>
+          <thead><tr><th scope="col">Time</th><th scope="col">Session</th><th scope="col">Room</th></tr></thead>
+          <tbody>
+            <tr><td class="num">09:00</td><td><span class="tag tag--plenary">Plenary</span><span class="prog__title">Placeholder lecture: deep bite and vertical control</span><span class="prog__who">Dr. Speaker Placeholder 05</span></td><td>Room 1</td></tr>
+            <tr><td class="num">10:45</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: molar distalisation, evidence and limits</span><span class="prog__who">Dr. Speaker Placeholder 06</span></td><td>Room 3</td></tr>
+            <tr><td class="num">10:45</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: interdisciplinary cases with periodontics</span><span class="prog__who">Dr. Speaker Placeholder 07</span></td><td>Room 6</td></tr>
+            <tr><td class="num">14:00</td><td><span class="tag tag--ws">Workshop</span><span class="prog__title">W05 · Placeholder hands-on: IPR protocols</span><span class="prog__who">Dr. Speaker Placeholder 08</span></td><td>Room 10</td></tr>
+            <tr><td class="num">15:30</td><td><span class="tag">Abstracts</span><span class="prog__title">Placeholder session: selected oral abstracts</span><span class="prog__who">Placeholder chairs</span></td><td>Room 5</td></tr>
+            <tr><td class="num">17:00</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: growing patients and Class III</span><span class="prog__who">Dr. Speaker Placeholder 09</span></td><td>Room 2</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="day" id="day-3" role="tabpanel" aria-labelledby="tab-d3" tabindex="0" hidden>
+        <table class="prog">
+          <caption><span class="date-mark" aria-hidden="true"></span>Saturday 10 April 2027 <span class="muted">· selected sessions, demo</span></caption>
+          <thead><tr><th scope="col">Time</th><th scope="col">Session</th><th scope="col">Room</th></tr></thead>
+          <tbody>
+            <tr><td class="num">09:00</td><td><span class="tag tag--plenary">Plenary</span><span class="prog__title">Placeholder lecture: retention after aligner therapy</span><span class="prog__who">Dr. Speaker Placeholder 10</span></td><td>Room 1</td></tr>
+            <tr><td class="num">10:45</td><td><span class="tag">Lecture</span><span class="prog__title">Placeholder lecture: refinements, why and how many</span><span class="prog__who">Dr. Speaker Placeholder 11</span></td><td>Room 4</td></tr>
+            <tr><td class="num">10:45</td><td><span class="tag tag--ws">Workshop</span><span class="prog__title">W09 · Placeholder hands-on: auxiliaries and elastics</span><span class="prog__who">Dr. Speaker Placeholder 12</span></td><td>Room 11</td></tr>
+            <tr><td class="num">14:00</td><td><span class="tag">Panel</span><span class="prog__title">Placeholder panel: managing complications</span><span class="prog__who">Panel of placeholder speakers</span></td><td>Room 1</td></tr>
+            <tr><td class="num">16:00</td><td><span class="tag">Closing</span><span class="prog__title">Closing session and EAS9 announcement</span><span class="prog__who">EAS Board</span></td><td>Room 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Speaker -->
+  <section class="section section--alt" id="speakers" aria-labelledby="h-spk">
+    <div class="wrap">
+      <header class="section__head section__head--row">
+        <div>
+          <p class="kicker">Speakers</p>
+          <h2 id="h-spk">Plenary speakers</h2>
+        </div>
+        <p class="lead">Preliminary line-up, about 30 speakers in total. Names and affiliations below are placeholders.</p>
+      </header>
+      <ul class="speakers">
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 01</h3><p>Department placeholder, University of Example</p><p class="muted">Country · Plenary, Thu 8 Apr</p></div></li>
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 05</h3><p>Private practice placeholder</p><p class="muted">Country · Plenary, Fri 9 Apr</p></div></li>
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 10</h3><p>Orthodontic clinic placeholder, Example Hospital</p><p class="muted">Country · Plenary, Sat 10 Apr</p></div></li>
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 02</h3><p>Faculty of Dentistry placeholder</p><p class="muted">Country · Lecture, Thu 8 Apr</p></div></li>
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 06</h3><p>Research group placeholder</p><p class="muted">Country · Lecture, Fri 9 Apr</p></div></li>
+        <li><span class="initials" aria-hidden="true">SP</span><div><h3>Dr. Speaker Placeholder 11</h3><p>Private practice placeholder</p><p class="muted">Country · Lecture, Sat 10 Apr</p></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Workshop -->
+  <section class="section" id="workshops" aria-labelledby="h-ws">
+    <div class="wrap">
+      <header class="section__head section__head--row">
+        <div>
+          <p class="kicker">Hands-on workshops</p>
+          <h2 id="h-ws">10 workshops, 20 seats each</h2>
+        </div>
+        <p class="lead"><b class="num">€100</b> per workshop, same price for everyone. Book them with your pass or on their own.</p>
+      </header>
+      <table class="ws">
+        <caption class="sr-only">Workshops with seats left</caption>
+        <thead><tr><th scope="col">Workshop</th><th scope="col">When</th><th scope="col">Seats left</th></tr></thead>
+        <tbody>
+          <tr><td><b class="num">W01</b> Placeholder hands-on: attachment design</td><td class="num">Thu 14:00</td><td><span class="seats"><span class="meter" aria-hidden="true"><i style="--v:70%"></i></span><span class="num">14 of 20</span></span></td></tr>
+          <tr><td><b class="num">W02</b> Placeholder hands-on: digital set-up review</td><td class="num">Thu 16:00</td><td><span class="seats"><span class="meter" aria-hidden="true"><i style="--v:30%"></i></span><span class="num">6 of 20</span> <span class="flag">Few left</span></span></td></tr>
+          <tr><td><b class="num">W03</b> Placeholder hands-on: aligner material selection</td><td class="num">Fri 09:00</td><td><span class="seats"><span class="meter" aria-hidden="true"><i style="--v:0%"></i></span><span class="num">0 of 20</span> <span class="flag flag--out">Sold out</span></span></td></tr>
+          <tr><td><b class="num">W05</b> Placeholder hands-on: IPR protocols</td><td class="num">Fri 14:00</td><td><span class="seats"><span class="meter" aria-hidden="true"><i style="--v:100%"></i></span><span class="num">20 of 20</span></span></td></tr>
+          <tr><td><b class="num">W09</b> Placeholder hands-on: auxiliaries and elastics</td><td class="num">Sat 10:45</td><td><span class="seats"><span class="meter" aria-hidden="true"><i style="--v:55%"></i></span><span class="num">11 of 20</span></span></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Seat counts are demo figures; on the live site they update as seats are booked. <a href="biglietti.html#ws-pick">See all 10 workshops</a></p>
+    </div>
+  </section>
+
+  <!-- Membership -->
+  <section class="section section--tint" id="membership" aria-labelledby="h-mem">
+    <div class="wrap mem">
+      <div>
+        <p class="kicker">Membership</p>
+        <h2 id="h-mem">Join EAS for <span class="num">€200</span> a year</h2>
+        <ul class="ticks">
+          <li><b>Early bird access.</b> The early bird price (−30%) is for members only.</li>
+          <li><b>Member price on every tier.</b> <span class="num">€395</span> instead of <span class="num">€695</span> for the full pass.</li>
+          <li><b>Member area.</b> Videos of past EAS congresses.</li>
+          <li><b>Active straight away</b> after purchase.</li>
+        </ul>
+        <a class="btn btn--primary" href="biglietti.html#membership">Become a member</a>
+      </div>
+      <table class="calc">
+        <caption>Full pass now: member route versus public</caption>
+        <tbody>
+          <tr><th scope="row">Membership, one year</th><td class="num">€200.00</td></tr>
+          <tr><th scope="row">Full pass, early bird member</th><td class="num">€276.50</td></tr>
+          <tr class="calc__total"><th scope="row">Member route total</th><td class="num">€476.50</td></tr>
+          <tr><th scope="row">Full pass, regular public</th><td class="num">€695.00</td></tr>
+          <tr class="calc__save"><th scope="row">Difference</th><td class="num">€218.50</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Sponsor -->
+  <section class="section" id="sponsors" aria-labelledby="h-sp">
+    <div class="wrap">
+      <header class="section__head">
+        <p class="kicker">Sponsors</p>
+        <h2 id="h-sp">With the support of</h2>
+      </header>
+      <h3 class="tier-label">Platinum</h3>
+      <ul class="logos logos--lg">
+        <li>Sponsor logo</li><li>Sponsor logo</li>
+      </ul>
+      <h3 class="tier-label">Gold</h3>
+      <ul class="logos">
+        <li>Sponsor logo</li><li>Sponsor logo</li><li>Sponsor logo</li><li>Sponsor logo</li>
+      </ul>
+      <p class="note">Placeholder logos. <a href="mailto:office@eas-aligners.com">Exhibiting or sponsoring? Write to us</a></p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Barra d'acquisto in basso su telefono: compare quando il bottone della prima schermata esce dalla vista -->
+<div class="buybar" id="buybar" hidden>
+  <p><span class="muted">Full pass from</span> <b class="num">€276.50</b></p>
+  <a class="btn btn--primary" href="biglietti.html">Buy tickets</a>
+</div>
+
+<footer class="footer">
+  <div class="wrap footer__grid">
+    <div>
+      <img class="footer__logo" src="assets/eas-logo.png" alt="EAS, European Aligner Society" width="125" height="70">
+      <p>EAS8 · Lisbon · <span class="date-accent">8–10 April 2027</span></p>
+    </div>
+    <nav aria-label="Congress">
+      <h2>Congress</h2>
+      <ul><li><a href="#programme">Programme</a></li><li><a href="#speakers">Speakers</a></li><li><a href="biglietti.html">Tickets</a></li><li><a href="#">Call for abstracts</a></li><li><a href="#">Road to Lisbon</a></li></ul>
+    </nav>
+    <nav aria-label="Society">
+      <h2>Society</h2>
+      <ul><li><a href="#membership">Membership</a></li><li><a href="#">EBAO</a></li><li><a href="#">Events</a></li><li><a href="#">FAQ</a></li><li><a href="#">About us</a></li></ul>
+    </nav>
+    <div>
+      <h2>Contact</h2>
+      <p><a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a></p>
+    </div>
+  </div>
+  <div class="wrap footer__legal">
+    <p>© 2026 EAS – European Aligner Society</p>
+    <p><a href="#">Privacy policy</a> · <a href="#">Cookie policy</a> · <a href="#">Terms of sale</a></p>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>
