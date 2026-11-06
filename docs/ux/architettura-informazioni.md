@@ -10,6 +10,7 @@ Nome evento (dal 06/11/2026): **EAS8 Lisbon**, 8–10 aprile 2027, Lisbona, 6.00
 `docs/cliente/risposte-2026-11-06.md`; date da confermare, vedi 11.3). Prezzi, membership e capienza sono quelli del cliente;
 speaker, sessioni, orari, sede, video e vendite sono segnaposto e dichiarati tali nell'interfaccia. Quello che manca è scritto «da definire», non riempito.
 I capitoli 1-10 sono stati scritti sul primo prototipo («Convegno 2027», prezzi inventati): dove i numeri differiscono vale il capitolo 11.
+Dal secondo giro di risposte del cliente (06/11/2026) il prototipo è **in inglese** e vale il capitolo 12 dove contraddice i precedenti (fasce, nessun cambio di nome, nuovi biglietti, 12 sale, video, lingua).
 
 ## 1. Direzione visiva
 
@@ -51,7 +52,7 @@ Legenda: **P** = prototipato in `prototipo/`, **—** = da progettare dopo.
 | Le mie prenotazioni | Sessioni incluse prenotate, annulla, lista d'attesa |
 | Il mio programma | Sessioni scelte in ordine di orario, sovrapposizioni segnalate |
 | Membership | Stato, scadenza, rinnovo automatico, disdetta, fatture |
-| Ordini e ricevute | Elenco ordini, ricevute; nessuna richiesta di rimborso (decisione del 05/11/2026): al suo posto il cambio nominativo gratuito fino a 48 ore prima |
+| Ordini e ricevute | Elenco ordini, ricevute; nessuna richiesta di rimborso (decisione del 05/11/2026): al suo posto il cambio nominativo gratuito fino a 48 ore prima. **Superato il 06/11/2026: nessun cambio di nome (12.3)** |
 | Profilo | Dati, email, lingua, esigenze di accessibilità, cancellazione account |
 
 ### 2.3 Admin (organizzatore)
@@ -268,7 +269,7 @@ File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. 
 | Scheda | Cosa fa | Casi coperti |
 |---|---|---|
 | I miei biglietti | Un biglietto per persona con QR nero su bianco, codice breve a 8 caratteri, stato, PDF e wallet (simulati) | Valido, rimborsato (QR sostituito dal testo «QR revocato»). Il QR non contiene il nome. L'importo pagato dice se era prezzo membro o pubblico |
-| Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, gratis fino a 48 ore prima dell'inizio, massimo 2 cambi (proposta) | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; meno di 48 ore all'inizio; limite cambi raggiunto; errori sui campi |
+| Cambio nominativo | Modulo nel biglietto: nome ed email nuovi, avviso che il QR vecchio smette di valere, gratis fino a 48 ore prima dell'inizio, massimo 2 cambi (proposta). **Tolto il 06/11/2026: nessun cambio di nome (12.3)** | Non cedibile se il prezzo è ridotto (ruolo): spiega perché e rimanda all'organizzazione; meno di 48 ore all'inizio; limite cambi raggiunto; errori sui campi |
 | La mia agenda | Sessioni prenotate e a pagamento per giorno | Orari sovrapposti: avviso che nomina le due sessioni e offre «Annulla la prenotazione» solo dove è gratis; sessioni a pagamento in conflitto: nessun annullamento, rimando all'organizzazione |
 | Membership | Stato, scadenza, rinnovo, apertura del portale clienti Stripe (simulato in pagina) | Nessuna, attiva, disdetta a fine periodo, pagamento fallito (non vale come membro, regola proposta), scaduta con «Rinnova» |
 | Ordini e ricevute | Elenco con stato e ricevuta | Pagato, in elaborazione («non pagare di nuovo»), non riuscito e scaduto (con «Riprova»), rimborsato |
@@ -366,6 +367,8 @@ Stati mai solo a colore: invariati dal capitolo 6 (forma delle tracce, icona e t
 
 ### 11.3 Dati veri e segnaposto (06/11/2026)
 
+> **Aggiornato dal capitolo 12:** date 8–10 aprile confermate; early bird solo per i membri (il pubblico non ha early bird); tre fasce; workshop 10 × 20 posti.
+
 | Dato | Valore | Stato |
 |---|---|---|
 | Evento | EAS8 Lisbon, Lisbona | vero (cliente) |
@@ -384,6 +387,8 @@ Stati mai solo a colore: invariati dal capitolo 6 (forma delle tracce, icona e t
 **Masterclass** non esiste più come tipo: restano keynote, panel, talk e workshop (a pagamento).
 
 ### 11.4 Lingua: italiano e inglese
+
+> **Superato dal capitolo 12.6:** l'inglese è la lingua predefinita; il prototipo è in inglese.
 
 Il sito sarà in italiano e in inglese; il prototipo resta in italiano.
 
@@ -417,6 +422,8 @@ La fatturazione vera (Stripe + Xero) non è prototipata: «Ordini e fatture» mo
 
 ### 11.6 Member area: video dei congressi
 
+> **Aggiornato dal capitolo 12.7:** video su Wistia e Vimeo, visibilità per ruolo scelta dall'admin.
+
 Nuova scheda «Video dei congressi» in `account.html` (elenco segnaposto di quattro video).
 
 | Chi guarda | Cosa vede |
@@ -446,3 +453,111 @@ Regole per i video veri: nessun avvio automatico, mai audio senza un tocco; sott
 - Il prototipo non è stato aperto in un browser: contrasti calcolati a mano, 360×740 stimato, nessuna prova con screen reader o tastiera. Serve il giro di `ux-reviewer`.
 - Header e footer sono scritti da `prototipo.js` (nel sito vero sono parti Blade); senza JavaScript il footer mostra una sola riga e il selettore di lingua non c'è.
 - Il QR del biglietto è un segnaposto non leggibile; le anteprime dei video sono riquadri a righe.
+
+## 12. Secondo giro del cliente: inglese, fasce, nuovi biglietti, 12 sale (06/11/2026)
+
+Autore: Giulio Occhipinti. Fonte: `docs/cliente/risposte-2026-11-06-secondo-giro.md` e `docs/brief.md` («Decisioni del cliente nel secondo giro»).
+Prototipo aggiornato in `prototipo/` (identità EAS invariata: palette, font, logo). Verificato in un browser (Chromium, Playwright) a 360×740 e 1280×800: misure in 12.10.
+
+### 12.1 Cosa cambia in breve
+
+| Tema | Prima | Ora |
+|---|---|---|
+| Lingua | Italiano, EN finto | **Inglese predefinito** (`lang="en"`), IT mostra solo un avviso |
+| Prezzo del pass | Early bird per tutti (486,50 € / 276,50 €) e Standard | Tre fasce: **Early bird** (solo membri, 276,50 €), **Regular** (695 € / 395 €), **Last minute** (prezzo da annunciare) |
+| Nome sul biglietto | Cambio gratis fino a 48 ore prima, 2 cambi | **Nessun cambio di nome**, conferma esplicita prima del pagamento |
+| Pagamento | Stripe | **Solo carta** (wallet inclusi), niente bonifico |
+| Membership | Attiva dopo il pagamento | Uguale, e dichiarato ovunque: **attiva subito**, quindi chi si iscrive compra subito a prezzo membro |
+| Tipi di biglietto | Pass intero, workshop | In più **Companion**, **Exhibitor / Sponsor**, **Complimentary** |
+| Programma | 4 sale, 16 sessioni | **12 sale**, 120 sessioni segnaposto (3 giorni: 48 + 48 + 24), 30 speaker segnaposto |
+| Workshop | Capienze diverse | **10 workshop da 20 posti**, 100 € per tutti |
+| Video | Bunny Stream, solo membri | **Wistia o Vimeo**, visibilità per ruolo |
+| Codici sconto | Solo Commercial | **Commercial e Organizer** |
+| Newsletter | Generica | **Mailchimp**, consenso facoltativo al checkout, non preselezionato |
+
+### 12.2 Fasce di prezzo
+
+Regole nel prototipo (`prototipo.js`, `DATA.fasce` e `DATA.listino`, unica fonte per sito e admin):
+
+| Fascia | Date (esempio, da confermare) | Pubblico | Membro |
+|---|---|---|---|
+| Early bird | 06/11/2026 («vendite subito») – 31/01/2027 | 695 € (vale il Regular: niente early bird) | 276,50 € (−30%) |
+| Regular | 01/02/2027 – 21/03/2027 | 695 € | 395 € |
+| Last minute | 22/03/2027 – 10/04/2027 | da annunciare | da annunciare |
+
+- **Dove si vede:** hero della home (prezzo per ruolo + riga «Early bird · now, ends 31 Jan 2027 (86 days left), then Regular…»), tre schede in `biglietti.html` con la fascia attiva marcata da bordo spesso, badge «Now» e `aria-current` (mai solo colore), tabella fascia × ruolo con la riga attiva, confronto in `membership.html`, cruscotto admin.
+- **Simulazione:** nella barra prototipo «Active price tier» (Automatic / Early bird / Regular / Last minute): la data simulata diventa il primo giorno della fascia scelta.
+- **Admin (`admin/biglietti.html`):** date dell'evento, date di inizio e fine delle tre fasce, matrice **tipo × fascia × ruolo** (ogni cella: Price, Regular = vale il prezzo Regular, TBA = da annunciare), capienze. Le modifiche restano nel browser (`cv-config`) e il sito pubblico le legge: si vede l'effetto subito. «Restore the example values» le toglie.
+- **Casi limite gestiti:** fasce sovrapposte (errore, non si salva); buco tra due fasce (avviso: in quei giorni non si vende); ultima fascia oltre la fine dell'evento (errore); nessuna fascia aperta («Sales are closed»); Last minute aperto con prezzo TBA → il pass intero non si compra (opzione disabilitata con motivo, home «Price to be announced», cruscotto «Price missing»); prezzo membro più alto del pubblico (avviso); cella Early bird pubblico diversa da «Regular» (avviso: regola del cliente); accorciare l'evento togliendo un giorno con sessioni (errore con il numero di sessioni).
+- **Il pubblico durante l'early bird** paga il Regular e lo vede scritto («Regular price: early bird is for members only»). Il riepilogo dell'ordine mostra il risparmio netto con la membership (695 − 276,50 − 200 = 218,50 €), che è attiva subito.
+
+### 12.3 Nessun cambio di nome
+
+- Tolto ogni modulo di cambio nominativo da `account.html`; ogni biglietto ha il badge «Name final» e un avviso «Names are final… If you spot a typo, write to the organiser before the event».
+- Al checkout (`biglietti.html`): avviso in «Who the tickets are for», campo «Full name on the ticket» (come su un documento), passo **6. Check and confirm** con l'elenco dei nomi che finiranno sui biglietti (si aggiorna mentre si scrive, «Name missing» se vuoto) e la casella obbligatoria «I have checked the names. I understand that the name on a ticket cannot be changed after payment». Senza spunta: errore nel riepilogo in alto con link al campo.
+- Admin ordini: nota «There is no name change»; un nome sbagliato si risolve solo con rimborso e nuovo acquisto, se l'organizzatore è d'accordo (domanda 25).
+- Il nome resta fuori dal QR (capitolo 10).
+
+### 12.4 Nuovi tipi di biglietto
+
+| Tipo | Come si ottiene | Prezzo | Regole e casi limite |
+|---|---|---|---|
+| Companion | Insieme a un pass intero nello stesso ordine, oppure dopo («Add a companion» sul pass in `account.html`, opzione «Companion only» se si ha già un pass) | 150 € **segnaposto**, uguale per tutti | Un accompagnatore per pass (regola da confermare); senza pass: avviso e blocco; non con il pass espositore; cosa include: da definire; nominativo e non modificabile; rimborsando il pass va rimborsato anche l'accompagnatore (nota nel modulo di rimborso) |
+| Exhibitor / Sponsor | Acquisto in `biglietti.html` con nome dell'azienda e **codice d'invito facoltativo** (prototipo: EXPO2027) | 450 € **segnaposto**, uguale per tutti | Codice errato: errore, si può lasciare vuoto; l'invito lega il pass allo stand; gli inviti si creano in «Discount codes» come tipo «Exhibitor invitation» |
+| Complimentary | **Non si compra**: lo emette l'admin in `admin/omaggi.html` («Issue complimentary ticket», anche da `admin/ordini.html`) | 0 € | Per speaker (scelta dal profilo, nome ed email precompilati) o staff; ordine a 0 € senza pagamento; occupa un posto come un pass; entra nell'export per il partner; un secondo omaggio alla stessa persona è bloccato; revoca con doppia conferma (QR non valido subito); «Resend» rimanda lo stesso QR |
+
+Il pass intero, gli omaggi e gli espositori consumano per ipotesi lo stesso pool da 6.000 posti; gli accompagnatori un pool proprio (300, segnaposto). Da confermare (domanda 24).
+
+### 12.5 Programma con 12 sale
+
+- **Telefono (360px):** lista per orario, raggruppata per fascia oraria con il numero di sessioni («09:00 · 12 sessions»); in alto, sempre visibili, il filtro **Room** (select, «All 12 rooms») e i chip **Track**; tipo e accesso in «More filters»; riga «Jump to 09:00 11:00 14:00 16:00» che porta il fuoco sul titolo dell'orario. Con 48 sessioni al giorno il filtro sala riduce a 4.
+- **Desktop (da 64rem):** griglia con 12 colonne (11rem minimo ciascuna) dentro `.griglia-scorri`, contenitore che scorre di lato e in verticale; **intestazioni di sala** (`position: sticky; top: 0`) e **colonna degli orari** (`left: 0`) restano ferme; le pause sono righe tratteggiate «Break». Pulsanti «Previous rooms» / «Next rooms» (alternativa a rotella e trascinamento, `aria-disabled` ai bordi); il contenitore ha `tabindex="0"`, `role="region"` e nome accessibile, quindi si scorre con le frecce. Ogni cella ha il nome della sala per i lettori di schermo. La pagina non scorre di lato (misurato).
+- **Insidia trovata nella misura:** i `.sr-only` assoluti dentro le celle allargavano la pagina a 2.090px perché il contenitore non era posizionato; risolto con `position: relative` su contenitore e celle.
+- **Dati segnaposto:** sale Auditorium, Hall A, Hall B, Room 1–7, Workshop Room A e B; titoli costruiti da 20 temi di ortodonzia con allineatori × 6 angoli; speaker con nomi evidentemente fittizi («Anna Example», «Bruno Sample»…); nella stessa fascia oraria nessuno speaker è in due sale.
+- **Admin (`admin/agenda.html`):** **Import from CSV/Excel** simulato per sessioni e speaker: scelta di cosa importare, file .csv/.xlsx (controllo di estensione e dimensione), righe esistenti da aggiornare o saltare, modello da scaricare, anteprima con conteggi, errori per riga (sala inesistente, sala occupata, fine prima dell'inizio, nome mancante, foto senza testo alternativo) e avvisi (speaker nuovo, workshop con più di 20 posti); si importano solo le righe valide, quelle con errori si scaricano. Elenco sessioni con filtro per sala e moduli costruiti solo all'apertura (120 sessioni).
+
+### 12.6 Lingua
+
+- Tutti i testi visibili (pubblico, account, accesso, check-in, admin, barra prototipo) sono in inglese britannico semplice («Programme», «organiser»), `<html lang="en">`.
+- Selettore EN/IT nell'intestazione: con IT compare un avviso **in italiano** con `lang="it"` («La versione italiana arriverà presto…») e un pulsante «Back to English». `<html lang>` resta `en` perché il testo è inglese. La scelta resta nel browser.
+- Importi in formato inglese (`€276.50`), date «31 Jan 2027». Resta valida la proposta del capitolo 11.4 per la gestione delle traduzioni, con l'inglese come lingua di partenza.
+
+### 12.7 Video (Wistia e Vimeo)
+
+- Member area (`account.html`, scheda «Videos»): ogni video mostra provider, edizione, durata e «Who can watch»; bloccato con lucchetto e motivo se il ruolo non basta; «You can watch 5 of 6». Ruoli: chiunque abbia un account, membri attivi, titolari di biglietto EAS8, speaker e staff.
+- Admin (`admin/video.html`, Admin e Organizer): provider, ID (controllo del formato: Vimeo numero di 6–12 cifre, Wistia 10 caratteri), titolo, edizione, durata, ruoli ammessi (almeno uno), sottotitoli disponibili (senza: avviso WCAG 1.2.2). Promemoria: video privati o limitati al dominio sul provider.
+
+### 12.8 Ruoli dell'admin (aggiorna 11.5)
+
+| Voce | Admin | Commercial | Organizer |
+|---|---|---|---|
+| Tickets, tiers and dates; Programme; Speakers; Videos | sì | no | sì |
+| Discount codes (creare e **modificare**) | sì | sì | sì |
+| Complimentary tickets | sì | sì | sì |
+| Orders and invoices; Members | sì | sì | no |
+
+Ogni codice mostra chi l'ha creato o modificato.
+
+### 12.9 Domande aperte nate da questo giro
+
+| # | Domanda | Per chi |
+|---|---|---|
+| 23 | Date vere di fine early bird e regular; prezzo last minute | cliente |
+| 24 | Accompagnatore: prezzo, che cosa include, quanti per pass, capienza; espositore: prezzo, quanti pass per stand, se consumano i 6.000 posti | cliente |
+| 25 | Errore di battitura nel nome: correzione da parte dell'organizzatore o solo rimborso? | cliente / catena legale |
+| 26 | Wistia e Vimeo trasferiscono dati negli USA: valutazione con la catena legale | Giulio / catena legale |
+| 27 | Mailchimp: doppio opt-in e testo del consenso | catena legale |
+| 28 | Formato del file del programma che il cliente userà davvero (colonne, una riga per sessione o per intervento) | cliente |
+
+### 12.10 Misure nel browser (06/11/2026)
+
+Chromium con Playwright, server locale, tutte le 22 pagine (pubbliche, account, accesso, check-in, admin) in tre stati (visitatore; membro con pass; utente con fascia Last minute e lingua IT), a 360×740 e 1280×800:
+
+- scorrimento orizzontale della pagina: **nessuno** (dopo la correzione di 12.5);
+- errori JavaScript in console e richieste fallite: **nessuno** (esclusi i font di Google, non raggiungibili senza rete);
+- CTA «Buy tickets» a 360×740: da y=424 a y=472, sopra la barra in basso (y=677): **nella prima schermata**;
+- griglia a 1280: 12 intestazioni di sala, contenitore 2.184px in 1.150px visibili, pagina 1.280px; dopo lo scorrimento interno colonna orari e intestazioni restano ferme;
+- bersagli tattili sotto 44px tra bottoni, select, campi, chip, tab e navigazione: nessuno trovato;
+- flussi provati: conferma dei nomi obbligatoria, accompagnatore, invito espositore, Last minute non vendibile, avviso IT, modifiche admin lette dal sito, import, omaggio, codici modificati da Organizer.
+
+Screenshot (deviceScaleFactor 2) in `docs/ux/screenshot/`: `home-390.png`, `biglietti-390.png`, `agenda-1280.png`, `admin-1280.png` (aggiornati anche `agenda-390.png` e `home-1280.png`). Restano da fare: prova con screen reader e tastiera reale, contrasti misurati sulla build (`ux-reviewer`).

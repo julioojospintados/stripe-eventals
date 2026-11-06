@@ -1,34 +1,23 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Speaker · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Speakers · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
-    <nav class="nav-main" aria-label="Principale">
-      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
-      <a href="speaker.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
-      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
-      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
-    </nav>
-    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
-  </div>
-</header>
+<body data-pagina="speaker">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 
 <main id="contenuto">
   <section class="sezione">
     <div class="wrap">
-      <h1 class="t-1">Speaker</h1>
-      <p class="t-muted misura">Dieci persone, in ordine alfabetico per cognome. I ritratti sono segnaposto: le foto vere arrivano dall’organizzatore.</p>
+      <h1 class="t-1">Speakers</h1>
+      <p class="t-muted misura">In alphabetical order by surname. Names, portraits and biographies are placeholders: the real speakers and photos will come from the organiser.</p>
       <p class="t-small t-muted" id="conteggio" role="status"></p>
       <div class="griglia-speaker" id="elenco"></div>
     </div>
@@ -36,16 +25,14 @@
 </main>
 
 <footer class="site-footer">
-  <div class="wrap">
-    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
-  </div>
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
 </footer>
 
 <script src="prototipo.js"></script>
 <script>
   CV.ready(function () {
-    var l = CV.DATA.speakers.slice().sort(function (a, b) { return a.cognome.localeCompare(b.cognome, 'it'); });
-    CV.qs('#conteggio').textContent = l.length + ' speaker';
+    var l = CV.DATA.speakers.slice().sort(function (a, b) { return a.cognome.localeCompare(b.cognome, 'en'); });
+    CV.qs('#conteggio').textContent = l.length + ' speakers';
     CV.qs('#elenco').innerHTML = l.map(CV.speakerCard).join('');
   });
 </script>

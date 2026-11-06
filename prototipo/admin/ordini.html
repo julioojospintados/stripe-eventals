@@ -1,41 +1,41 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Ordini e fatture · Admin · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Orders and invoices · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body class="senza-nav" data-area="admin">
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
-    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
-  </div>
-</header>
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 <div class="wrap admin-shell">
-  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
 
   <main id="contenuto" class="admin-main">
-    <div class="admin-head"><h1 class="t-1">Ordini</h1></div>
+    <div class="admin-head">
+      <h1 class="t-1">Orders</h1>
+      <a class="btn btn--primary" href="omaggi.html#h-nuovo"><svg class="ic" aria-hidden="true"><use href="#i-gift"></use></svg>Issue complimentary ticket</a>
+    </div>
+    <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+      <div>Card payments only, through Stripe (wallets included). Names on tickets are final: there is no name change, here or in the customer’s account. Complimentary tickets appear as €0 orders.</div></div>
 
     <section aria-labelledby="h-cerca">
-      <h2 class="t-2 sr-only" id="h-cerca">Cerca</h2>
+      <h2 class="t-2 sr-only" id="h-cerca">Search</h2>
       <form class="grid-2" role="search" id="cerca" onsubmit="return false" style="align-items:end">
-        <div class="campo"><label for="q">Cerca per numero, nome o email</label><input class="input" id="q" type="search" autocomplete="off" placeholder="CV-1042, Alessia, @example.test"></div>
-        <div class="campo"><label for="stato">Stato</label><select class="select" id="stato"></select></div>
+        <div class="campo"><label for="q">Search by number, name or email</label><input class="input" id="q" type="search" autocomplete="off" placeholder="CV-1042, Alessia, @example.test"></div>
+        <div class="campo"><label for="stato">Status</label><select class="select" id="stato"></select></div>
       </form>
       <p class="t-small t-muted" id="conto" role="status" aria-live="polite" style="margin-block:var(--s-3)"></p>
       <table class="tabella tabella--stack">
-        <caption class="sr-only">Ordini</caption>
-        <thead><tr><th scope="col">Ordine</th><th scope="col">Data</th><th scope="col">Chi</th><th scope="col" class="num">Importo</th><th scope="col">Stato</th><th scope="col"><span class="sr-only">Azioni</span></th></tr></thead>
+        <caption class="sr-only">Orders</caption>
+        <thead><tr><th scope="col">Order</th><th scope="col">Date</th><th scope="col">Who</th><th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
         <tbody id="righe"></tbody>
       </table>
-      <div id="vuoto" class="vuoto" hidden>Nessun ordine corrisponde alla ricerca.</div>
+      <div id="vuoto" class="vuoto" hidden>No orders match the search.</div>
     </section>
 
     <section id="dett" aria-labelledby="h-dett" hidden></section>
@@ -46,42 +46,44 @@
 <script src="admin.js"></script>
 <script>
   CV.ready(function () {
-    var $ = CV.qs, $$ = CV.qa, O = JSON.parse(JSON.stringify(AD.ordini)), e = AD.euro, aperto = null;
-    $('#stato').innerHTML = '<option value="">Tutti gli stati</option>' + Object.keys(AD.STATO_ORD).map(function (k) { return '<option value="' + k + '">' + AD.STATO_ORD[k][2] + '</option>'; }).join('');
+    var $ = CV.qs, $$ = CV.qa, O = JSON.parse(JSON.stringify(AD.ordini)), e = CV.euro, aperto = null;
+    $('#stato').innerHTML = '<option value="">All statuses</option>' + Object.keys(AD.STATO_ORD).map(function (k) { return '<option value="' + k + '">' + AD.STATO_ORD[k][2] + '</option>'; }).join('');
     if (AD.param('filtro') === 'review') $('#stato').value = 'review';
 
     function elenco() {
       var q = $('#q').value.trim().toLowerCase(), s = $('#stato').value;
       var l = O.filter(function (o) { return (!s || o.stato === s) && (!q || (o.id + ' ' + o.nome + ' ' + o.email).toLowerCase().indexOf(q) > -1); });
       $('#righe').innerHTML = l.map(function (o) {
-        return '<tr><th scope="row">' + o.id + '</th><td data-label="Data">' + o.data + '</td><td data-label="Chi" class="cella-testo">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></td><td class="num" data-label="Importo">' + e(o.totale) + '</td><td data-label="Stato">' + AD.badgeOrd(o.stato) + '</td>' +
-          '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-apri="' + o.id + '">Dettaglio<span class="sr-only"> ordine ' + o.id + '</span></button></td></tr>';
+        return '<tr><th scope="row">' + o.id + '</th><td data-label="Date">' + o.data + '</td><td data-label="Who" class="cella-testo">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></td><td class="num" data-label="Amount">' + e(o.totale) + '</td><td data-label="Status">' + AD.badgeOrd(o.stato) + '</td>' +
+          '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-apri="' + o.id + '">Details<span class="sr-only"> of order ' + o.id + '</span></button></td></tr>';
       }).join('');
-      $('#vuoto').hidden = l.length > 0; $('#conto').textContent = l.length + (l.length === 1 ? ' ordine' : ' ordini');
+      $('#vuoto').hidden = l.length > 0; $('#conto').textContent = l.length + (l.length === 1 ? ' order' : ' orders');
     }
     $('#q').addEventListener('input', elenco); $('#stato').addEventListener('change', elenco);
     $('#righe').addEventListener('click', function (x) { var b = x.target.closest('[data-apri]'); if (b) dettaglio(b.getAttribute('data-apri'), true); });
 
-    function quota(o, r) { var somma = o.righe.reduce(function (a, x) { return a + x.v; }, 0); return r.v - (o.sconto ? Math.round(o.sconto * r.v / somma) : 0); }
+    function quota(o, r) { var somma = o.righe.reduce(function (a, x) { return a + x.v; }, 0); return r.v - (o.sconto ? Math.round(o.sconto * r.v / somma * 100) / 100 : 0); }
     function dettaglio(id, fuoco, msg) {
       var o = O.filter(function (x) { return x.id === id; })[0]; if (!o) return; aperto = id;
       var pannello = $('#dett'); pannello.hidden = false;
-      var h = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">Ordine ' + o.id + '</h2>' + AD.badgeOrd(o.stato) + '</div>' +
+      var h = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">Order ' + o.id + '</h2>' + AD.badgeOrd(o.stato) + '</div>' +
         '<div id="st-dett" role="status" aria-live="polite">' + (msg || '') + '</div>' +
         '<div class="layout-2"><div class="stack" style="--stack:var(--s-5)">' +
-        (o.nota ? '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Da rivedere.</b> ' + o.nota + '</div></div>' : '') +
-        '<table class="tabella tabella--stack"><caption>Che cosa contiene</caption><thead><tr><th scope="col">Voce</th><th scope="col">Biglietto</th><th scope="col" class="num">Prezzo</th></tr></thead><tbody>' +
-        o.righe.map(function (r) { return '<tr><th scope="row">' + r.t + '</th><td data-label="Biglietto">' + (r.tk === 'valido' ? '<span class="badge badge--ok">' + AD.icona('check') + 'Valido</span>' : (r.tk === 'rimborsato' ? '<span class="badge badge--err">' + AD.icona('x') + 'Rimborsato</span>' : '<span class="badge badge--info">' + AD.icona('clock') + 'Non emesso</span>')) + '</td><td class="num" data-label="Prezzo">' + e(r.v) + '</td></tr>'; }).join('') + '</tbody>' +
-        '<tfoot>' + (o.sconto ? '<tr><th scope="row" colspan="2">Codice ' + o.codice + '</th><td class="num" data-label="Sconto">−' + e(o.sconto) + '</td></tr>' : '') + '<tr><th scope="row" colspan="2">Totale</th><td class="num" data-label="Totale">' + e(o.totale) + '</td></tr></tfoot></table>' +
-        '<div><h3 class="t-3">Che cosa è successo</h3><ul class="elenco-pulito">' + o.eventi.map(function (v) { return '<li><span class="t-num t-muted">' + v[0] + '</span> · <b>' + v[1] + '</b><br><span class="t-small">' + v[2] + '</span></li>'; }).join('') + '</ul></div>' +
+        (o.nota ? '<div class="avviso avviso--warn">' + AD.icona('alert') + '<div><b>To review.</b> ' + o.nota + '</div></div>' : '') +
+        '<table class="tabella tabella--stack"><caption>What it contains</caption><thead><tr><th scope="col">Item</th><th scope="col">Ticket</th><th scope="col" class="num">Price</th></tr></thead><tbody>' +
+        o.righe.map(function (r) { return '<tr><th scope="row">' + r.t + '</th><td data-label="Ticket">' + (r.tk === 'valido' ? '<span class="badge badge--ok">' + AD.icona('check') + 'Valid</span>' : (r.tk === 'rimborsato' ? '<span class="badge badge--err">' + AD.icona('x') + 'Refunded</span>' : '<span class="badge badge--info">' + AD.icona('clock') + 'Not issued</span>')) + '</td><td class="num" data-label="Price">' + e(r.v) + '</td></tr>'; }).join('') + '</tbody>' +
+        '<tfoot>' + (o.sconto ? '<tr><th scope="row" colspan="2">Code ' + o.codice + '</th><td class="num" data-label="Discount">−' + e(o.sconto) + '</td></tr>' : '') + '<tr><th scope="row" colspan="2">Total</th><td class="num" data-label="Total">' + e(o.totale) + '</td></tr></tfoot></table>' +
+        '<div><h3 class="t-3">What happened</h3><ul class="elenco-pulito">' + o.eventi.map(function (v) { return '<li><span class="t-num t-muted">' + v[0] + '</span> · <b>' + v[1] + '</b><br><span class="t-small">' + v[2] + '</span></li>'; }).join('') + '</ul></div>' +
         '</div><div class="layout-2__lato stack">' +
-        '<dl class="meta-lista"><div><dt>Chi</dt><dd>' + o.nome + '</dd></div><div><dt>Email</dt><dd class="cella-testo">' + o.email + '</dd></div><div><dt>Prezzo di</dt><dd>' + { membro: 'Membro', pubblico: 'Pubblico' }[o.ruolo] + '</dd></div><div><dt>Pagamento</dt><dd class="t-num">' + o.pi + '</dd></div></dl>' +
+        '<dl class="meta-lista"><div><dt>Who</dt><dd>' + o.nome + '</dd></div><div><dt>Email</dt><dd class="cella-testo">' + o.email + '</dd></div>' +
+        (o.azienda ? '<div><dt>Company</dt><dd>' + o.azienda + (o.invito ? ' · invitation ' + o.invito : '') + '</dd></div>' : '') +
+        '<div><dt>Price role</dt><dd>' + { membro: 'Member', pubblico: 'Public', omaggio: 'Complimentary' }[o.ruolo] + '</dd></div><div><dt>Payment</dt><dd class="t-num">' + (o.stato === 'comp' ? 'none (complimentary)' : o.pi) + '</dd></div></dl>' +
         '<div class="stack" style="--stack:var(--s-2)">' +
-        '<button type="button" class="btn btn--secondary btn--block" data-az="stripe">' + AD.icona('external') + 'Apri il pagamento su Stripe</button>' +
-        (o.stato === 'paid' || o.stato === 'partial' ? '<button type="button" class="btn btn--block" data-az="rimborsa">Rimborsa…</button>' : '') +
-        (o.stato === 'review' ? '<button type="button" class="btn btn--primary btn--block" data-az="riconcilia">Segna come riconciliato</button>' : '') +
-        (o.stato === 'processing' ? '<button type="button" class="btn btn--secondary btn--block" data-az="ricontrolla">' + AD.icona('refresh') + 'Ricontrolla su Stripe</button>' : '') +
-        '</div><div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Rimborsa solo da qui. Un rimborso fatto direttamente nella Dashboard di Stripe non si collega ai biglietti: l’ordine finisce in «Da rivedere» e va sistemato a mano.</div></div>' +
+        (o.stato === 'comp' ? '<button type="button" class="btn btn--secondary btn--block" data-az="revoca">Revoke the complimentary ticket</button>' : '<button type="button" class="btn btn--secondary btn--block" data-az="stripe">' + AD.icona('external') + 'Open the payment on Stripe</button>') +
+        (o.stato === 'paid' || o.stato === 'partial' ? '<button type="button" class="btn btn--block" data-az="rimborsa">Refund…</button>' : '') +
+        (o.stato === 'review' ? '<button type="button" class="btn btn--primary btn--block" data-az="riconcilia">Mark as reconciled</button>' : '') +
+        (o.stato === 'pending' ? '<button type="button" class="btn btn--secondary btn--block" data-az="ricontrolla">' + AD.icona('refresh') + 'Check again on Stripe</button>' : '') +
+        '</div><div class="avviso avviso--info">' + AD.icona('info') + '<div>Refund only from here. A refund made directly in the Stripe Dashboard is not linked to the tickets: the order goes to «To review» and must be fixed by hand. There is no name change: a ticket with a wrong name is refunded and bought again, only if the organiser agrees.</div></div>' +
         '</div></div><div id="rimborso"></div>';
       pannello.innerHTML = h;
       if (fuoco) $('#h-dett').focus();
@@ -89,11 +91,16 @@
     $('#dett').addEventListener('click', function (x) {
       var b = x.target.closest('[data-az]'); if (!b) return;
       var o = O.filter(function (y) { return y.id === aperto; })[0], az = b.getAttribute('data-az');
-      if (az === 'stripe') CV.msg($('#st-dett'), 'info', 'Nel sito vero si apre la Dashboard di Stripe in una nuova scheda, sul pagamento <b>' + o.pi + '</b>. Qui puoi guardare, non rimborsare.');
-      if (az === 'ricontrolla') CV.msg($('#st-dett'), 'info', 'Stripe non ha ancora confermato il pagamento. Ricontrollo automatico ogni minuto; non rimborsare e non rifare l’ordine.');
+      if (az === 'stripe') CV.msg($('#st-dett'), 'info', 'On the real site the Stripe Dashboard opens in a new tab, on the payment <b>' + o.pi + '</b>. There you can look, not refund.');
+      if (az === 'ricontrolla') CV.msg($('#st-dett'), 'info', 'The customer has not finished paying on Stripe. The checkout expires by itself and the seats go back on sale; do not create a new order.');
+      if (az === 'revoca') {
+        if (!b.getAttribute('data-c')) { b.setAttribute('data-c', '1'); b.textContent = 'Confirm: revoke the ticket'; b.className = 'btn btn--danger btn--block'; CV.msg($('#st-dett'), 'warn', 'Press again to revoke. The QR stops working at once and the person receives an email.'); return; }
+        o.righe.forEach(function (r) { r.tk = 'rimborsato'; }); o.stato = 'refunded'; o.eventi.push(['now', 'Complimentary revoked', 'QR revoked, email sent']);
+        dettaglio(o.id, true, '<div class="avviso avviso--ok">' + AD.icona('check') + '<div>Complimentary ticket revoked (simulated). Written to the audit log.</div></div>'); elenco();
+      }
       if (az === 'riconcilia') {
-        o.stato = 'paid'; o.nota = ''; o.eventi.push(['ora', 'Riconciliazione manuale', 'importo verificato su Stripe, ordine segnato come pagato']);
-        dettaglio(o.id, true, '<div class="avviso avviso--ok"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>Ordine riconciliato (simulato). Registrato nel registro audit.</div></div>'); elenco();
+        o.stato = 'paid'; o.nota = ''; o.eventi.push(['now', 'Manual reconciliation', 'amount checked on Stripe, order marked as paid']);
+        dettaglio(o.id, true, '<div class="avviso avviso--ok">' + AD.icona('check') + '<div>Order reconciled (simulated). Written to the audit log.</div></div>'); elenco();
       }
       if (az === 'rimborsa') rimborso(o);
     });
@@ -101,43 +108,43 @@
     /* rimborso: scelta, conferma, invio a Stripe, esito */
     function rimborso(o) {
       var idx = []; o.righe.forEach(function (r, i) { if (r.tk === 'valido') idx.push(i); });
-      var h = '<section class="scheda" aria-labelledby="h-rimb" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-rimb" tabindex="-1">Rimborso dell’ordine ' + o.id + '</h3>' +
-        '<form id="f-rimb" class="stack" novalidate><fieldset class="campo"><legend class="etichetta">Quali biglietti rimborsare</legend>' +
+      var h = '<section class="scheda" aria-labelledby="h-rimb" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-rimb" tabindex="-1">Refund of order ' + o.id + '</h3>' +
+        '<form id="f-rimb" class="stack" novalidate><fieldset class="campo"><legend class="etichetta">Which tickets to refund</legend>' +
         idx.map(function (i) { return '<label class="scelta"><input type="checkbox" value="' + i + '" checked><span>' + o.righe[i].t + ' · <b>' + e(quota(o, o.righe[i])) + '</b></span></label>'; }).join('') + '</fieldset>' +
-        '<p class="t-small t-muted">L’importo è il prezzo pagato meno la quota di sconto.</p>' +
-        '<label class="scelta"><input type="checkbox" id="rimetti" checked><span>Rimetti in vendita i posti liberati</span></label>' +
-        '<div class="campo"><label for="motivo">Motivo</label><select class="select" id="motivo"><option value="">Scegli…</option><option>Evento annullato</option><option>Pagato senza posti</option></select></div>' +
-        '<div class="campo"><label for="nota-r">Nota interna</label><textarea class="textarea" id="nota-r"></textarea></div>' +
+        '<p class="t-small t-muted">The amount is the price paid minus its share of the discount. A companion ticket linked to a refunded pass should be refunded too.</p>' +
+        '<label class="scelta"><input type="checkbox" id="rimetti" checked><span>Put the freed seats back on sale</span></label>' +
+        '<div class="campo"><label for="motivo">Reason</label><select class="select" id="motivo"><option value="">Choose…</option><option>Event cancelled</option><option>Paid when seats had sold out</option><option>Organiser decision</option></select></div>' +
+        '<div class="campo"><label for="nota-r">Internal note</label><textarea class="textarea" id="nota-r"></textarea></div>' +
         '<div id="er-rimb" role="alert" aria-live="assertive"></div>' +
-        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Continua</button><button type="button" class="btn btn--quiet" id="chiudi-rimb">Annulla</button></div></form></section>';
+        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Continue</button><button type="button" class="btn btn--quiet" id="chiudi-rimb">Cancel</button></div></form></section>';
       $('#rimborso').innerHTML = h; $('#h-rimb').focus();
       $('#chiudi-rimb').addEventListener('click', function () { $('#rimborso').innerHTML = ''; });
       $('#f-rimb').addEventListener('submit', function (ev) {
         ev.preventDefault();
         var sel = $$('#f-rimb input[type=checkbox][value]:checked').map(function (c) { return +c.value; }), er = [];
         var mot = $('#motivo').value;
-        if (!sel.length) er.push('Scegli almeno un biglietto da rimborsare.');
-        if (!mot) er.push('Scegli il motivo del rimborso.');
+        if (!sel.length) er.push('Choose at least one ticket to refund.');
+        if (!mot) er.push('Choose the reason for the refund.');
         if (er.length) { $('#er-rimb').innerHTML = '<div class="riepilogo-errori"><ul>' + er.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul></div>'; return; }
         $('#er-rimb').innerHTML = '';
         var tot = sel.reduce(function (a, i) { return a + quota(o, o.righe[i]); }, 0), rimetti = $('#rimetti').checked;
-        $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-conf" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-conf" tabindex="-1">Conferma il rimborso di ' + e(tot) + '</h3>' +
+        $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-conf" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-conf" tabindex="-1">Confirm the refund of ' + e(tot) + '</h3>' +
           '<ul class="elenco-pulito">' + sel.map(function (i) { return '<li>' + o.righe[i].t + ' · ' + e(quota(o, o.righe[i])) + '</li>'; }).join('') + '</ul>' +
-          '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><ul><li>I biglietti diventano <b>non validi subito</b>: il QR non passa più al check-in.</li><li>I posti ' + (rimetti ? 'tornano in vendita' : 'restano occupati') + '.</li><li>La commissione di Stripe non viene restituita: è un costo.</li><li>Il denaro arriva sulla carta nei tempi della banca.</li></ul></div></div>' +
-          '<div class="azioni-riga"><button type="button" class="btn btn--danger" id="vai">Rimborsa ' + e(tot) + ' su Stripe</button><button type="button" class="btn btn--quiet" id="indietro">Indietro</button></div></section>';
+          '<div class="avviso avviso--warn">' + AD.icona('alert') + '<div><ul><li>The tickets become <b>invalid at once</b>: the QR no longer passes at check-in.</li><li>The seats ' + (rimetti ? 'go back on sale' : 'stay taken') + '.</li><li>The Stripe fee is not returned: it is a cost.</li><li>The money reaches the card within the bank’s times.</li></ul></div></div>' +
+          '<div class="azioni-riga"><button type="button" class="btn btn--danger" id="vai">Refund ' + e(tot) + ' on Stripe</button><button type="button" class="btn btn--quiet" id="indietro">Back</button></div></section>';
         $('#h-conf').focus();
         $('#indietro').addEventListener('click', function () { rimborso(o); });
         $('#vai').addEventListener('click', function () {
           sel.forEach(function (i) { o.righe[i].tk = 'rimborsato'; });
           var tutti = o.righe.every(function (r) { return r.tk !== 'valido'; });
-          o.eventi.push(['ora', 'Rimborso creato su Stripe', e(tot) + ' · biglietti revocati · ' + mot]);
-          $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-ok" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-ok" tabindex="-1">Rimborso inviato a Stripe</h3>' +
-            '<div class="avviso avviso--info" role="status"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg><div>In attesa della conferma di Stripe. I biglietti sono già revocati.</div></div>' +
-            '<p><button type="button" class="btn btn--secondary" id="conferma">Simula: Stripe conferma</button></p></section>';
+          o.eventi.push(['now', 'Refund created on Stripe', e(tot) + ' · tickets revoked · ' + mot]);
+          $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-ok" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-ok" tabindex="-1">Refund sent to Stripe</h3>' +
+            '<div class="avviso avviso--info" role="status">' + AD.icona('clock') + '<div>Waiting for Stripe to confirm. The tickets are already revoked.</div></div>' +
+            '<p><button type="button" class="btn btn--secondary" id="conferma">Simulate: Stripe confirms</button></p></section>';
           $('#h-ok').focus();
           $('#conferma').addEventListener('click', function () {
-            o.stato = tutti ? 'refunded' : 'partial'; o.eventi.push(['ora', 'charge.refunded', 'rimborso confermato da Stripe']);
-            dettaglio(o.id, true, '<div class="avviso avviso--ok"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b>Rimborso confermato</b> (simulato). Il cliente riceve un’email. Registrato nel registro audit.</div></div>'); elenco();
+            o.stato = tutti ? 'refunded' : 'partial'; o.eventi.push(['now', 'charge.refunded', 'refund confirmed by Stripe']);
+            dettaglio(o.id, true, '<div class="avviso avviso--ok">' + AD.icona('check') + '<div><b>Refund confirmed</b> (simulated). The customer receives an email. Written to the audit log.</div></div>'); elenco();
           });
         });
       });

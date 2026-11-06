@@ -1,28 +1,17 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Accedi · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Log in · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
-    <nav class="nav-main" aria-label="Principale">
-      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
-      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
-      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
-      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
-    </nav>
-    <span class="site-header__destra"><a class="header-link" href="account.html" aria-current="page">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
-  </div>
-</header>
+<body data-pagina="accesso">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 
 <main id="contenuto">
   <section class="sezione">
@@ -30,57 +19,57 @@
       <div class="stack" style="--stack:var(--s-5)">
         <!-- Passo 1: email -->
         <div id="passo-email" class="stack">
-          <h1 class="t-1" tabindex="-1" id="h-email">Accedi o crea l’account</h1>
-          <p class="t-lead misura">Niente password: ti mandiamo un codice via email. Al primo accesso l’account si crea da solo.</p>
+          <h1 class="t-1" tabindex="-1" id="h-email">Log in or create your account</h1>
+          <p class="t-lead misura">No password: we email you a code. The first time, your account is created automatically.</p>
           <form id="f-email" class="stack" novalidate style="max-width:30rem">
             <div class="campo">
               <label for="email">Email</label>
               <input class="input" id="email" type="email" inputmode="email" autocomplete="email" aria-describedby="aiuto-email">
-              <p class="campo__aiuto" id="aiuto-email">Usa l’indirizzo a cui vuoi ricevere i biglietti.</p>
+              <p class="campo__aiuto" id="aiuto-email">Use the address where you want to receive your tickets. In the prototype, an address containing «member» logs you in as a member.</p>
               <p class="campo__errore" id="err-email" hidden></p>
             </div>
-            <button class="btn btn--primary btn--block" type="submit">Mandami il codice</button>
-            <p class="t-small t-muted">Continuando accetti l’informativa privacy (pagina in preparazione).</p>
+            <button class="btn btn--primary btn--block" type="submit">Send me the code</button>
+            <p class="t-small t-muted">By continuing you accept the privacy notice (page in preparation).</p>
           </form>
 
           <div class="stack" style="max-width:30rem;--stack:var(--s-2)">
-            <p class="etichetta">Oppure</p>
-            <button type="button" class="btn btn--block" aria-disabled="true" aria-describedby="nota-google">Continua con Google</button>
-            <p class="t-small t-muted" id="nota-google">Non ancora attivo: l’architettura prevede solo il codice via email. Da decidere.</p>
+            <p class="etichetta">Or</p>
+            <button type="button" class="btn btn--block" aria-disabled="true" aria-describedby="nota-google">Continue with Google</button>
+            <p class="t-small t-muted" id="nota-google">Not active yet: the architecture only has the email code. To be decided.</p>
           </div>
         </div>
 
         <!-- Passo 2: codice -->
         <div id="passo-codice" class="stack" hidden>
-          <h1 class="t-1" tabindex="-1" id="h-codice">Scrivi il codice</h1>
-          <p class="t-lead misura">Abbiamo mandato un codice a <b id="dove"></b>. Vale per poco tempo.</p>
+          <h1 class="t-1" tabindex="-1" id="h-codice">Enter the code</h1>
+          <p class="t-lead misura">We sent a code to <b id="dove"></b>. It is valid for a short time.</p>
           <form id="f-codice" class="stack" novalidate style="max-width:30rem">
             <div class="campo">
-              <label for="codice">Codice di 6 cifre</label>
+              <label for="codice">6-digit code</label>
               <input class="input t-num" id="codice" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="aiuto-codice err-codice" style="letter-spacing:0.3em;font-size:1.5rem">
-              <p class="campo__aiuto" id="aiuto-codice">Nel prototipo il codice è 123456. Puoi incollarlo.</p>
+              <p class="campo__aiuto" id="aiuto-codice">In the prototype the code is 123456. You can paste it.</p>
               <p class="campo__errore" id="err-codice" hidden></p>
             </div>
-            <button class="btn btn--primary btn--block" type="submit">Entra</button>
+            <button class="btn btn--primary btn--block" type="submit">Log in</button>
           </form>
           <div class="azioni-riga">
-            <button type="button" class="btn btn--secondary" id="rinvia" aria-disabled="true">Rinvia il codice</button>
+            <button type="button" class="btn btn--secondary" id="rinvia" aria-disabled="true">Send the code again</button>
             <span class="t-small t-muted" id="attesa"></span>
-            <button type="button" class="btn btn--quiet" id="cambia">Cambia email</button>
+            <button type="button" class="btn btn--quiet" id="cambia">Use another email</button>
           </div>
         </div>
       </div>
 
-      <aside class="layout-2__lato stack" aria-label="Informazioni sull’accesso">
+      <aside class="layout-2__lato stack" aria-label="About logging in">
         <div class="scheda">
-          <h2 class="t-3">Continuare senza account?</h2>
-          <p class="t-small"><b>Per comprare serve un account.</b> Serve a due cose: applicare il prezzo giusto (pubblico o membro) e ritrovare i biglietti sul telefono il giorno dell’evento.</p>
-          <p class="t-small">Programma, speaker e prezzi si guardano senza accedere.</p>
-          <p><a class="btn btn--secondary" href="agenda.html">Guarda il programma</a></p>
+          <h2 class="t-3">Continue without an account?</h2>
+          <p class="t-small"><b>You need an account to buy.</b> It does two things: applies the right price (public or member) and keeps your tickets on your phone for the day of the event.</p>
+          <p class="t-small">You can browse the programme, speakers and prices without logging in.</p>
+          <p><a class="btn btn--secondary" href="agenda.html">See the programme</a></p>
         </div>
         <div class="scheda">
-          <h2 class="t-3">Sei dello staff?</h2>
-          <p class="t-small">Chi amministra il sito ha un secondo passaggio con un’app di autenticazione, subito dopo il codice. Lo staff del check-in accede qui e poi apre la schermata dedicata.</p>
+          <h2 class="t-3">Speaker or staff?</h2>
+          <p class="t-small">Your complimentary ticket is issued by the organiser and sent to your email: log in with that address to see it. Site administrators have a second step with an authenticator app, right after the code.</p>
         </div>
       </aside>
     </div>
@@ -88,9 +77,7 @@
 </main>
 
 <footer class="site-footer">
-  <div class="wrap">
-    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
-  </div>
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
 </footer>
 
 <script src="prototipo.js"></script>
@@ -114,7 +101,7 @@
       var b = $('#rinvia'); clearInterval(timer);
       function tick() {
         if (s <= 0) { clearInterval(timer); b.removeAttribute('aria-disabled'); $('#attesa').textContent = ''; return; }
-        b.setAttribute('aria-disabled', 'true'); $('#attesa').textContent = 'Puoi chiederne un altro tra ' + s + ' secondi.'; s--;
+        b.setAttribute('aria-disabled', 'true'); $('#attesa').textContent = 'You can ask for a new one in ' + s + ' seconds.'; s--;
       }
       tick(); timer = setInterval(tick, 1000);
     }
@@ -122,27 +109,27 @@
     $('#f-email').addEventListener('submit', function (e) {
       e.preventDefault();
       var v = $('#email').value.trim();
-      if (!/^\S+@\S+\.\S+$/.test(v)) { errore('err-email', 'Controlla l’email: manca la chiocciola o il dominio, per esempio nome@esempio.it.'); $('#email').focus(); return; }
+      if (!/^\S+@\S+\.\S+$/.test(v)) { errore('err-email', 'Check the email: the @ or the domain is missing, for example name@example.com.'); $('#email').focus(); return; }
       errore('err-email', ''); tentativi = 5;
       $('#dove').textContent = v; passo('codice'); conto(30);
     });
     $('#f-codice').addEventListener('submit', function (e) {
       e.preventDefault();
       var c = $('#codice').value.replace(/\s/g, '');
-      if (tentativi <= 0) { errore('err-codice', 'Troppi tentativi. Chiedi un nuovo codice con «Rinvia il codice».'); return; }
-      if (!/^\d{6}$/.test(c)) { errore('err-codice', 'Il codice ha 6 cifre. Controlla di averle scritte tutte.'); $('#codice').focus(); return; }
+      if (tentativi <= 0) { errore('err-codice', 'Too many attempts. Ask for a new code with «Send the code again».'); return; }
+      if (!/^\d{6}$/.test(c)) { errore('err-codice', 'The code has 6 digits. Check you typed them all.'); $('#codice').focus(); return; }
       if (c !== '123456') {
         tentativi--;
-        errore('err-codice', tentativi > 0 ? 'Il codice non è quello giusto. Hai ancora ' + tentativi + (tentativi === 1 ? ' tentativo.' : ' tentativi.') : 'Troppi tentativi. Chiedi un nuovo codice con «Rinvia il codice».');
+        errore('err-codice', tentativi > 0 ? 'That is not the right code. You have ' + tentativi + (tentativi === 1 ? ' attempt left.' : ' attempts left.') : 'Too many attempts. Ask for a new code with «Send the code again».');
         $('#codice').focus(); return;
       }
       var mail = $('#email').value.toLowerCase();
-      CV.setStato({ ruolo: mail.indexOf('membro') > -1 ? 'membro' : 'pubblico' });
+      CV.setStato({ ruolo: mail.indexOf('member') > -1 || mail.indexOf('membro') > -1 ? 'membro' : 'pubblico' });
       location.href = next;
     });
     $('#rinvia').addEventListener('click', function () {
       if (this.getAttribute('aria-disabled') === 'true') return;
-      tentativi = 5; errore('err-codice', ''); $('#aiuto-codice').textContent = 'Nuovo codice mandato. Nel prototipo è sempre 123456.'; conto(30);
+      tentativi = 5; errore('err-codice', ''); $('#aiuto-codice').textContent = 'New code sent. In the prototype it is always 123456.'; conto(30);
     });
     $('#cambia').addEventListener('click', function () { clearInterval(timer); passo('email'); });
   });

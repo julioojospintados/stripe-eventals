@@ -1,80 +1,88 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Programma · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Programme · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, pagina iniziale"><img src="assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"></a>
-    <nav class="nav-main" aria-label="Principale">
-      <a href="agenda.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
-      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
-      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
-      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
-    </nav>
-    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
-  </div>
-</header>
+<body data-pagina="agenda">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 
 <main id="contenuto" class="agenda" data-vista="griglia">
   <section class="sezione">
     <div class="wrap">
-      <h1 class="t-1">Programma</h1>
-      <p class="t-muted misura">Tre giorni, quattro sale, quattro tracce. Le sessioni <b>incluse</b> valgono con il pass; i workshop sono <b>a pagamento</b> e si acquistano a parte.</p>
+      <h1 class="t-1">Programme</h1>
+      <p class="t-muted misura">Three days, <b>12 rooms in parallel</b>, <span id="n-tot">120</span> sessions. Sessions marked <b>included</b> come with the pass; <b>workshops</b> are paid extra. All sessions, rooms and speakers are placeholders.</p>
 
-      <div class="tabs" role="tablist" aria-label="Giorni del congresso">
-        <button class="tab" role="tab" id="tab-g1" aria-controls="pannello" aria-selected="true" data-giorno="g1">Gio 8<small>aprile</small></button>
-        <button class="tab" role="tab" id="tab-g2" aria-controls="pannello" aria-selected="false" tabindex="-1" data-giorno="g2">Ven 9<small>aprile</small></button>
-        <button class="tab" role="tab" id="tab-g3" aria-controls="pannello" aria-selected="false" tabindex="-1" data-giorno="g3">Sab 10<small>aprile</small></button>
+      <div class="tabs" role="tablist" aria-label="Congress days" id="tabs-g"></div>
+
+      <!-- filtri rapidi sempre visibili: sala e traccia (telefono, una mano) -->
+      <div class="filtri-rapidi">
+        <div class="campo filtri-rapidi__sala">
+          <label for="f-sala">Room</label>
+          <select class="select" id="f-sala"></select>
+        </div>
+        <fieldset class="filtri-rapidi__tracce">
+          <legend>Track</legend>
+          <div class="gruppo-chip" id="f-tracce"></div>
+        </fieldset>
       </div>
 
       <details class="filtri" id="filtri">
-        <summary><span>Filtri <span id="filtri-n"></span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <summary><span>More filters <span id="filtri-n"></span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
         <div class="filtri__corpo">
-          <fieldset>
-            <legend>Traccia</legend>
-            <div class="gruppo-chip" id="f-tracce"></div>
-          </fieldset>
           <div class="campo">
-            <label for="f-tipo">Tipo di sessione</label>
+            <label for="f-tipo">Session type</label>
             <select class="select" id="f-tipo"></select>
           </div>
           <fieldset>
-            <legend>Accesso</legend>
+            <legend>Access</legend>
             <div class="gruppo-chip">
-              <label class="chip-radio"><input type="radio" name="acc" value="" checked><span>Tutte</span></label>
-              <label class="chip-radio"><input type="radio" name="acc" value="incluse"><span>Incluse nel pass</span></label>
-              <label class="chip-radio"><input type="radio" name="acc" value="pagamento"><span>Solo a pagamento</span></label>
+              <label class="chip-radio"><input type="radio" name="acc" value="" checked><span>All</span></label>
+              <label class="chip-radio"><input type="radio" name="acc" value="incluse"><span>Included in pass</span></label>
+              <label class="chip-radio"><input type="radio" name="acc" value="pagamento"><span>Paid extra only</span></label>
             </div>
           </fieldset>
-          <div class="filtri__azioni"><button type="button" class="btn btn--secondary" id="f-reset">Azzera i filtri</button></div>
+          <div class="filtri__azioni"><button type="button" class="btn btn--secondary" id="f-reset">Clear all filters</button></div>
         </div>
       </details>
 
-      <div class="vista-scelta" role="group" aria-label="Modo di visualizzazione">
-        <button type="button" class="chip" id="v-griglia" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Griglia per sala</button>
-        <button type="button" class="chip" id="v-lista" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Elenco</button>
+      <div class="vista-scelta" role="group" aria-label="Display mode">
+        <button type="button" class="chip" id="v-griglia" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>Grid by room</button>
+        <button type="button" class="chip" id="v-lista" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg>List by time</button>
       </div>
 
       <p id="esito" role="status" aria-live="polite" class="t-small t-muted"></p>
 
-      <div id="pannello" role="tabpanel" tabindex="0" aria-labelledby="tab-g1" class="tabpanel">
-        <h2 class="t-2" id="titolo-giorno">Giovedì 8 aprile</h2>
+      <div id="pannello" role="tabpanel" tabindex="0" aria-labelledby="tg-g1" class="tabpanel">
+        <h2 class="t-2" id="titolo-giorno">Thursday 8 April</h2>
         <div id="vuoto" hidden>
           <div class="avviso avviso--info" role="note">
             <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-            <div><b>Nessuna sessione con questi filtri.</b><p>Prova a togliere un filtro o a guardare un altro giorno.</p></div>
+            <div><b>No sessions match these filters.</b><p>Try removing a filter or looking at another day.</p></div>
           </div>
         </div>
-        <div class="griglia" id="griglia" style="--cols:4" role="group" aria-label="Griglia delle sessioni per sala. L’elenco è un’alternativa equivalente."></div>
+
+        <!-- griglia (da 64rem): scorre di lato DENTRO il suo contenitore; intestazioni di sala e colonna degli orari restano ferme -->
+        <div class="griglia-box" id="griglia-box">
+          <div class="griglia-comandi">
+            <p class="t-small t-muted" id="aiuto-griglia">Scroll sideways inside the grid to see all rooms: room names and times stay in place. With the keyboard, focus the grid and use the arrow keys.</p>
+            <div class="azioni-riga">
+              <button type="button" class="btn btn--secondary btn--piccolo" id="sale-prima"><svg class="ic" aria-hidden="true"><use href="#i-back"></use></svg>Previous rooms</button>
+              <button type="button" class="btn btn--secondary btn--piccolo" id="sale-dopo">Next rooms<svg class="ic" aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+            </div>
+          </div>
+          <div class="griglia-scorri" id="griglia-scorri" tabindex="0" role="region" aria-label="Session grid by room. Scrolls sideways. The list by time is an equivalent alternative." aria-describedby="aiuto-griglia">
+            <div class="griglia" id="griglia"></div>
+          </div>
+        </div>
+
+        <nav class="salta-ora" id="salta-ora" aria-label="Jump to a time"></nav>
         <div class="lista" id="lista"></div>
       </div>
     </div>
@@ -82,58 +90,77 @@
 </main>
 
 <footer class="site-footer">
-  <div class="wrap">
-    <p>EAS8 Lisbon · European Aligner Society. Prototipo con speaker e sessioni segnaposto.</p>
-  </div>
+  <div class="wrap"><p>EAS8 Lisbon · European Aligner Society. Prototype with placeholder speakers and sessions.</p></div>
 </footer>
 
 <script src="prototipo.js"></script>
 <script>
   CV.ready(function () {
-    var D = CV.DATA, $ = CV.qs, giorno = 'g1';
-    var f = { t: [], tipo: '', acc: '' };
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, giorno = D.giorni[0].id;
+    var f = { sala: '', t: [], tipo: CV.param('tipo') && D.tipi[CV.param('tipo')] ? CV.param('tipo') : '', acc: '' };
+    var ordineSala = D.sale.map(function (s) { return s.id; });
+    $('#n-tot').textContent = D.sessioni.length;
+
+    /* giorni: dalle date dell'evento */
+    $('#tabs-g').innerHTML = D.giorni.map(function (g, i) {
+      return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '"' + (i ? ' tabindex="-1"' : '') + ' data-giorno="' + g.id + '">' + g.breve + '<small>' + g.mese + '</small></button>';
+    }).join('');
 
     /* filtri: costruiti dai dati */
+    $('#f-sala').innerHTML = '<option value="">All ' + D.sale.length + ' rooms</option>' + D.sale.map(function (s) { return '<option value="' + s.id + '">' + s.nome + ' (' + s.nota + ')</option>'; }).join('');
     $('#f-tracce').innerHTML = D.tracce.map(function (t) {
       return '<button type="button" class="chip" aria-pressed="false" data-t="' + t.id + '" data-id="' + t.id + '"><span class="marker" aria-hidden="true"></span>' + t.nome + CV.ic('check') + '</button>';
     }).join('');
-    $('#f-tipo').innerHTML = '<option value="">Tutti i tipi</option>' + Object.keys(D.tipi).map(function (k) {
-      return '<option value="' + k + '">' + D.tipi[k] + '</option>';
-    }).join('');
-    if (window.matchMedia('(min-width: 64rem)').matches) $('#filtri').open = true;
+    $('#f-tipo').innerHTML = '<option value="">All types</option>' + Object.keys(D.tipi).map(function (k) { return '<option value="' + k + '">' + D.tipi[k] + '</option>'; }).join('');
+    $('#f-tipo').value = f.tipo;
+    if (f.tipo) $('#filtri').open = true;
 
-    function filtra() {
+    function filtra(soloGiorno) {
       return D.sessioni.filter(function (s) {
-        return s.g === giorno &&
+        return s.g === (soloGiorno || giorno) &&
+          (!f.sala || s.sala === f.sala) &&
           (!f.t.length || f.t.indexOf(s.t) > -1) &&
           (!f.tipo || s.tipo === f.tipo) &&
           (!f.acc || (f.acc === 'pagamento') === !!s.pagamento);
-      }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da) || a.sala.localeCompare(b.sala); });
+      }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da) || ordineSala.indexOf(a.sala) - ordineSala.indexOf(b.sala); });
     }
 
+    /* griglia: una colonna per sala, una riga ogni 30 minuti */
     function griglia(l) {
-      var h = '<div class="griglia__sala" style="grid-column:1"><span class="sr-only">Ora</span></div>';
-      D.sale.forEach(function (s, i) {
-        h += '<div class="griglia__sala" style="grid-column:' + (2 + i) + '">' + s.nome + '<small>' + s.nota + '</small></div>';
-      });
-      for (var o = 9; o <= 17; o++) {
-        h += '<div class="griglia__riga" style="grid-row:' + (2 + (o - 9) * 2) + ' / span 2"><span class="griglia__ora">' + (o < 10 ? '0' : '') + o + ':00</span></div>';
+      var tutte = D.sessioni.filter(function (s) { return s.g === giorno; });
+      var inizio = Math.min.apply(null, tutte.map(function (s) { return CV.min(s.da); })), fine = Math.max.apply(null, tutte.map(function (s) { return CV.min(s.a); }));
+      inizio = Math.floor(inizio / 30) * 30;
+      var righe = Math.ceil((fine - inizio) / 30), sale = f.sala ? D.sale.filter(function (s) { return s.id === f.sala; }) : D.sale;
+      var g = $('#griglia');
+      g.style.setProperty('--cols', sale.length); g.style.setProperty('--righe', righe);
+      var h = '<div class="griglia__angolo" style="grid-column:1;grid-row:1"><span class="sr-only">Time</span></div>';
+      sale.forEach(function (s, i) { h += '<div class="griglia__sala" style="grid-column:' + (2 + i) + '">' + s.nome + '<small>' + s.nota + '</small></div>'; });
+      for (var r = 0; r < righe; r++) {
+        var m = inizio + r * 30, ora = (m < 600 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00');
+        var occupata = tutte.some(function (s) { return CV.min(s.da) <= m && m < CV.min(s.a); });
+        h += '<div class="griglia__ora" style="grid-row:' + (2 + r) + '"><span>' + ora + '</span></div>';
+        h += '<div class="griglia__riga' + (occupata ? '' : ' griglia__riga--pausa') + '" style="grid-row:' + (2 + r) + '">' + (occupata ? '' : '<span>Break</span>') + '</div>';
       }
       l.forEach(function (s) {
-        var idx = D.sale.map(function (x) { return x.id; }).indexOf(s.sala);
-        var r0 = 2 + (CV.min(s.da) - 540) / 30, span = (CV.min(s.a) - CV.min(s.da)) / 30;
-        h += '<a class="cella" data-t="' + s.t + '" href="sessione.html?id=' + s.id + '" style="grid-column:' + (2 + idx) + ';grid-row:' + r0 + ' / span ' + span + '">' +
-          '<b>' + s.titolo + '</b><small>' + s.da + '–' + s.a + ' · ' + D.tipi[s.tipo] + '</small>' +
-          CV.badgeAccesso(s) + (s.pagamento ? '<small><b>' + (CV.stato.ruolo === 'visitatore' ? 'Membri ' + CV.euro(s.pagamento.mem) + ' · pubblico ' + CV.euro(s.pagamento.pub) : 'Tuo prezzo ' + CV.euro(CV.prezzoMio(s.pagamento))) + '</b></small>' : '') + (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Posti esauriti</span>' : '') + '</a>';
+        var col = sale.map(function (x) { return x.id; }).indexOf(s.sala);
+        var r0 = 2 + (CV.min(s.da) - inizio) / 30, span = (CV.min(s.a) - CV.min(s.da)) / 30;
+        h += '<a class="cella" data-t="' + s.t + '" href="sessione.html?id=' + s.id + '" style="grid-column:' + (2 + col) + ';grid-row:' + r0 + ' / span ' + span + '">' +
+          '<span class="sr-only">' + CV.sala(s.sala).nome + ', </span><b>' + s.titolo + '</b><small>' + s.da + '–' + s.a + ' · ' + D.tipi[s.tipo] + '</small>' +
+          CV.badgeAccesso(s) + (s.pagamento ? '<small><b>' + CV.euro(s.pagamento.pub) + ', same price for everyone</b></small>' : '') +
+          (s.posti.res === 0 ? '<span class="badge badge--err">' + CV.ic('alert') + 'Sold out</span>' : '') + '</a>';
       });
-      return h;
+      g.innerHTML = h;
+      frecce();
     }
 
     function lista(l) {
       var gruppi = {}, h = '';
       l.forEach(function (s) { (gruppi[s.da] = gruppi[s.da] || []).push(s); });
-      Object.keys(gruppi).sort().forEach(function (ora) {
-        h += '<section class="sessione-gruppo" aria-labelledby="ora-' + ora.replace(':', '') + '"><h3 class="sessione-gruppo__titolo t-num" id="ora-' + ora.replace(':', '') + '">' + ora + '</h3>' +
+      var ore = Object.keys(gruppi).sort();
+      $('#salta-ora').innerHTML = ore.length > 1 ? '<span class="t-small t-muted">Jump to</span>' + ore.map(function (o) { return '<a class="chip" href="#ora-' + o.replace(':', '') + '">' + o + '</a>'; }).join('') : '';
+      ore.forEach(function (ora) {
+        h += '<section class="sessione-gruppo" aria-labelledby="ora-' + ora.replace(':', '') + '"><h3 class="sessione-gruppo__titolo t-num" id="ora-' + ora.replace(':', '') + '" tabindex="-1">' + ora +
+          ' <small>' + gruppi[ora].length + (gruppi[ora].length === 1 ? ' session' : ' sessions') + '</small></h3>' +
           gruppi[ora].map(function (s) { return CV.sessioneRiga(s, { h: 'h4' }); }).join('') + '</section>';
       });
       return h;
@@ -141,22 +168,40 @@
 
     function disegna() {
       var tutte = D.sessioni.filter(function (s) { return s.g === giorno; }), l = filtra();
-      var attivi = f.t.length + (f.tipo ? 1 : 0) + (f.acc ? 1 : 0);
-      $('#filtri-n').textContent = attivi ? '(' + attivi + (attivi === 1 ? ' attivo)' : ' attivi)') : '';
+      var altri = (f.tipo ? 1 : 0) + (f.acc ? 1 : 0);
+      $('#filtri-n').textContent = altri ? '(' + altri + ' on)' : '';
       $('#titolo-giorno').textContent = CV.giorno(giorno).lungo;
-      $('#esito').textContent = l.length ? l.length + ' sessioni su ' + tutte.length + ' in questo giorno' : 'Nessuna sessione con questi filtri.';
+      $('#esito').textContent = l.length === tutte.length ? tutte.length + ' sessions on ' + CV.giorno(giorno).lungo + ', in ' + D.sale.length + ' rooms.'
+        : (l.length ? l.length + ' of ' + tutte.length + ' sessions match your filters.' : 'No sessions match these filters.');
       $('#vuoto').hidden = l.length > 0;
-      $('#griglia').innerHTML = l.length ? griglia(l) : '';
+      $('#griglia-box').hidden = !l.length;
+      if (l.length) griglia(l);
       $('#lista').innerHTML = lista(l);
     }
 
+    /* comandi per scorrere tra le sale (alternativa alla rotella e al trascinamento) */
+    var sc = $('#griglia-scorri');
+    function frecce() {
+      var a = sc.scrollLeft <= 2, b = sc.scrollLeft + sc.clientWidth >= sc.scrollWidth - 2;
+      $('#sale-prima').setAttribute('aria-disabled', a); $('#sale-dopo').setAttribute('aria-disabled', b);
+    }
+    function scorri(dir) {
+      var passo = Math.max(200, sc.clientWidth - 90);
+      sc.scrollBy({ left: dir * passo, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+    $('#sale-prima').addEventListener('click', function () { if (this.getAttribute('aria-disabled') !== 'true') scorri(-1); });
+    $('#sale-dopo').addEventListener('click', function () { if (this.getAttribute('aria-disabled') !== 'true') scorri(1); });
+    sc.addEventListener('scroll', frecce, { passive: true });
+    window.addEventListener('resize', frecce);
+
     /* schede dei giorni (modello ARIA: frecce, Home, Fine) */
-    var tabs = CV.qa('.tab');
+    var tabs = $$('.tab');
     function scegli(t, sposta) {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); x.tabIndex = x === t ? 0 : -1; });
       giorno = t.getAttribute('data-giorno');
       $('#pannello').setAttribute('aria-labelledby', t.id);
       if (sposta) t.focus();
+      sc.scrollLeft = 0;
       disegna();
     }
     tabs.forEach(function (t, i) {
@@ -170,7 +215,8 @@
     });
 
     /* filtri */
-    CV.qa('#f-tracce .chip').forEach(function (b) {
+    $('#f-sala').addEventListener('change', function (e) { f.sala = e.target.value; sc.scrollLeft = 0; disegna(); });
+    $$('#f-tracce .chip').forEach(function (b) {
       b.addEventListener('click', function () {
         var id = b.getAttribute('data-id'), on = b.getAttribute('aria-pressed') !== 'true';
         b.setAttribute('aria-pressed', on);
@@ -179,13 +225,18 @@
       });
     });
     $('#f-tipo').addEventListener('change', function (e) { f.tipo = e.target.value; disegna(); });
-    CV.qa('input[name="acc"]').forEach(function (r) { r.addEventListener('change', function () { f.acc = r.value === 'incluse' ? 'incluse' : r.value; disegna(); }); });
+    $$('input[name="acc"]').forEach(function (r) { r.addEventListener('change', function () { f.acc = r.value; disegna(); }); });
     $('#f-reset').addEventListener('click', function () {
-      f = { t: [], tipo: '', acc: '' };
-      CV.qa('#f-tracce .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
-      $('#f-tipo').value = '';
+      f = { sala: '', t: [], tipo: '', acc: '' };
+      $$('#f-tracce .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      $('#f-tipo').value = ''; $('#f-sala').value = '';
       CV.qs('input[name="acc"][value=""]').checked = true;
       disegna();
+    });
+    /* "Jump to": porta il fuoco sul titolo dell'orario */
+    $('#salta-ora').addEventListener('click', function (e) {
+      var a = e.target.closest('a'); if (!a) return; e.preventDefault();
+      var t = $(a.getAttribute('href')); if (t) { t.focus(); t.scrollIntoView({ block: 'start' }); }
     });
 
     /* griglia / elenco (la griglia esiste solo da 64rem) */
@@ -193,6 +244,7 @@
       CV.qs('.agenda').setAttribute('data-vista', v);
       $('#v-griglia').setAttribute('aria-pressed', v === 'griglia');
       $('#v-lista').setAttribute('aria-pressed', v === 'lista');
+      frecce();
     }
     $('#v-griglia').addEventListener('click', function () { vista('griglia'); });
     $('#v-lista').addEventListener('click', function () { vista('lista'); });

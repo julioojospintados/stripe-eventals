@@ -1,0 +1,121 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Videos · Admin · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head">
+      <h1 class="t-1">Videos</h1>
+      <button type="button" class="btn btn--primary" id="nuovo"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg>Add a video</button>
+    </div>
+    <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+      <div>Videos stay on <b>Vimeo</b> or <b>Wistia</b>: here you only link them and choose who can watch them in the member area. Set each video as private or domain-restricted on the provider, otherwise anyone with the link can watch it.</div></div>
+
+    <section aria-labelledby="h-elenco">
+      <h2 class="t-2" id="h-elenco">Videos in the member area</h2>
+      <div id="st-elenco" role="status" aria-live="polite"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Videos</caption>
+        <thead><tr><th scope="col">Title</th><th scope="col">Provider</th><th scope="col">Video ID</th><th scope="col">Allowed roles</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="h-form" id="pannello-form" hidden>
+      <h2 class="t-2" id="h-form" tabindex="-1">Edit video</h2>
+      <form id="f" class="stack" novalidate style="max-width:40rem">
+        <div class="campo"><label for="titolo">Title</label><input class="input" id="titolo" autocomplete="off"></div>
+        <fieldset class="campo" id="provider" tabindex="-1"><legend class="etichetta">Provider</legend>
+          <label class="scelta"><input type="radio" name="prov" value="vimeo"><span>Vimeo</span></label>
+          <label class="scelta"><input type="radio" name="prov" value="wistia"><span>Wistia</span></label>
+        </fieldset>
+        <div class="campo"><label for="vid">Video ID</label><input class="input t-num" id="vid" autocomplete="off" spellcheck="false" aria-describedby="a-vid"><p class="campo__aiuto" id="a-vid">Vimeo: the number at the end of the link (for example 76979871). Wistia: the 10-character code (for example e4a27b971d).</p></div>
+        <div class="grid-2">
+          <div class="campo"><label for="edizione">Edition</label><input class="input" id="edizione" autocomplete="off" placeholder="EAS7"></div>
+          <div class="campo"><label for="durata">Length</label><input class="input" id="durata" autocomplete="off" placeholder="45 min"></div>
+        </div>
+        <fieldset class="campo" id="ruoli" tabindex="-1"><legend class="etichetta">Who can watch</legend><div id="ruoli-scelte"></div>
+          <p class="campo__aiuto">Choose one or more. «Anyone with an account» includes everyone else.</p></fieldset>
+        <label class="scelta"><input type="checkbox" id="sottotitoli"><span>Captions are available on the provider</span></label>
+        <div id="er" role="alert" aria-live="assertive"></div>
+        <div class="azioni-riga"><button type="submit" class="btn btn--primary">Save the video</button><button type="button" class="btn btn--quiet" id="annulla">Close without saving</button></div>
+        <div id="st" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, V = JSON.parse(JSON.stringify(D.video)), corrente = null, nuovi = 0;
+    V.forEach(function (v, i) { v.sottotitoli = i % 3 !== 2; });
+    $('#ruoli-scelte').innerHTML = Object.keys(D.videoRuoli).map(function (k) { return '<label class="scelta"><input type="checkbox" name="ruolo" value="' + k + '"><span>' + D.videoRuoli[k] + '</span></label>'; }).join('');
+
+    function elenco() {
+      $('#righe').innerHTML = V.map(function (v) {
+        return '<tr><th scope="row">' + v.titolo + '<br><span class="t-small t-muted">' + (v.edizione || '—') + ' · ' + (v.durata || '—') + '</span>' + (v.sottotitoli ? '' : '<br><span class="badge badge--warn">' + AD.icona('alert') + 'No captions</span>') + '</th>' +
+          '<td data-label="Provider">' + D.provider[v.provider] + '</td><td data-label="Video ID" class="t-num cella-testo">' + v.vid + '</td>' +
+          '<td data-label="Allowed roles">' + v.ruoli.map(function (r) { return D.videoRuoli[r]; }).join('<br>') + '</td>' +
+          '<td data-label=""><div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-mod="' + v.id + '">Edit<span class="sr-only"> ' + v.titolo + '</span></button>' +
+          '<button type="button" class="btn btn--quiet btn--piccolo" data-del="' + v.id + '">Remove<span class="sr-only"> ' + v.titolo + '</span></button></div></td></tr>';
+      }).join('');
+    }
+    function apri(v) {
+      corrente = v; $('#pannello-form').hidden = false; $('#er').innerHTML = ''; $('#st').innerHTML = '';
+      $('#h-form').textContent = v.nuovo ? 'New video' : 'Edit: ' + v.titolo;
+      $('#titolo').value = v.titolo; $('#vid').value = v.vid; $('#edizione').value = v.edizione || ''; $('#durata').value = v.durata || ''; $('#sottotitoli').checked = !!v.sottotitoli;
+      $$('input[name="prov"]').forEach(function (r) { r.checked = r.value === v.provider; });
+      $$('input[name="ruolo"]').forEach(function (c) { c.checked = v.ruoli.indexOf(c.value) > -1; });
+      $('#h-form').focus();
+    }
+    $('#righe').addEventListener('click', function (e) {
+      var m = e.target.closest('[data-mod]'), x = e.target.closest('[data-del]');
+      if (m) apri(V.filter(function (v) { return v.id === m.getAttribute('data-mod'); })[0]);
+      if (x) {
+        var v = V.filter(function (q) { return q.id === x.getAttribute('data-del'); })[0];
+        if (!x.getAttribute('data-c')) { x.setAttribute('data-c', '1'); x.textContent = 'Confirm removal'; CV.msg($('#st-elenco'), 'warn', 'Press «Confirm removal» to take «' + v.titolo + '» out of the member area. The video stays on ' + D.provider[v.provider] + '.'); x.focus(); return; }
+        V = V.filter(function (q) { return q.id !== v.id; }); elenco(); CV.msg($('#st-elenco'), 'ok', '«' + v.titolo + '» removed from the member area (simulated). Written to the audit log.');
+      }
+    });
+    $('#nuovo').addEventListener('click', function () { apri({ id: 'vn' + (++nuovi), titolo: '', provider: '', vid: '', ruoli: ['membro'], nuovo: true }); });
+    $('#annulla').addEventListener('click', function () { $('#pannello-form').hidden = true; $('#nuovo').focus(); });
+    $('#f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var er = [], av = [], prov = ($('input[name="prov"]:checked') || {}).value, id = $('#vid').value.trim(), ruoli = $$('input[name="ruolo"]:checked').map(function (c) { return c.value; });
+      $$('[aria-invalid]', $('#f')).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      if (!$('#titolo').value.trim()) er.push(['titolo', 'Write the title.']);
+      if (!prov) er.push(['provider', 'Choose the provider: Vimeo or Wistia.']);
+      if (!id) er.push(['vid', 'Write the video ID.']);
+      else if (prov === 'vimeo' && !/^\d{6,12}$/.test(id)) er.push(['vid', 'A Vimeo ID is a number of 6 to 12 digits. Copy it from the end of the video link.']);
+      else if (prov === 'wistia' && !/^[a-z0-9]{10}$/i.test(id)) er.push(['vid', 'A Wistia ID has 10 letters and numbers. Copy it from the video page on Wistia.']);
+      if (!ruoli.length) er.push(['ruoli', 'Choose at least one role that can watch the video.']);
+      if (!$('#sottotitoli').checked) av.push('Without captions the video is not accessible to deaf and hard-of-hearing members (WCAG 1.2.2). Add them on ' + (D.provider[prov] || 'the provider') + '.');
+      if (er.length) {
+        $('#er').innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' + er.map(function (x) { return '<li><a href="#' + x[0] + '">' + x[1] + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { $('#' + x[0]).setAttribute('aria-invalid', 'true'); }); $('#he').focus(); return;
+      }
+      $('#er').innerHTML = '';
+      corrente.titolo = $('#titolo').value.trim(); corrente.provider = prov; corrente.vid = id; corrente.edizione = $('#edizione').value.trim(); corrente.durata = $('#durata').value.trim();
+      corrente.ruoli = ruoli; corrente.sottotitoli = $('#sottotitoli').checked;
+      if (corrente.nuovo) { delete corrente.nuovo; V.push(corrente); }
+      elenco(); CV.msg($('#st'), av.length ? 'warn' : 'ok', '<b>Video saved</b> (simulated). Visible to: ' + ruoli.map(function (r) { return D.videoRuoli[r]; }).join(', ') + '. Written to the audit log.' + (av.length ? '<br>' + av.join('<br>') : ''));
+    });
+    elenco();
+  });
+</script>
+</body>
+</html>

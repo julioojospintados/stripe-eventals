@@ -1,60 +1,86 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Programma · Admin · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Programme · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body class="senza-nav" data-area="admin">
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
-    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
-  </div>
-</header>
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 <div class="wrap admin-shell">
-  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
 
   <main id="contenuto" class="admin-main">
     <div class="admin-head">
-      <h1 class="t-1">Programma</h1>
-      <p class="t-small t-muted">Le modifiche di questo prototipo non si salvano davvero. Nel sito ogni modifica finisce nel registro audit.</p>
+      <h1 class="t-1">Programme</h1>
+      <p class="t-small t-muted">Changes in this prototype are not really saved. On the real site every change is written to the audit log.</p>
     </div>
 
+    <section aria-labelledby="h-import">
+      <h2 class="t-2" id="h-import">Import from CSV/Excel</h2>
+      <p class="t-muted misura">With 12 rooms, about 120 sessions and 30 speakers, the content arrives in spreadsheets. Upload a file: first you see a preview with the rows that have problems, then you confirm. <b>Simulated:</b> the prototype does not read the file.</p>
+      <form id="f-import" class="stack scheda" novalidate style="max-width:44rem">
+        <fieldset class="campo"><legend class="etichetta">What are you importing?</legend>
+          <label class="scelta"><input type="radio" name="imp-cosa" value="sessioni" checked><span>Sessions</span></label>
+          <label class="scelta"><input type="radio" name="imp-cosa" value="speaker"><span>Speakers</span></label>
+        </fieldset>
+        <div class="campo">
+          <label for="imp-file">File (.csv or .xlsx)</label>
+          <input class="input" id="imp-file" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" aria-describedby="imp-colonne">
+          <p class="campo__aiuto" id="imp-colonne"></p>
+        </div>
+        <fieldset class="campo"><legend class="etichetta">Rows that already exist</legend>
+          <label class="scelta"><input type="radio" name="imp-esist" value="aggiorna" checked><span>Update them</span></label>
+          <label class="scelta"><input type="radio" name="imp-esist" value="salta"><span>Skip them</span></label>
+        </fieldset>
+        <div id="er-import" role="alert" aria-live="assertive"></div>
+        <div class="azioni-riga">
+          <button type="submit" class="btn btn--primary"><svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg>Check the file</button>
+          <button type="button" class="btn btn--secondary" id="imp-esempio">Use the example file</button>
+          <button type="button" class="btn btn--quiet" id="imp-modello"><svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>Download the template</button>
+        </div>
+        <div id="st-modello" role="status" aria-live="polite"></div>
+      </form>
+      <div id="anteprima" style="margin-top:var(--s-5)"></div>
+    </section>
+
     <section aria-labelledby="h-struttura">
-      <h2 class="t-2" id="h-struttura">Giorni, sale e tracce</h2>
-      <p class="t-muted misura">Si riordina trascinando la maniglia con il mouse, oppure con i pulsanti Su e Giù (tastiera e telefono). L’ordine delle sale è l’ordine delle colonne nella griglia pubblica.</p>
+      <h2 class="t-2" id="h-struttura">Days, rooms and tracks</h2>
+      <p class="t-muted misura">Reorder by dragging the handle with the mouse, or with the Up and Down buttons (keyboard and phone). The order of the rooms is the order of the columns in the public grid.</p>
 
       <details class="acc" open>
-        <summary>Giorni<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
-        <div class="acc__corpo"><ul class="elenco-pulito" id="l-giorni"></ul></div>
+        <summary>Days<svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <div class="acc__corpo"><ul class="elenco-pulito" id="l-giorni"></ul>
+          <p class="t-small t-muted">Dates come from the event dates. <a href="biglietti.html#h-evento">Edit the event dates</a>.</p></div>
       </details>
       <details class="acc">
-        <summary><span>Sale <span class="t-small t-muted">· dentro: elenco e riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <summary><span>Rooms <span class="t-small t-muted" id="n-sale"></span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
         <div class="acc__corpo"><ul class="riordina" id="l-sale"></ul>
-          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-sala">Aggiungi una sala</button></div>
+          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-sala">Add a room</button></div>
           <div id="st-sale" role="status" aria-live="polite"></div></div>
       </details>
       <details class="acc">
-        <summary><span>Tracce <span class="t-small t-muted">· dentro: elenco e riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
+        <summary><span>Tracks <span class="t-small t-muted">· list and order</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>
         <div class="acc__corpo"><ul class="riordina" id="l-tracce"></ul>
-          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-traccia">Aggiungi una traccia</button></div>
+          <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-traccia">Add a track</button></div>
           <div id="st-tracce" role="status" aria-live="polite"></div></div>
       </details>
     </section>
 
     <section aria-labelledby="h-sessioni">
-      <h2 class="t-2" id="h-sessioni">Sessioni</h2>
-      <div class="tabs" role="tablist" aria-label="Giorno da modificare" id="tabs-g"></div>
+      <h2 class="t-2" id="h-sessioni">Sessions</h2>
+      <div class="tabs" role="tablist" aria-label="Day to edit" id="tabs-g"></div>
       <div id="pannello" role="tabpanel" tabindex="0" class="tabpanel">
+        <div class="campo" style="max-width:20rem;margin-bottom:var(--s-3)"><label for="f-sala">Show room</label><select class="select" id="f-sala"></select></div>
+        <p class="t-small t-muted" id="conto-sessioni" role="status" aria-live="polite"></p>
         <div id="st-sessioni" role="status" aria-live="polite"></div>
         <div id="l-sessioni"></div>
-        <p style="margin-top:var(--s-4)"><button type="button" class="btn btn--primary" id="add-sessione">Aggiungi una sessione a questo giorno</button></p>
+        <p style="margin-top:var(--s-4)"><button type="button" class="btn btn--primary" id="add-sessione">Add a session to this day</button></p>
       </div>
     </section>
   </main>
@@ -67,104 +93,172 @@
     var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
     var copia = function (x) { return JSON.parse(JSON.stringify(x)); };
     var S = copia(D.sessioni), SALE = copia(D.sale), TR = copia(D.tracce), GG = copia(D.giorni);
-    var giorno = 'g1', aperta = null, nuovo = 0, nSub = 0;
-    var DATE = { g1: '2027-04-08', g2: '2027-04-09', g3: '2027-04-10' };   // date da confermare (modulo: 10-14 aprile)
+    var giorno = GG[0].id, aperta = null, nuovo = 0, nSub = 0, salaF = '';
 
-    var ORE = []; for (var m = 540; m <= 1080; m += 30) ORE.push((Math.floor(m / 60) < 10 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00'));
+    var ORE = []; for (var m = 480; m <= 1140; m += 30) ORE.push((Math.floor(m / 60) < 10 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00'));
     function opt(lista, sel, v, l) { return lista.map(function (x) { var val = v ? x[v] : x; return '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + (l ? x[l] : x) + '</option>'; }).join(''); }
     function venduti(s) { return s.posti.tot ? s.posti.tot - s.posti.res : 0; }
     function tipoAcc(s) { return s.pagamento ? 'pagamento' : (s.posti.libero ? 'libero' : 'prenotazione'); }
-    function nomiSp(s) { return s.sp.map(function (i) { return CV.persona(i).nome; }).join(', '); }
+    function nomeSala(id) { return (SALE.filter(function (y) { return y.id === id; })[0] || { nome: '?' }).nome; }
+
+    /* ---------------- import da CSV/Excel (simulato) ---------------- */
+    var COLONNE = {
+      sessioni: 'Columns: day, start, end, room, track, type, title, speakers (separated by ;), access (free / booking / paid), capacity, price. One row per session.',
+      speaker: 'Columns: full name, email, role, organisation, biography, photo file name, photo alt text. One row per speaker.'
+    };
+    function cosa() { return $('input[name="imp-cosa"]:checked').value; }
+    function aggiornaColonne() { $('#imp-colonne').textContent = COLONNE[cosa()]; $('#anteprima').innerHTML = ''; $('#er-import').innerHTML = ''; }
+    $$('input[name="imp-cosa"]').forEach(function (r) { r.addEventListener('change', aggiornaColonne); });
+    aggiornaColonne();
+    $('#imp-modello').addEventListener('click', function () {
+      CV.msg($('#st-modello'), 'info', 'Template ready (simulated): <span class="t-num">eas8-' + (cosa() === 'sessioni' ? 'sessions' : 'speakers') + '-template.xlsx</span>, with the column headers and two example rows.');
+    });
+    function esempioRighe() {
+      var g1 = GG[0], ha = CV.trova('g1', '11:00', 'ha');
+      if (cosa() === 'sessioni') return {
+        nome: 'eas8-programme-v3.xlsx', tot: 118, nuove: 9, agg: 104,
+        err: [[7, 'Room «Room 13» does not exist. Add it in Rooms or correct the file.'], [12, 'Hall A is already taken by «' + (ha ? ha.titolo : '') + '» at 11:00 on ' + g1.breve + '.'], [19, 'The end (10:00) is before the start (11:30).']],
+        avv: [[23, 'Speaker «Jane Newname» not found: a new speaker profile will be created.'], [41, 'Workshop with 25 seats: workshops have 20 seats. The value will be kept, check it.']],
+        righe: [[2, g1.breve, '09:00–10:30', 'Auditorium', 'Opening keynote (updated title)', 'update'], [7, g1.breve, '11:00–12:30', 'Room 13', 'Retention: case-based review', 'error'],
+          [12, g1.breve, '11:00–12:30', 'Hall A', 'Open bite: panel', 'error'], [19, GG[1].breve, '11:30–10:00', 'Room 2', 'Torque control: new approaches', 'error'],
+          [23, GG[1].breve, '14:00–15:30', 'Room 5', 'AI-assisted planning: limits', 'warn'], [57, GG[2].breve, '11:00–12:30', 'Room 7', 'New session from the file', 'new']]
+      };
+      return {
+        nome: 'eas8-speakers.csv', tot: 31, nuove: 2, agg: 27,
+        err: [[4, 'The full name is missing.'], [9, 'Photo «portrait-09.jpg» without alt text: write a short description of the photo.']],
+        avv: [[2, 'Same email as «Anna Example»: the profile will be updated, not duplicated.']],
+        righe: [[2, 'Anna Example', 'anna.example@example.test', 'Orthodontist', 'update'], [4, '—', 'no-name@example.test', 'Researcher', 'error'],
+          [9, 'Ines Ipsum', 'ines.ipsum@example.test', 'Professor of orthodontics', 'error'], [30, 'Jane Newname', 'jane.newname@example.test', 'Orthodontist', 'new']]
+      };
+    }
+    var ESITO = { update: ['info', 'refresh', 'Update'], new: ['ok', 'plus', 'New'], error: ['err', 'alert', 'Error: skipped'], warn: ['warn', 'alert', 'Check'] };
+    function anteprima(nomeFile) {
+      var x = esempioRighe(), ok = x.tot - x.err.length, salta = $('input[name="imp-esist"]:checked').value === 'salta';
+      var h = '<section class="scheda stack" aria-labelledby="h-ant"><h3 class="t-3" id="h-ant" tabindex="-1">Preview: ' + (nomeFile || x.nome) + '</h3>' +
+        '<p><b>' + x.tot + ' rows read.</b> ' + ok + ' ready (' + x.nuove + ' new, ' + (salta ? x.agg + ' existing will be skipped' : x.agg + ' updates') + '), <b>' + x.err.length + ' with errors</b>, ' + x.avv.length + ' to check.</p>' +
+        '<div class="avviso avviso--err">' + CV.ic('alert') + '<div><b>Rows with errors are not imported.</b><ul class="elenco-puntato">' + x.err.map(function (e) { return '<li>Row ' + e[0] + ': ' + e[1] + '</li>'; }).join('') + '</ul></div></div>' +
+        '<div class="avviso avviso--warn">' + CV.ic('alert') + '<div><b>To check.</b><ul class="elenco-puntato">' + x.avv.map(function (e) { return '<li>Row ' + e[0] + ': ' + e[1] + '</li>'; }).join('') + '</ul></div></div>' +
+        '<table class="tabella tabella--stack"><caption>Some rows of the file</caption><thead><tr><th scope="col">Row</th>' +
+        (cosa() === 'sessioni' ? '<th scope="col">Day</th><th scope="col">Time</th><th scope="col">Room</th><th scope="col">Title</th>' : '<th scope="col">Name</th><th scope="col">Email</th><th scope="col">Role</th>') +
+        '<th scope="col">Result</th></tr></thead><tbody>' + x.righe.map(function (r) {
+          var es = ESITO[r[r.length - 1]], lab = cosa() === 'sessioni' ? ['Day', 'Time', 'Room', 'Title'] : ['Name', 'Email', 'Role'];
+          return '<tr><th scope="row">' + r[0] + '</th>' + r.slice(1, -1).map(function (c, i) { return '<td data-label="' + lab[i] + '" class="cella-testo">' + c + '</td>'; }).join('') +
+            '<td data-label="Result"><span class="badge badge--' + es[0] + '">' + CV.ic(es[1]) + es[2] + '</span></td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<div class="azioni-riga"><button type="button" class="btn btn--primary" id="imp-conferma">Import ' + ok + ' rows</button><button type="button" class="btn btn--secondary" id="imp-errori">' + CV.ic('download') + 'Download the rows with errors</button><button type="button" class="btn btn--quiet" id="imp-annulla">Cancel</button></div>' +
+        '<div id="st-import" role="status" aria-live="polite"></div></section>';
+      $('#anteprima').innerHTML = h; $('#h-ant').focus();
+      $('#imp-annulla').addEventListener('click', function () { $('#anteprima').innerHTML = ''; $('#imp-file').focus(); });
+      $('#imp-errori').addEventListener('click', function () { CV.msg($('#st-import'), 'info', 'File with the ' + x.err.length + ' rows with errors ready (simulated), with a column that explains each error. Fix it and import it again.'); });
+      $('#imp-conferma').addEventListener('click', function () {
+        CV.msg($('#st-import'), 'ok', '<b>' + ok + ' rows imported</b> (simulated): ' + x.nuove + ' new' + (salta ? ', ' + x.agg + ' existing skipped' : ', ' + x.agg + ' updated') + '. ' + x.err.length + ' rows skipped because of errors. Written to the audit log. Orders already paid are not touched.');
+        this.setAttribute('aria-disabled', 'true');
+      });
+    }
+    $('#f-import').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var f = $('#imp-file').files[0], er = '';
+      $('#imp-file').removeAttribute('aria-invalid');
+      if (!f) er = 'Choose a file, or press «Use the example file».';
+      else if (!/\.(csv|xlsx|xls)$/i.test(f.name)) er = 'The file «' + f.name + '» is not a CSV or Excel file. Save it as .csv or .xlsx.';
+      else if (f.size > 5 * 1024 * 1024) er = 'The file is larger than 5 MB (example limit). Split it in two.';
+      if (er) { $('#er-import').innerHTML = '<p class="campo__errore">' + CV.ic('alert') + '<span>' + er + '</span></p>'; $('#imp-file').setAttribute('aria-invalid', 'true'); $('#imp-file').focus(); return; }
+      $('#er-import').innerHTML = ''; anteprima(f.name);
+    });
+    $('#imp-esempio').addEventListener('click', function () { $('#er-import').innerHTML = ''; anteprima(); });
 
     /* ---------------- struttura ---------------- */
     $('#l-giorni').innerHTML = GG.map(function (g) {
-      return '<li class="azioni-riga"><div class="campo" style="flex:1 1 14rem"><label for="gn-' + g.id + '">Nome del giorno</label><input class="input" id="gn-' + g.id + '" value="' + g.lungo + '"></div>' +
-        '<div class="campo"><label for="gd-' + g.id + '">Data</label><input class="input" id="gd-' + g.id + '" type="date" value="' + DATE[g.id] + '"></div></li>';
+      var n = S.filter(function (s) { return s.g === g.id; }).length;
+      return '<li class="azioni-riga"><div class="campo" style="flex:1 1 14rem"><label for="gn-' + g.id + '">Day name</label><input class="input" id="gn-' + g.id + '" value="' + g.lungo + '"></div>' +
+        '<p class="t-small"><b>' + CV.dataEn(g.data) + '</b><br>' + n + ' sessions</p></li>';
     }).join('');
 
     function strutt(ul, lista, chiave, tipo) {
       ul.innerHTML = lista.map(function (x) {
-        return AD.rigaRiordina(x.nome, '<div class="campo"><label for="n-' + x.id + '">Nome ' + tipo + '</label><input class="input" id="n-' + x.id + '" value="' + x.nome + '"></div>' +
-          '<button type="button" class="btn btn--quiet btn--piccolo" data-rimuovi="' + x.id + '" data-tipo="' + chiave + '">Rimuovi</button>');
+        return AD.rigaRiordina(x.nome, '<div class="campo"><label for="n-' + x.id + '">' + tipo + ' name</label><input class="input" id="n-' + x.id + '" value="' + x.nome + '"></div>' +
+          '<button type="button" class="btn btn--quiet btn--piccolo" data-rimuovi="' + x.id + '" data-tipo="' + chiave + '">Remove<span class="sr-only"> ' + x.nome + '</span></button>');
       }).join('');
       $$('li', ul).forEach(function (li, i) { li.setAttribute('data-id', lista[i].id); });
     }
     function disegnaStruttura() {
-      strutt($('#l-sale'), SALE, 'sala', 'della sala'); strutt($('#l-tracce'), TR, 'traccia', 'della traccia');
+      strutt($('#l-sale'), SALE, 'sala', 'Room'); strutt($('#l-tracce'), TR, 'traccia', 'Track');
       AD.riordina($('#l-sale')); AD.riordina($('#l-tracce'));
+      $('#n-sale').textContent = '· ' + SALE.length + ' rooms in parallel, list and order';
+      $('#f-sala').innerHTML = '<option value="">All ' + SALE.length + ' rooms</option>' + opt(SALE, salaF, 'id', 'nome');
     }
     function aggiungi(lista, pre, chiave, ul, st) {
-      var id = pre + (++nuovo); lista.push({ id: id, nome: 'Nuova ' + chiave + ' ' + nuovo, nota: 'da definire' });
+      var id = pre + (++nuovo); lista.push({ id: id, nome: 'New ' + chiave + ' ' + nuovo, nota: 'to be defined' });
       disegnaStruttura(); var inp = $('#n-' + id, ul); inp.focus(); inp.select();
-      CV.msg(st, 'ok', 'Aggiunta. Rinominala e riordinala: la modifica vale quando salvi (simulato).');
+      CV.msg(st, 'ok', 'Added. Rename and reorder it: the change applies when you save (simulated).');
     }
-    $('#add-sala').addEventListener('click', function () { aggiungi(SALE, 'sala', 'sala', $('#l-sale'), $('#st-sale')); });
-    $('#add-traccia').addEventListener('click', function () { aggiungi(TR, 'tr', 'traccia', $('#l-tracce'), $('#st-tracce')); });
-    d_rimuovi();
-    function d_rimuovi() {
-      document.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-rimuovi]'); if (!b) return;
-        var id = b.getAttribute('data-rimuovi'), sala = b.getAttribute('data-tipo') === 'sala';
-        var usate = S.filter(function (s) { return (sala ? s.sala : s.t) === id; }).length;
-        var st = sala ? $('#st-sale') : $('#st-tracce');
-        if (usate) { CV.msg(st, 'err', 'Non si può rimuovere: ' + usate + (usate === 1 ? ' sessione la usa' : ' sessioni la usano') + '. Spostale prima in un’altra ' + (sala ? 'sala' : 'traccia') + '.'); return; }
-        var lista = sala ? SALE : TR; lista.splice(lista.map(function (x) { return x.id; }).indexOf(id), 1);
-        disegnaStruttura(); CV.msg(st, 'ok', 'Rimossa (simulato).');
-      });
-    }
+    $('#add-sala').addEventListener('click', function () { aggiungi(SALE, 'sala', 'room', $('#l-sale'), $('#st-sale')); });
+    $('#add-traccia').addEventListener('click', function () { aggiungi(TR, 'tr', 'track', $('#l-tracce'), $('#st-tracce')); });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rimuovi]'); if (!b) return;
+      var id = b.getAttribute('data-rimuovi'), sala = b.getAttribute('data-tipo') === 'sala';
+      var usate = S.filter(function (s) { return (sala ? s.sala : s.t) === id; }).length;
+      var st = sala ? $('#st-sale') : $('#st-tracce');
+      if (usate) { CV.msg(st, 'err', 'Cannot remove it: ' + usate + (usate === 1 ? ' session uses it' : ' sessions use it') + '. Move them to another ' + (sala ? 'room' : 'track') + ' first.'); return; }
+      var lista = sala ? SALE : TR; lista.splice(lista.map(function (x) { return x.id; }).indexOf(id), 1);
+      disegnaStruttura(); CV.msg(st, 'ok', 'Removed (simulated).');
+    });
 
     /* ---------------- sessioni ---------------- */
     function riepilogo(s) {
-      return '<span class="t-num"><b>' + s.da + '–' + s.a + '</b></span> · ' + s.titolo + ' <span class="t-muted">· ' + (SALE.filter(function (y) { return y.id === s.sala; })[0] || { nome: '?' }).nome + '</span> ' +
-        '<span class="badge badge--' + (s.pagamento ? 'pagamento' : 'inclusa') + '">' + (s.pagamento ? 'A pagamento' : 'Inclusa') + '</span>';
+      return '<span class="t-num"><b>' + s.da + '–' + s.a + '</b></span> · ' + s.titolo + ' <span class="t-muted">· ' + nomeSala(s.sala) + '</span> ' +
+        '<span class="badge badge--' + (s.pagamento ? 'pagamento' : 'inclusa') + '">' + (s.pagamento ? 'Paid' : 'Included') + '</span>';
     }
     function formSessione(s) {
       var acc = tipoAcc(s), v = venduti(s), id = s.id;
       var sub = s.subs.map(function (x) { return rigaSub(x.ora, x.titolo, x.chi); }).join('');
       return '<form class="acc__corpo stack" data-id="' + id + '" novalidate style="--stack:var(--s-4)">' +
-        '<div class="campo"><label for="f-' + id + '-titolo">Titolo</label><input class="input" id="f-' + id + '-titolo" value="' + s.titolo.replace(/"/g, '&quot;') + '"></div>' +
-        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-g">Giorno</label><select class="select" id="f-' + id + '-g">' + opt(GG, s.g, 'id', 'lungo') + '</select></div>' +
-        '<div class="campo"><label for="f-' + id + '-da">Inizio</label><select class="select" id="f-' + id + '-da">' + opt(ORE, s.da) + '</select></div>' +
-        '<div class="campo"><label for="f-' + id + '-a">Fine</label><select class="select" id="f-' + id + '-a">' + opt(ORE, s.a) + '</select></div></div>' +
-        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-sala">Sala</label><select class="select" id="f-' + id + '-sala">' + opt(SALE, s.sala, 'id', 'nome') + '</select></div>' +
-        '<div class="campo"><label for="f-' + id + '-t">Traccia</label><select class="select" id="f-' + id + '-t">' + opt(TR, s.t, 'id', 'nome') + '</select></div>' +
-        '<div class="campo"><label for="f-' + id + '-tipo">Tipo</label><select class="select" id="f-' + id + '-tipo">' + Object.keys(D.tipi).map(function (k) { return '<option value="' + k + '"' + (k === s.tipo ? ' selected' : '') + '>' + D.tipi[k] + '</option>'; }).join('') + '</select></div></div>' +
-        '<fieldset class="campo"><legend class="etichetta">Accesso</legend>' +
-        ['libero|Inclusa nel pass, ingresso libero', 'prenotazione|Inclusa nel pass, con prenotazione gratuita', 'pagamento|A pagamento, a parte'].map(function (o) {
+        '<div class="campo"><label for="f-' + id + '-titolo">Title</label><input class="input" id="f-' + id + '-titolo" value="' + s.titolo.replace(/"/g, '&quot;') + '"></div>' +
+        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-g">Day</label><select class="select" id="f-' + id + '-g">' + opt(GG, s.g, 'id', 'lungo') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-da">Start</label><select class="select" id="f-' + id + '-da">' + opt(ORE, s.da) + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-a">End</label><select class="select" id="f-' + id + '-a">' + opt(ORE, s.a) + '</select></div></div>' +
+        '<div class="grid-3"><div class="campo"><label for="f-' + id + '-sala">Room</label><select class="select" id="f-' + id + '-sala">' + opt(SALE, s.sala, 'id', 'nome') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-t">Track</label><select class="select" id="f-' + id + '-t">' + opt(TR, s.t, 'id', 'nome') + '</select></div>' +
+        '<div class="campo"><label for="f-' + id + '-tipo">Type</label><select class="select" id="f-' + id + '-tipo">' + Object.keys(D.tipi).map(function (k) { return '<option value="' + k + '"' + (k === s.tipo ? ' selected' : '') + '>' + D.tipi[k] + '</option>'; }).join('') + '</select></div></div>' +
+        '<fieldset class="campo"><legend class="etichetta">Access</legend>' +
+        ['libero|Included in the pass, free entry', 'prenotazione|Included in the pass, free booking', 'pagamento|Paid workshop, separate ticket'].map(function (o) {
           var p = o.split('|'); return '<label class="scelta"><input type="radio" name="acc-' + id + '" value="' + p[0] + '"' + (p[0] === acc ? ' checked' : '') + '><span>' + p[1] + '</span></label>'; }).join('') + '</fieldset>' +
-        '<div class="campo" data-cap' + (acc === 'libero' ? ' hidden' : '') + '><label for="f-' + id + '-cap">Capienza</label><input class="input input--num" id="f-' + id + '-cap" type="number" min="0" step="1" value="' + (s.posti.tot || '') + '" aria-describedby="h-' + id + '-cap">' +
-        '<p class="campo__aiuto" id="h-' + id + '-cap">' + (v ? 'Già venduti o prenotati: ' + v + '. Non si può scendere sotto questo numero.' : 'Nessun posto ancora venduto.') + '</p></div>' +
-        '<fieldset class="campo" data-prezzi' + (acc === 'pagamento' ? '' : ' hidden') + '><legend class="etichetta">Prezzi per ruolo (€)</legend><div class="grid-3">' +
-        ['pub|Pubblico', 'mem|Membro'].map(function (o) { var p = o.split('|'); return '<div class="campo"><label for="f-' + id + '-' + p[0] + '">' + p[1] + '</label><input class="input input--num" id="f-' + id + '-' + p[0] + '" type="number" min="0" step="0.01" value="' + (s.pagamento ? s.pagamento[p[0]] : '') + '"></div>'; }).join('') + '</div></fieldset>' +
-        '<fieldset class="campo"><legend class="etichetta">Speaker</legend><div class="grid-2">' + D.speakers.map(function (p) {
+        '<div class="campo" data-cap' + (acc === 'libero' ? ' hidden' : '') + '><label for="f-' + id + '-cap">Capacity</label><input class="input input--num" id="f-' + id + '-cap" type="number" min="0" step="1" value="' + (s.posti.tot || '') + '" aria-describedby="h-' + id + '-cap">' +
+        '<p class="campo__aiuto" id="h-' + id + '-cap">' + (v ? 'Already sold or booked: ' + v + '. You cannot go below this number.' : 'No seats sold yet.') + '</p></div>' +
+        '<div class="campo" data-prezzi' + (acc === 'pagamento' ? '' : ' hidden') + '><label for="f-' + id + '-pub">Price (€), same for everyone</label><input class="input input--num" id="f-' + id + '-pub" type="number" min="0" step="0.01" value="' + (s.pagamento ? s.pagamento.pub : '100') + '" aria-describedby="h-' + id + '-pub">' +
+        '<p class="campo__aiuto" id="h-' + id + '-pub">Client decision: workshops cost €100 for everyone, no member price.</p></div>' +
+        '<fieldset class="campo"><legend class="etichetta">Speakers</legend><div class="grid-3">' + D.speakers.map(function (p) {
           return '<label class="scelta"><input type="checkbox" value="' + p.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + ' data-sp><span>' + p.nome + '</span></label>'; }).join('') + '</div></fieldset>' +
-        '<fieldset class="campo"><legend class="etichetta">Interventi (sottosezioni)</legend>' +
-        '<p class="campo__aiuto">Ordina con la maniglia o con Su e Giù. Gli orari devono salire e stare dentro la sessione.</p>' +
+        '<fieldset class="campo"><legend class="etichetta">Talks (sub-sessions)</legend>' +
+        '<p class="campo__aiuto">Order them with the handle or with Up and Down. Times must go up and stay within the session.</p>' +
         '<ul class="riordina" data-subs>' + sub + '</ul>' +
-        '<p><button type="button" class="btn btn--secondary btn--piccolo" data-add-sub>Aggiungi un intervento</button></p></fieldset>' +
+        '<p><button type="button" class="btn btn--secondary btn--piccolo" data-add-sub>Add a talk</button></p></fieldset>' +
         '<div id="er-' + id + '" role="alert" aria-live="assertive"></div>' +
-        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Salva la sessione</button><button type="button" class="btn btn--quiet" data-elimina="' + id + '">Elimina</button></div>' +
+        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Save the session</button><button type="button" class="btn btn--quiet" data-elimina="' + id + '">Delete</button></div>' +
         '<div id="el-' + id + '" role="status" aria-live="polite"></div></form>';
     }
     function rigaSub(ora, titolo, chi) {
-      // ogni campo ha un nome accessibile per riga ("Ora, intervento «...»"), uguale per chi legge lo schermo e per chi usa la voce
-      var nome = titolo ? 'intervento «' + titolo.replace(/"/g, '&quot;') + '»' : 'nuovo intervento', sid = 'sub' + (++nSub);
-      return AD.rigaRiordina(titolo || 'Nuovo intervento',
-        '<div class="grid-3"><div class="campo"><label for="' + sid + '-ora">Ora</label><select class="select" id="' + sid + '-ora" data-s="ora" aria-label="Ora, ' + nome + '">' + opt(ORE.concat(['09:15', '11:15', '11:45', '12:05', '12:30', '11:40']).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort(), ora || '09:00') + '</select></div>' +
-        '<div class="campo"><label for="' + sid + '-titolo">Titolo</label><input class="input" id="' + sid + '-titolo" data-s="titolo" aria-label="Titolo, ' + nome + '" value="' + (titolo || '').replace(/"/g, '&quot;') + '"></div>' +
-        '<div class="campo"><label for="' + sid + '-chi">Chi interviene</label><input class="input" id="' + sid + '-chi" data-s="chi" aria-label="Chi interviene, ' + nome + '" value="' + (chi || '') + '"></div></div>');
+      var nome = titolo ? 'talk «' + titolo.replace(/"/g, '&quot;') + '»' : 'new talk', sid = 'sub' + (++nSub);
+      var ore = ORE.concat(ora ? [ora] : []).filter(function (x, i, a) { return a.indexOf(x) === i; }).sort();
+      return AD.rigaRiordina(titolo || 'New talk',
+        '<div class="grid-3"><div class="campo"><label for="' + sid + '-ora">Time</label><select class="select" id="' + sid + '-ora" data-s="ora" aria-label="Time, ' + nome + '">' + opt(ore, ora || '09:00') + '</select></div>' +
+        '<div class="campo"><label for="' + sid + '-titolo">Title</label><input class="input" id="' + sid + '-titolo" data-s="titolo" aria-label="Title, ' + nome + '" value="' + (titolo || '').replace(/"/g, '&quot;') + '"></div>' +
+        '<div class="campo"><label for="' + sid + '-chi">Speaking</label><input class="input" id="' + sid + '-chi" data-s="chi" aria-label="Speaking, ' + nome + '" value="' + (chi || '') + '"></div></div>');
     }
     function disegnaSessioni() {
-      var l = S.filter(function (s) { return s.g === giorno; }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da); });
+      var tutte = S.filter(function (s) { return s.g === giorno; });
+      var l = tutte.filter(function (s) { return !salaF || s.sala === salaF; }).sort(function (a, b) { return CV.min(a.da) - CV.min(b.da) || SALE.map(function (x) { return x.id; }).indexOf(a.sala) - SALE.map(function (x) { return x.id; }).indexOf(b.sala); });
+      $('#conto-sessioni').textContent = (salaF ? l.length + ' of ' : '') + tutte.length + ' sessions on this day' + (salaF ? ', in ' + nomeSala(salaF) : '') + '.';
       $('#l-sessioni').innerHTML = l.length ? l.map(function (s) {
-        return '<details class="acc" id="d-' + s.id + '"' + (aperta === s.id ? ' open' : '') + '><summary><span>' + riepilogo(s) + ' <span class="t-small t-muted">· dentro: modifica, interventi e loro riordino</span></span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>' + formSessione(s) + '</details>';
-      }).join('') : '<p class="vuoto">Nessuna sessione in questo giorno.</p>';
+        return '<details class="acc" id="d-' + s.id + '"' + (aperta === s.id ? ' open' : '') + '><summary><span>' + riepilogo(s) + '</span><svg class="ic" aria-hidden="true"><use href="#i-chev"></use></svg></summary>' + (aperta === s.id ? formSessione(s) : '<div class="acc__corpo" data-pigro="' + s.id + '"></div>') + '</details>';
+      }).join('') : '<p class="vuoto">No sessions on this day' + (salaF ? ' in this room' : '') + '.</p>';
       $$('[data-subs]').forEach(function (ul) { AD.riordina(ul); });
     }
 
     /* schede dei giorni */
-    $('#tabs-g').innerHTML = GG.map(function (g, i) { return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '" data-g="' + g.id + '">' + g.breve + '<small>aprile</small></button>'; }).join('');
-    var tabs = $$('.tab');
+    $('#tabs-g').innerHTML = GG.map(function (g, i) { return '<button class="tab" role="tab" id="tg-' + g.id + '" aria-controls="pannello" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '" data-g="' + g.id + '">' + g.breve + '<small>' + g.mese + '</small></button>'; }).join('');
+    $('#pannello').setAttribute('aria-labelledby', 'tg-' + giorno);
+    var tabs = $$('#tabs-g .tab');
     function scegli(t, sposta) {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t); x.tabIndex = x === t ? 0 : -1; });
       giorno = t.getAttribute('data-g'); $('#pannello').setAttribute('aria-labelledby', t.id); if (sposta) t.focus(); disegnaSessioni();
@@ -173,9 +267,16 @@
       t.addEventListener('click', function () { scegli(t, false); });
       t.addEventListener('keydown', function (e) { var n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key]; if (n === undefined) return; e.preventDefault(); scegli(tabs[(n + tabs.length) % tabs.length], true); });
     });
+    $('#f-sala').addEventListener('change', function (e) { salaF = e.target.value; disegnaSessioni(); });
 
     var box = $('#l-sessioni');
-    box.addEventListener('toggle', function (e) { if (e.target.open) aperta = e.target.id.replace('d-', ''); }, true);
+    // il modulo di una sessione si costruisce solo quando la si apre (120 sessioni: pagina leggera)
+    box.addEventListener('toggle', function (e) {
+      if (!e.target.open) return;
+      aperta = e.target.id.replace('d-', '');
+      var pigro = e.target.querySelector('[data-pigro]');
+      if (pigro) { var s = S.filter(function (x) { return x.id === aperta; })[0]; pigro.outerHTML = formSessione(s); $$('[data-subs]', e.target).forEach(function (ul) { AD.riordina(ul); }); }
+    }, true);
     box.addEventListener('change', function (e) {
       var f = e.target.closest('form'); if (!f) return;
       if (e.target.name && e.target.name.indexOf('acc-') === 0) {
@@ -186,14 +287,14 @@
       var f = e.target.closest('form'); if (!f) return;
       if (e.target.closest('[data-add-sub]')) {
         var ul = f.querySelector('[data-subs]'); ul.insertAdjacentHTML('beforeend', rigaSub('', '', '')); AD.riordina(ul);
-        ul.lastElementChild.querySelector('input').focus(); AD.annuncio('Intervento aggiunto in fondo.');
+        ul.lastElementChild.querySelector('input').focus(); AD.annuncio('Talk added at the end.');
       }
       var el = e.target.closest('[data-elimina]');
       if (el) {
         var s = S.filter(function (x) { return x.id === f.getAttribute('data-id'); })[0], st = $('#el-' + s.id);
-        if (venduti(s)) { CV.msg(st, 'err', 'Non si elimina: ci sono ' + venduti(s) + ' posti venduti o prenotati. Rimborsa o sposta prima gli ordini.'); return; }
-        if (!el.getAttribute('data-conferma')) { el.setAttribute('data-conferma', '1'); el.textContent = 'Conferma: elimina davvero'; el.className = 'btn btn--danger'; CV.msg(st, 'warn', 'Premi di nuovo per eliminare «' + s.titolo + '». Non si può annullare.'); return; }
-        S = S.filter(function (x) { return x.id !== s.id; }); aperta = null; disegnaSessioni(); CV.msg($('#st-sessioni'), 'ok', 'Sessione eliminata (simulato). Registrato nel registro audit.');
+        if (venduti(s)) { CV.msg(st, 'err', 'Cannot delete it: ' + venduti(s) + ' seats are sold or booked. Refund or move the orders first.'); return; }
+        if (!el.getAttribute('data-conferma')) { el.setAttribute('data-conferma', '1'); el.textContent = 'Confirm: delete for good'; el.className = 'btn btn--danger'; CV.msg(st, 'warn', 'Press again to delete «' + s.titolo + '». This cannot be undone.'); return; }
+        S = S.filter(function (x) { return x.id !== s.id; }); aperta = null; disegnaSessioni(); CV.msg($('#st-sessioni'), 'ok', 'Session deleted (simulated). Written to the audit log.');
       }
     });
     box.addEventListener('submit', function (e) {
@@ -203,29 +304,27 @@
       var n = { titolo: g('titolo').trim(), g: g('g'), da: g('da'), a: g('a'), sala: g('sala'), t: g('t'), tipo: g('tipo') };
       $$('[aria-invalid]', f).forEach(function (x) { x.removeAttribute('aria-invalid'); });
       function err(k, m) { er.push({ k: k, m: m }); }
-      if (!n.titolo) err('titolo', 'Scrivi il titolo della sessione.');
-      if (CV.min(n.a) <= CV.min(n.da)) err('a', 'La fine deve essere dopo l’inizio.');
-      else S.forEach(function (o) { if (o.id !== id && o.g === n.g && o.sala === n.sala && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) err('sala', 'La sala è occupata da «' + o.titolo + '» (' + o.da + '–' + o.a + '). Cambia sala o orario.'); });
-      var cap = parseInt(g('cap'), 10), pr = { pub: +g('pub'), mem: +g('mem') };
+      if (!n.titolo) err('titolo', 'Write the session title.');
+      if (CV.min(n.a) <= CV.min(n.da)) err('a', 'The end must be after the start.');
+      else S.forEach(function (o) { if (o.id !== id && o.g === n.g && o.sala === n.sala && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) err('sala', nomeSala(n.sala) + ' is taken by «' + o.titolo + '» (' + o.da + '–' + o.a + '). Change room or time.'); });
+      var cap = parseInt(g('cap'), 10), pr = +g('pub');
       if (acc !== 'libero') {
-        if (isNaN(cap) || cap < 1) err('cap', 'Scrivi la capienza: un numero da 1 in su.');
-        else if (cap < venduti(s)) err('cap', 'La capienza non può scendere sotto ' + venduti(s) + ': ci sono già posti venduti o prenotati.');
+        if (isNaN(cap) || cap < 1) err('cap', 'Write the capacity: a number from 1 up.');
+        else if (cap < venduti(s)) err('cap', 'The capacity cannot go below ' + venduti(s) + ': seats are already sold or booked.');
       }
-      if (acc === 'pagamento') {
-        ['pub', 'mem'].forEach(function (k) { if (isNaN(pr[k]) || pr[k] < 0 || $('#f-' + id + '-' + k).value === '') err(k, 'Scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' (anche 0).'); });
-      }
+      if (acc === 'pagamento' && (g('pub') === '' || isNaN(pr) || pr < 0)) err('pub', 'Write the price (0 or more).');
       var subs = $$('[data-subs] > li', f).map(function (li) { return { ora: $('[data-s="ora"]', li).value, titolo: $('[data-s="titolo"]', li).value.trim(), chi: $('[data-s="chi"]', li).value.trim() }; });
       subs.forEach(function (x, i) {
-        if (!x.titolo) err('titolo', 'L’intervento ' + (i + 1) + ' non ha un titolo.');
-        if (CV.min(x.ora) < CV.min(n.da) || CV.min(x.ora) >= CV.min(n.a)) err('da', 'L’intervento «' + (x.titolo || i + 1) + '» è fuori dall’orario della sessione.');
-        if (i && CV.min(x.ora) < CV.min(subs[i - 1].ora)) err('da', 'Gli interventi non sono in ordine di orario: «' + (x.titolo || i + 1) + '» comincia prima del precedente.');
+        if (!x.titolo) err('titolo', 'Talk ' + (i + 1) + ' has no title.');
+        if (CV.min(x.ora) < CV.min(n.da) || CV.min(x.ora) >= CV.min(n.a)) err('da', 'The talk «' + (x.titolo || i + 1) + '» is outside the session time.');
+        if (i && CV.min(x.ora) < CV.min(subs[i - 1].ora)) err('da', 'Talks are not in time order: «' + (x.titolo || i + 1) + '» starts before the previous one.');
       });
       var spk = $$('[data-sp]:checked', f).map(function (c) { return c.value; });
       var avv = [];
-      S.forEach(function (o) { if (o.id !== id && o.g === n.g && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) spk.forEach(function (p) { if (o.sp.indexOf(p) > -1) avv.push(CV.persona(p).nome + ' è anche in «' + o.titolo + '» alla stessa ora'); }); });
+      S.forEach(function (o) { if (o.id !== id && o.g === n.g && CV.min(o.da) < CV.min(n.a) && CV.min(n.da) < CV.min(o.a)) spk.forEach(function (p) { if (o.sp.indexOf(p) > -1) avv.push(CV.persona(p).nome + ' is also in «' + o.titolo + '» (' + nomeSala(o.sala) + ') at the same time'); }); });
       var box2 = $('#er-' + id);
       if (er.length) {
-        box2.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + id + '">Controlla ' + er.length + (er.length === 1 ? ' campo' : ' campi') + '</h3><ul>' +
+        box2.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + id + '">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' +
           er.map(function (x) { return '<li><a href="#f-' + id + '-' + x.k + '">' + x.m + '</a></li>'; }).join('') + '</ul></div>';
         er.forEach(function (x) { var el = $('#f-' + id + '-' + x.k); if (el) el.setAttribute('aria-invalid', 'true'); });
         $('#he-' + id).focus(); return;
@@ -233,18 +332,18 @@
       s.titolo = n.titolo; s.g = n.g; s.da = n.da; s.a = n.a; s.sala = n.sala; s.t = n.t; s.tipo = n.tipo; s.sp = spk; s.subs = subs;
       var vend = venduti(s);
       if (acc === 'libero') { s.posti = { libero: true }; s.pagamento = undefined; }
-      else { s.posti = { tot: cap, res: cap - vend }; s.pagamento = acc === 'pagamento' ? pr : undefined; }
+      else { s.posti = { tot: cap, res: cap - vend }; s.pagamento = acc === 'pagamento' ? { pub: pr, mem: pr } : undefined; }
       giorno = s.g; aperta = null;
       tabs.forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('data-g') === giorno); t.tabIndex = t.getAttribute('data-g') === giorno ? 0 : -1; });
       disegnaSessioni();
-      CV.msg($('#st-sessioni'), 'ok', '<b>Sessione salvata</b> (simulato): «' + s.titolo + '». Registrato nel registro audit.' + (avv.length ? '<br><b>Attenzione:</b> ' + avv.join('; ') + '.' : ''));
+      CV.msg($('#st-sessioni'), 'ok', '<b>Session saved</b> (simulated): «' + s.titolo + '». Written to the audit log.' + (avv.length ? '<br><b>Warning:</b> ' + avv.join('; ') + '.' : ''));
       var sm = $('#d-' + s.id + ' > summary'); if (sm) sm.focus();
     });
     $('#add-sessione').addEventListener('click', function () {
       var id = 'sn' + (++nuovo);
-      S.push({ id: id, g: giorno, da: '09:00', a: '10:00', sala: SALE[0].id, t: TR[0].id, tipo: 'talk', titolo: 'Nuova sessione (bozza)', sp: [], desc: '', posti: { libero: true }, subs: [] });
+      S.push({ id: id, g: giorno, da: '09:00', a: '10:00', sala: salaF || SALE[0].id, t: TR[0].id, tipo: 'talk', titolo: 'New session (draft)', sp: [], desc: '', posti: { libero: true }, subs: [] });
       aperta = id; disegnaSessioni(); var t = $('#f-' + id + '-titolo'); t.focus(); t.select();
-      AD.annuncio('Sessione aggiunta e aperta per la modifica.');
+      AD.annuncio('Session added and open for editing.');
     });
 
     disegnaStruttura(); disegnaSessioni();

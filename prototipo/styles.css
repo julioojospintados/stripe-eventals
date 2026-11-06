@@ -57,6 +57,8 @@
     .btn + --primary (oro) | --secondary (bianco) | --quiet | --danger | --on-hero · --block · .btn-gruppo
   Chip e badge, prezzi per ruolo, agenda, tabelle, form, processo, avvisi: come prima.
   Nuove: .video-riga (member area) · .admin-ruolo (selettore ruolo admin) · .lang-avviso
+  Secondo giro (06/11/2026): griglia a 12 sale in .griglia-scorri (sticky), .filtri-rapidi, .salta-ora, .fasce, .scorri-x,
+  .tabella--matrice, .scelta--forte (conferma dei nomi). Palette, font e logo invariati.
   ============================================================================
 */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
@@ -488,25 +490,48 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .sub b { display: block; font-size: var(--fs-base); }
 .sub time { font-weight: 700; }
 
-/* vista a griglia per sala: solo da 64rem; su telefono resta la lista */
-.griglia { display: none; }
+/* vista a griglia per sala: solo da 64rem; su telefono resta la lista per orario.
+   12 sale: la griglia scorre di lato DENTRO .griglia-scorri (la pagina no). Intestazioni di sala (top) e colonna orari (left)
+   restano ferme con position: sticky, che funziona perche' il contenitore scorre in entrambe le direzioni. */
+.griglia-box { display: none; }
 @media (min-width: 64rem) {
-  .agenda[data-vista="griglia"] .griglia {
-    display: grid; grid-template-columns: 4rem repeat(var(--cols, 4), minmax(0, 1fr));
-    grid-template-rows: auto repeat(18, 3.75rem); column-gap: var(--s-2);
-  }
-  .agenda[data-vista="griglia"] .lista { display: none; }
+  .agenda[data-vista="griglia"] .griglia-box { display: block; }
+  .agenda[data-vista="griglia"] .lista, .agenda[data-vista="griglia"] .salta-ora { display: none; }
 }
-.griglia__sala { grid-row: 1; padding: var(--s-2) var(--s-2) var(--s-3); font-weight: 700; border-bottom: 3px solid var(--c-ink); }
+.griglia-comandi { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); margin-bottom: var(--s-3); }
+.griglia-comandi > p { max-width: 60ch; }
+.griglia-scorri {
+  position: relative; /* blocco contenitore anche per i .sr-only assoluti delle celle: senza, allargano la pagina */
+  overflow: auto; max-height: min(78vh, 52rem); overscroll-behavior-x: contain;
+  border: 1px solid var(--c-line-strong); border-radius: var(--r-m); background: var(--c-bg);
+}
+.griglia-scorri:focus-visible { outline-offset: 2px; }
+.griglia {
+  display: grid; grid-template-columns: 4.5rem repeat(var(--cols, 12), minmax(11rem, 1fr));
+  grid-template-rows: auto repeat(var(--righe, 17), 3.5rem);
+  min-width: calc(4.5rem + var(--cols, 12) * 11rem);
+}
+.griglia__sala, .griglia__angolo {
+  grid-row: 1; position: sticky; top: 0; z-index: 3; background: var(--c-bg);
+  padding: var(--s-2) var(--s-2) var(--s-3); font-weight: 700; line-height: 1.2; border-bottom: 3px solid var(--c-ink);
+}
+.griglia__angolo { left: 0; z-index: 5; box-shadow: 1px 0 0 var(--c-line-strong); }
 .griglia__sala small { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--c-ink-2); }
-.griglia__riga { grid-column: 1 / -1; border-top: 1px solid var(--c-line); pointer-events: none; }
-.griglia__ora { font-size: var(--fs-xs); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink-2); padding-top: var(--s-1); }
+.griglia__ora {
+  grid-column: 1; position: sticky; left: 0; z-index: 2; background: var(--c-bg);
+  border-top: 1px solid var(--c-line); box-shadow: 1px 0 0 var(--c-line-strong); padding: var(--s-1) var(--s-2) 0;
+  font-size: var(--fs-xs); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--c-ink-2);
+}
+.griglia__riga { grid-column: 2 / -1; border-top: 1px solid var(--c-line); pointer-events: none; }
+.griglia__riga--pausa { background: repeating-linear-gradient(135deg, transparent 0 10px, var(--c-surface-2) 10px 20px); display: flex; align-items: center; padding-left: var(--s-3); }
+.griglia__riga--pausa span { position: sticky; left: 5.25rem; font-size: var(--fs-xs); font-weight: 700; color: var(--c-ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
 .cella {
-  z-index: 1; display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; overflow: hidden;
-  margin: 2px 0; padding: var(--s-2) var(--s-3); background: var(--tt, var(--c-surface-2)); color: #111111;
+  position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; overflow: hidden;
+  margin: 2px 4px; padding: var(--s-2) var(--s-3); background: var(--tt, var(--c-surface-2)); color: #111111;
   border: 1px solid var(--tk, var(--c-line-strong)); border-radius: var(--r-m); text-decoration: none; font-size: var(--fs-sm);
 }
 .cella:hover { background: var(--c-surface); outline: 2px solid var(--c-ink); }
+.cella:focus-visible { outline-offset: -3px; }
 .cella b { line-height: 1.2; }
 .cella small { font-variant-numeric: tabular-nums; color: #111111; }
 .cella .badge { align-self: flex-start; min-height: 1.5rem; }
@@ -803,3 +828,60 @@ body.senza-nav { --nav-h: 0rem; }
 .esito--attesa { background: var(--c-surface); color: var(--c-ink-2); border-style: dashed; }
 .senza-nav .barra-azione { padding-bottom: calc(var(--s-3) + env(safe-area-inset-bottom)); }
 .checkin-main { padding-bottom: calc(var(--s-3) * 2 + 4rem + 1rem + env(safe-area-inset-bottom)); }
+
+/* ============================================================================
+   SECONDO GIRO (06/11/2026): inglese, fasce di prezzo, 12 sale, nuovi biglietti, import, video.
+   ============================================================================ */
+.proto-bar__campo { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); min-width: 0; max-width: 100%; }
+.proto-bar__campo .select { max-width: 100%; }
+
+/* agenda: filtri rapidi sempre visibili (sala e traccia) e salto all'orario sul telefono */
+.filtri-rapidi { display: grid; gap: var(--s-3); }
+@media (min-width: 40rem) { .filtri-rapidi { grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr); align-items: start; } }
+.filtri-rapidi fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.filtri-rapidi legend { font-weight: 600; padding: 0; margin-bottom: var(--s-1); }
+.salta-ora { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.salta-ora:empty { display: none; }
+.salta-ora .chip { text-decoration: none; font-variant-numeric: tabular-nums; }
+.sessione-gruppo__titolo small { font: 400 var(--fs-sm) / 1 var(--font-body); color: var(--c-ink-2); letter-spacing: 0; margin-left: var(--s-2); }
+.sessione-gruppo__titolo:focus-visible { outline-offset: 4px; }
+
+/* fasce di prezzo: la fascia attiva ha bordo spesso, badge «Now» e aria-current (mai solo colore) */
+.fasce { list-style: none; display: grid; gap: var(--s-3); }
+@media (min-width: 40rem) { .fasce { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.fascia { background: var(--c-surface); border: 1px solid var(--c-line-strong); border-radius: var(--r-m); padding: var(--s-3) var(--s-4); }
+.fascia > * + * { margin-top: var(--s-1); }
+.fascia__nome { font: 600 var(--fs-lg) / 1.2 var(--font-display); }
+.fascia--ora { border: 3px solid var(--c-accent-text); padding: calc(var(--s-3) - 2px) calc(var(--s-4) - 2px); background: var(--c-accent-soft); }
+.fascia--finita { background: var(--c-surface-2); color: var(--c-ink-2); }
+.tabella .riga-ora th, .tabella .riga-ora td { border-top: 3px solid var(--c-accent-text); }
+.prezzo-valore--tba { font: 700 var(--fs-1) / 1.1 var(--font-display); }
+.hero__prezzi .badge--info { background: #f5f5f5; color: #111111; border-color: #f5f5f5; }
+.fascia-nota .badge { margin-right: var(--s-1); vertical-align: 0.05em; }
+.scelta--forte { align-items: flex-start; padding: var(--s-3); border: 2px solid var(--c-warn-fg); border-radius: var(--r-m); background: var(--c-warn-bg); color: var(--c-warn-fg); }
+.scelta--forte input { margin-top: 0.1rem; }
+.campo--errore .scelta--forte { border-color: var(--c-err-fg); }
+
+/* tabelle larghe (matrice dei prezzi): scorrono nel loro contenitore, la pagina no */
+.scorri-x { overflow-x: auto; max-width: 100%; }
+.scorri-x:focus-visible { outline-offset: 2px; }
+.tabella--matrice th, .tabella--matrice td { vertical-align: top; }
+.tabella--matrice thead .th-fascia { text-align: center; border-bottom: 1px solid var(--c-line); }
+.cella-prezzo { display: grid; gap: var(--s-1); justify-items: start; min-width: 7.5rem; }
+.select--piccolo { min-height: 2.75rem; padding-block: var(--s-1); width: auto; }
+@media (max-width: 39.99rem) {
+  .tabella--stack td .cella-prezzo { justify-items: end; min-width: 0; }
+  .scorri-x { overflow: visible; }
+}
+
+.elenco-puntato { padding-left: 1.25rem; }
+.elenco-puntato li + li { margin-top: var(--s-1); }
+.lista-scorri { max-height: 20rem; overflow-y: auto; border: 1px solid var(--c-line-strong); border-radius: var(--r-m); padding: var(--s-2) var(--s-3); background: var(--c-surface); }
+/* matrice: controlli stretti, cosi' 3 fasce x 2 ruoli stanno a 1280px senza scorrere */
+@media (min-width: 40rem) {
+  .tabella--matrice th, .tabella--matrice td { padding: var(--s-2); }
+  .tabella--matrice .cella-prezzo { min-width: 0; }
+  .tabella--matrice td .select, .tabella--matrice td .input { width: 5.75rem; min-width: 0; max-width: 5.75rem; }
+  .tabella--matrice tbody th { max-width: 9rem; }
+}
+@media (min-width: 40rem) { .tabella--matrice td .select--piccolo { font-size: var(--fs-sm); padding-inline: var(--s-2) 0; } }

@@ -1,73 +1,87 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Biglietti e prezzi · Admin · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Tickets, tiers and dates · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body class="senza-nav" data-area="admin">
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
-    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
-  </div>
-</header>
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 <div class="wrap admin-shell">
-  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
 
   <main id="contenuto" class="admin-main">
     <div class="admin-head">
-      <h1 class="t-1">Biglietti e prezzi</h1>
-      <p class="t-small t-muted">Cambiare un prezzo non tocca gli ordini già pagati.</p>
+      <h1 class="t-1">Tickets, tiers and dates</h1>
+      <p class="t-small t-muted">Changing a price never touches orders already paid.</p>
     </div>
+    <div id="st-config" role="status" aria-live="polite"></div>
 
-    <section aria-labelledby="h-matrice">
-      <h2 class="t-2" id="h-matrice">Prezzi per ruolo, oggi</h2>
-      <div class="campo" style="max-width:16rem;margin-bottom:var(--s-4)">
-        <label for="oggi">Prototipo: simula la data di oggi</label>
-        <input class="input" type="date" id="oggi" value="2026-11-06">
+    <section aria-labelledby="h-evento">
+      <h2 class="t-2" id="h-evento">Event dates</h2>
+      <p class="t-muted misura">The programme days come from these dates. A day that still has sessions cannot be removed.</p>
+      <div class="grid-2" style="max-width:32rem">
+        <div class="campo"><label for="ev-dal">First day</label><input class="input" type="date" id="ev-dal"></div>
+        <div class="campo"><label for="ev-al">Last day</label><input class="input" type="date" id="ev-al"></div>
       </div>
-      <p class="t-muted misura">I pass prendono il prezzo dalla fascia di vendita in corso (sezione sotto). Le sessioni a pagamento si modificano qui. Due prezzi: pubblico e membro; il prezzo membro vale solo sul biglietto del membro che compra.</p>
-      <table class="tabella tabella--stack" id="matrice">
-        <caption class="sr-only">Prezzi per tipo di biglietto e ruolo</caption>
-        <thead><tr><th scope="col">Tipo di biglietto</th><th scope="col" class="num">Pubblico (€)</th><th scope="col" class="num">Membro (€)</th></tr></thead>
-        <tbody id="righe-matrice"></tbody>
-      </table>
-      <div id="er-matrice" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
-      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-matrice">Salva i prezzi delle sessioni</button></div>
-      <div id="st-matrice" role="status" aria-live="polite"></div>
+      <p class="t-small t-muted" id="ev-giorni" style="margin-top:var(--s-2)"></p>
+      <div id="er-evento" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-evento">Save event dates</button></div>
     </section>
 
     <section aria-labelledby="h-fasce">
-      <h2 class="t-2" id="h-fasce">Fasce di vendita (early bird)</h2>
-      <p class="t-muted misura">Per ogni pass, una fascia ha date di inizio e fine e i due prezzi. La fascia aperta è quella che si vede anche sul sito pubblico. Due fasce dello stesso pass non devono sovrapporsi.</p>
+      <h2 class="t-2" id="h-fasce">Price tiers</h2>
+      <p class="t-muted misura">Three tiers in a row: Early bird, Regular, Last minute. Each has a start and an end date; tiers must not overlap. The open tier is the one the public site shows. Client rule: early bird (−30%) is for members only.</p>
+      <div class="campo" style="max-width:16rem;margin-bottom:var(--s-4)">
+        <label for="oggi">Prototype: simulate today’s date</label>
+        <input class="input" type="date" id="oggi">
+      </div>
       <div id="attive" role="status" aria-live="polite" class="stack" style="margin-bottom:var(--s-4)"></div>
       <table class="tabella tabella--stack">
-        <caption class="sr-only">Fasce di vendita</caption>
-        <thead><tr><th scope="col">Fascia</th><th scope="col">Pass</th><th scope="col">Dal</th><th scope="col">Al</th><th scope="col" class="num">Pubblico</th><th scope="col" class="num">Membro</th><th scope="col"><span class="sr-only">Azioni</span></th></tr></thead>
+        <caption class="sr-only">Price tiers with dates</caption>
+        <thead><tr><th scope="col">Tier</th><th scope="col">Starts</th><th scope="col">Ends</th><th scope="col">Length</th><th scope="col">Status on the simulated date</th></tr></thead>
         <tbody id="righe-fasce"></tbody>
       </table>
-      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-fascia">Aggiungi una fascia</button><button type="button" class="btn btn--primary" id="salva-fasce">Salva le fasce</button></div>
       <div id="er-fasce" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
-      <div id="st-fasce" role="status" aria-live="polite"></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-fasce">Save tier dates</button></div>
+    </section>
+
+    <section aria-labelledby="h-matrice">
+      <h2 class="t-2" id="h-matrice">Prices: ticket type × tier × role</h2>
+      <p class="t-muted misura">For each cell choose <b>Price</b> (write it), <b>Regular</b> (no discount in this tier: the Regular price applies) or <b>TBA</b> (price to be announced: that ticket cannot be sold in that tier). Companion and exhibitor prices are placeholders until the client decides them.</p>
+      <div class="scorri-x" tabindex="0" role="region" aria-label="Price matrix, scrolls sideways on narrow screens">
+        <table class="tabella tabella--stack tabella--matrice" id="matrice">
+          <caption class="sr-only">Prices by ticket type, tier and role, in euros</caption>
+          <thead id="testa-matrice"></thead>
+          <tbody id="righe-matrice"></tbody>
+        </table>
+      </div>
+      <div id="er-matrice" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-matrice">Save prices</button></div>
     </section>
 
     <section aria-labelledby="h-cap">
-      <h2 class="t-2" id="h-cap">Capienze</h2>
-      <p class="t-muted misura">Un pass intero vale per i tre giorni e consuma un posto della capienza del congresso. Non si può scendere sotto i posti già venduti o in riserva.</p>
+      <h2 class="t-2" id="h-cap">Capacities</h2>
+      <p class="t-muted misura">A full pass is valid for the three days and takes one seat of the congress capacity. 10 workshops with 20 seats each. You cannot go below seats already sold or held.</p>
       <table class="tabella tabella--stack">
-        <caption class="sr-only">Capienze</caption>
-        <thead><tr><th scope="col">Posti</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col" class="num">Minimo</th><th scope="col" class="num">Capienza</th></tr></thead>
+        <caption class="sr-only">Capacities</caption>
+        <thead><tr><th scope="col">Pool</th><th scope="col" class="num">Sold</th><th scope="col" class="num">Held</th><th scope="col" class="num">Minimum</th><th scope="col" class="num">Capacity</th></tr></thead>
         <tbody id="righe-cap"></tbody>
       </table>
       <div id="er-cap" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
-      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-cap">Salva le capienze</button></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-cap">Save capacities</button></div>
       <div id="st-cap" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="h-ripristina">
+      <h2 class="t-2" id="h-ripristina">Prototype</h2>
+      <p class="t-muted misura">Saved dates and prices stay in this browser, so you can see the effect on the public site. They are not sent anywhere.</p>
+      <p><button type="button" class="btn btn--secondary" id="ripristina">Restore the example values</button></p>
     </section>
   </main>
 </div>
@@ -76,108 +90,177 @@
 <script src="admin.js"></script>
 <script>
   CV.ready(function () {
-    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, nuovo = 0;
-    var fmt = function (iso) { var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
-    // le fasce sono la stessa fonte del sito pubblico (CV.DATA.fasce): una copia da modificare
-    var FASCE = JSON.parse(JSON.stringify(D.fasce));
-    var SES = D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { return { id: s.id, titolo: s.titolo, g: s.g, p: JSON.parse(JSON.stringify(s.pagamento)) }; });
-    // Il pass di un solo giorno non e' offerto per ora (cliente: «non indicato»): solo il pass intero ha fasce di vendita.
-    var NOMI = { intero: 'Pass intero' };
-    var num = function (id, v, lab) { return '<input class="input input--num" id="' + id + '" type="number" min="0" step="1" value="' + v + '" aria-label="' + lab + '">'; };
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, E = CV.euro, copia = function (x) { return JSON.parse(JSON.stringify(x)); };
+    var FASCE = copia(D.fasce), LIST = copia(D.listino), EV = { dal: D.evento.dal, al: D.evento.al };
+    var TIPI = [['intero', 'Full pass', true], ['companion', 'Companion', false], ['espositore', 'Exhibitor / Sponsor pass', false], ['workshop', 'Workshop', false]];
+    var RU = { pub: 'Public', mem: 'Member' };
 
-    function attiva(tipo) { var o = $('#oggi').value; return FASCE.filter(function (f) { return f.tipo === tipo && f.dal <= o && o <= f.al; }); }
-    function matrice() {
-      var h = '';
-      ['intero'].forEach(function (t) {
-        var a = attiva(t), f = a[0];
-        h += '<tr><th scope="row">' + NOMI[t] + '<br><span class="t-small t-muted">' + (a.length === 1 ? 'fascia ' + f.nome : (a.length ? 'fasce sovrapposte: da correggere' : 'nessuna fascia aperta')) + '</span></th>' +
-          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + (a.length === 1 ? f[k].toLocaleString('it-IT', { minimumFractionDigits: Math.round(f[k]) === f[k] ? 0 : 2 }) +' €' : '—') + '</td>'; }).join('') + '</tr>';
-      });
-      SES.forEach(function (s) {
-        h += '<tr><th scope="row">' + s.titolo + '<br><span class="t-small t-muted">' + CV.giorno(s.g).breve + ' · sessione a pagamento</span></th>' +
-          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + num('m-' + s.id + '-' + k, s.p[k], { pub: 'Prezzo pubblico', mem: 'Prezzo membro' }[k] + ': ' + s.titolo) + '</td>'; }).join('') + '</tr>';
-      });
-      $('#righe-matrice').innerHTML = h;
-      var msg = '';
-      ['intero'].forEach(function (t) { var a = attiva(t); msg += '<div class="avviso avviso--' + (a.length === 1 ? 'info' : 'warn') + '"><svg class="ic" aria-hidden="true"><use href="#i-' + (a.length === 1 ? 'info' : 'alert') + '"></use></svg><div><b>' + NOMI[t] + ':</b> ' + (a.length === 1 ? 'in vendita con la fascia «' + a[0].nome + '» fino al ' + fmt(a[0].al) + '.' : (a.length ? 'più fasce aperte nello stesso giorno.' : 'oggi nessuna fascia è aperta: il pass non si può comprare.')) + '</div></div>'; });
-      $('#attive').innerHTML = msg;
+    function salvaConfig(cosa) {
+      var cfg = {};
+      try { cfg = JSON.parse(localStorage.getItem('cv-config')) || {}; } catch (e) { cfg = {}; }
+      if (cosa === 'evento') cfg.evento = EV;
+      if (cosa === 'fasce') cfg.fasce = FASCE.map(function (f) { return { id: f.id, dal: f.dal, al: f.al }; });
+      if (cosa === 'listino') cfg.listino = LIST;
+      try { localStorage.setItem('cv-config', JSON.stringify(cfg)); return true; } catch (e) { return false; }
     }
+    function riepilogoErrori(box, er, pre) {
+      if (!er.length) { box.innerHTML = ''; return false; }
+      box.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + pre + '">Check ' + er.length + (er.length === 1 ? ' point' : ' points') + '</h3><ul>' + er.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+      $('#he-' + pre).focus(); return true;
+    }
+    function fatto(testo, av, ok) {
+      CV.msg($('#st-config'), av && av.length ? 'warn' : 'ok', '<b>' + testo.replace(/\.$/, '') + '</b> (simulated). Written to the audit log.' + (ok === false ? ' Browser storage is not available: the public site will not see the change.' : ' The public site uses it in this browser.') + (av && av.length ? '<br>' + av.join('<br>') : ''));
+      $('#st-config').scrollIntoView({ block: 'nearest' });
+    }
+
+    /* ---------------- date dell'evento ---------------- */
+    $('#ev-dal').value = EV.dal; $('#ev-al').value = EV.al;
+    function giorniEvento() {
+      var a = $('#ev-dal').value, b = $('#ev-al').value;
+      $('#ev-giorni').textContent = a && b && a <= b ? CV.intervallo(a, b) + ' · ' + (CV.giorniTra(a, b) + 1) + ' days' : '';
+    }
+    $('#ev-dal').addEventListener('input', giorniEvento); $('#ev-al').addEventListener('input', giorniEvento); giorniEvento();
+    $('#salva-evento').addEventListener('click', function () {
+      var a = $('#ev-dal').value, b = $('#ev-al').value, er = [];
+      $$('#ev-dal, #ev-al').forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      if (!a || !b) er.push('Write both the first and the last day.');
+      else if (b < a) er.push('The last day (' + CV.dataEn(b) + ') is before the first day (' + CV.dataEn(a) + ').');
+      else {
+        var n = CV.giorniTra(a, b) + 1;
+        if (n > 5) er.push('The event can last at most 5 days in the prototype; you chose ' + n + '.');
+        D.giorni.forEach(function (g, i) {
+          var k = D.sessioni.filter(function (s) { return s.g === g.id; }).length;
+          if (i >= n && k) er.push('Day ' + (i + 1) + ' (' + g.lungo + ') still has ' + k + ' sessions: move them in Programme before shortening the event.');
+        });
+        var ult = FASCE[FASCE.length - 1];
+        if (ult.al > b) er.push('The last tier («' + ult.nome + '») ends on ' + CV.dataEn(ult.al) + ', after the event. Change the tier dates too.');
+      }
+      if (er.length) { $('#ev-al').setAttribute('aria-invalid', 'true'); }
+      if (riepilogoErrori($('#er-evento'), er, 'evento')) return;
+      EV = { dal: a, al: b };
+      fatto('Event dates saved: ' + CV.intervallo(a, b) + '.', [], salvaConfig('evento'));
+    });
+
+    /* ---------------- fasce ---------------- */
+    $('#oggi').value = CV.oggi();
+    function aperta(o) { return FASCE.filter(function (f) { return f.dal && f.al && f.dal <= o && o <= f.al; }); }
     function fasce() {
+      var o = $('#oggi').value;
       $('#righe-fasce').innerHTML = FASCE.map(function (f) {
-        return '<tr data-id="' + f.id + '"><td data-label="Fascia"><input class="input" data-k="nome" value="' + f.nome + '" aria-label="Nome della fascia"></td>' +
-          '<td data-label="Pass"><select class="select" data-k="tipo" aria-label="Pass della fascia ' + f.nome + '"><option value="intero" selected>Pass intero</option></select></td>' +
-          '<td data-label="Dal"><input class="input" type="date" data-k="dal" value="' + f.dal + '" aria-label="Dal, fascia ' + f.nome + '"></td><td data-label="Al"><input class="input" type="date" data-k="al" value="' + f.al + '" aria-label="Al, fascia ' + f.nome + '"></td>' +
-          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '"><input class="input input--num" type="number" min="0" step="0.01" data-k="' + k + '" value="' + f[k] + '" aria-label="' + { pub: 'Prezzo pubblico', mem: 'Prezzo membro' }[k] + ', fascia ' + f.nome + '"></td>'; }).join('') +
-          '<td data-label=""><button type="button" class="btn btn--quiet btn--piccolo" data-rm="' + f.id + '">Rimuovi<span class="sr-only"> la fascia ' + f.nome + '</span></button></td></tr>';
+        var on = f.dal <= o && o <= f.al, st = !f.dal || !f.al ? 'dates missing' : (on ? 'open now · ' + CV.giorniTra(o, f.al) + ' days left' : (f.al < o ? 'ended' : 'starts in ' + CV.giorniTra(o, f.dal) + ' days'));
+        return '<tr data-id="' + f.id + '"><th scope="row">' + f.nome + '<br><span class="t-small t-muted">' + { early: 'members only, −30%', regular: 'public and member price', last: 'price set in the matrix below' }[f.id] + '</span></th>' +
+          '<td data-label="Starts"><input class="input" type="date" data-k="dal" value="' + f.dal + '" aria-label="Start of ' + f.nome + '"></td>' +
+          '<td data-label="Ends"><input class="input" type="date" data-k="al" value="' + f.al + '" aria-label="End of ' + f.nome + '"></td>' +
+          '<td data-label="Length">' + (f.dal && f.al && f.dal <= f.al ? (CV.giorniTra(f.dal, f.al) + 1) + ' days' : '—') + '</td>' +
+          '<td data-label="Status">' + (on ? '<span class="badge badge--info">' + CV.ic('clock') + st + '</span>' : '<span class="t-small">' + st + '</span>') + '</td></tr>';
       }).join('');
+      var a = aperta(o);
+      $('#attive').innerHTML = '<div class="avviso avviso--' + (a.length === 1 ? 'info' : 'warn') + '">' + CV.ic(a.length === 1 ? 'info' : 'alert') + '<div>' +
+        (a.length === 1 ? 'On ' + CV.dataEn(o) + ' the <b>' + a[0].nome + '</b> tier is open, until ' + CV.dataEn(a[0].al) + '.' : (a.length ? 'More than one tier is open on the same day: fix the dates.' : 'On ' + CV.dataEn(o) + ' no tier is open: nothing can be bought.')) + '</div></div>';
     }
     function leggiFasce() {
       $$('#righe-fasce tr').forEach(function (tr) {
         var f = FASCE.filter(function (x) { return x.id === tr.getAttribute('data-id'); })[0];
-        $$('[data-k]', tr).forEach(function (i) { var k = i.getAttribute('data-k'); f[k] = (k === 'pub' || k === 'mem') ? (i.value === '' ? NaN : +i.value) : i.value; });
+        $$('[data-k]', tr).forEach(function (i) { f[i.getAttribute('data-k')] = i.value; });
       });
     }
-    $('#righe-fasce').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-rm]'); if (!b) return; leggiFasce();
-      FASCE = FASCE.filter(function (f) { return f.id !== b.getAttribute('data-rm'); }); fasce(); matrice(); AD.annuncio('Fascia rimossa.');
-      var p = $('#add-fascia'); p.focus();
-    });
-    $('#add-fascia').addEventListener('click', function () {
-      leggiFasce(); var id = 'fn' + (++nuovo);
-      FASCE.push({ id: id, nome: 'Nuova fascia', tipo: 'intero', dal: '', al: '', pub: 0, mem: 0 }); fasce();
-      var i = $('#righe-fasce tr[data-id="' + id + '"] input'); i.focus(); i.select();
-    });
-    $('#oggi').addEventListener('change', matrice);
-
-    function riepilogoErrori(box, er, prefisso) {
-      if (!er.length) { box.innerHTML = ''; return false; }
-      box.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + prefisso + '">Controlla ' + er.length + (er.length === 1 ? ' punto' : ' punti') + '</h3><ul>' + er.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
-      $('#he-' + prefisso).focus(); return true;
-    }
+    $('#righe-fasce').addEventListener('change', function () { leggiFasce(); fasce(); });
+    $('#oggi').addEventListener('change', fasce);
     $('#salva-fasce').addEventListener('click', function () {
       leggiFasce(); var er = [], av = [];
-      FASCE.forEach(function (f) {
-        var n = f.nome || 'senza nome';
-        if (!f.dal || !f.al) er.push('Fascia «' + n + '»: scrivi le date di inizio e di fine.');
-        else if (f.dal > f.al) er.push('Fascia «' + n + '»: la fine (' + fmt(f.al) + ') è prima dell’inizio (' + fmt(f.dal) + ').');
-        ['pub', 'mem'].forEach(function (k) { if (isNaN(f[k]) || f[k] < 0) er.push('Fascia «' + n + '»: il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' deve essere un numero da 0 in su.'); });
-        if (f.mem > f.pub) av.push('Fascia «' + n + '»: il prezzo membro è più alto del pubblico, quindi il membro non avrebbe vantaggio.');
+      FASCE.forEach(function (f, i) {
+        if (!f.dal || !f.al) er.push('«' + f.nome + '»: write the start and end dates.');
+        else if (f.dal > f.al) er.push('«' + f.nome + '»: the end (' + CV.dataEn(f.al) + ') is before the start (' + CV.dataEn(f.dal) + ').');
+        var p = FASCE[i - 1];
+        if (p && p.al && f.dal) {
+          if (f.dal <= p.al) er.push('«' + p.nome + '» and «' + f.nome + '» overlap: «' + f.nome + '» must start after ' + CV.dataEn(p.al) + '.');
+          else if (CV.giorniTra(p.al, f.dal) > 1) av.push('Gap: no tier is open from ' + CV.dataEn(CV.piuGiorni(p.al, 1)) + ' to ' + CV.dataEn(CV.piuGiorni(f.dal, -1)) + '. Nothing can be bought on those days.');
+        }
       });
-      FASCE.forEach(function (a, i) { FASCE.slice(i + 1).forEach(function (b) { if (a.tipo === b.tipo && a.dal && b.dal && a.dal <= b.al && b.dal <= a.al) er.push('Le fasce «' + a.nome + '» e «' + b.nome + '» (' + NOMI[a.tipo] + ') si sovrappongono.'); }); });
+      var ult = FASCE[FASCE.length - 1];
+      if (ult.al && ult.al > EV.al) er.push('«' + ult.nome + '» ends after the last day of the event (' + CV.dataEn(EV.al) + ').');
       if (riepilogoErrori($('#er-fasce'), er, 'fasce')) return;
-      matrice(); CV.msg($('#st-fasce'), av.length ? 'warn' : 'ok', '<b>Fasce salvate</b> (simulato). Registrato nel registro audit.' + (av.length ? '<br>' + av.join('<br>') : ''));
-    });
-    $('#salva-matrice').addEventListener('click', function () {
-      var er = [], av = [];
-      SES.forEach(function (s) {
-        ['pub', 'mem'].forEach(function (k) {
-          var v = $('#m-' + s.id + '-' + k).value;
-          if (v === '' || +v < 0) er.push('«' + s.titolo + '»: scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' (anche 0).'); else s.p[k] = +v;
-        });
-        if (s.p.mem > s.p.pub) av.push('«' + s.titolo + '»: il prezzo membro supera il pubblico, non avrà effetto.');
-      });
-      if (riepilogoErrori($('#er-matrice'), er, 'matrice')) return;
-      CV.msg($('#st-matrice'), av.length ? 'warn' : 'ok', '<b>Prezzi salvati</b> (simulato). Gli ordini già pagati restano al prezzo pagato.' + (av.length ? '<br>' + av.join('<br>') : ''));
+      fasce(); fatto('Tier dates saved.', av, salvaConfig('fasce'));
     });
 
-    /* capienze */
-    var held = { s03: 1, s09: 0, s10: 2, s15: 0, s05: 0 };
-    // capienza vera (6.000 posti); venduti e in riserva inventati
-    var POOL = [{ id: 'p1', nome: 'Pass intero (8–10 aprile)', cap: D.evento.posti, conf: 3240, held: 35 }]
-      .concat(D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { var h = held[s.id] || 0; return { id: s.id, nome: s.titolo, cap: s.posti.tot, conf: s.posti.tot - s.posti.res - h, held: h }; }));
+    /* ---------------- matrice tipo × fascia × ruolo ---------------- */
+    function modo(v) { return v === 'reg' ? 'reg' : (v === 'tba' || v === null || v === undefined ? 'tba' : 'prezzo'); }
+    function matrice() {
+      $('#testa-matrice').innerHTML = '<tr><th scope="col" rowspan="2">Ticket type</th>' + FASCE.map(function (f) { return '<th scope="colgroup" colspan="2" class="th-fascia">' + f.nome + '</th>'; }).join('') + '</tr>' +
+        '<tr>' + FASCE.map(function () { return '<th scope="col">Public</th><th scope="col">Member</th>'; }).join('') + '</tr>';
+      var h = TIPI.map(function (t) {
+        return '<tr><th scope="row">' + t[1] + (D.segnaposto[t[0]] ? '<br><span class="badge badge--warn">' + CV.ic('alert') + 'Placeholder price</span>' : '') + '</th>' +
+          FASCE.map(function (f) {
+            return ['pub', 'mem'].map(function (k) {
+              var v = LIST[t[0]][f.id][k], m = modo(v), id = 'm-' + t[0] + '-' + f.id + '-' + k, lab = t[1] + ', ' + f.nome + ', ' + RU[k];
+              return '<td data-label="' + f.nome + ' · ' + RU[k] + '"><div class="cella-prezzo">' +
+                '<select class="select select--piccolo" id="' + id + '-modo" aria-label="Kind of price: ' + lab + '">' +
+                '<option value="prezzo"' + (m === 'prezzo' ? ' selected' : '') + '>Price</option>' +
+                (f.id !== 'regular' ? '<option value="reg"' + (m === 'reg' ? ' selected' : '') + '>Regular</option>' : '') +
+                '<option value="tba"' + (m === 'tba' ? ' selected' : '') + '>TBA</option></select>' +
+                '<input class="input input--num" id="' + id + '" type="number" min="0" step="0.01" value="' + (m === 'prezzo' ? v : '') + '" aria-label="Price in euros: ' + lab + '"' + (m === 'prezzo' ? '' : ' hidden') + '>' +
+                (m === 'reg' ? '<span class="t-small t-muted" data-nota>= Regular</span>' : (m === 'tba' ? '<span class="t-small t-muted" data-nota>to be announced</span>' : '')) + '</div></td>';
+            }).join('');
+          }).join('') + '</tr>';
+      }).join('');
+      h += '<tr><th scope="row">Complimentary</th><td colspan="6" data-label="All tiers">' + E(0) + ' · not for sale: issued from <a href="omaggi.html">Complimentary tickets</a> to speakers and staff.</td></tr>';
+      $('#righe-matrice').innerHTML = h;
+    }
+    $('#righe-matrice').addEventListener('change', function (e) {
+      if (!e.target.id || e.target.id.slice(-5) !== '-modo') return;
+      var id = e.target.id.slice(0, -5), inp = $('#' + id), nota = e.target.parentNode.querySelector('[data-nota]');
+      if (nota) nota.remove();
+      inp.hidden = e.target.value !== 'prezzo';
+      if (e.target.value !== 'prezzo') e.target.insertAdjacentHTML('afterend', '<span class="t-small t-muted" data-nota>' + (e.target.value === 'reg' ? '= Regular' : 'to be announced') + '</span>');
+      else inp.focus();
+    });
+    $('#salva-matrice').addEventListener('click', function () {
+      var er = [], av = [], nuovo = copia(LIST);
+      TIPI.forEach(function (t) {
+        FASCE.forEach(function (f) {
+          ['pub', 'mem'].forEach(function (k) {
+            var id = 'm-' + t[0] + '-' + f.id + '-' + k, m = $('#' + id + '-modo').value, v = $('#' + id).value;
+            $('#' + id).removeAttribute('aria-invalid');
+            if (m === 'prezzo') {
+              if (v === '' || +v < 0) { er.push('<a href="#' + id + '">' + t[1] + ', ' + f.nome + ', ' + RU[k].toLowerCase() + ': write a price (0 or more).</a>'); $('#' + id).setAttribute('aria-invalid', 'true'); }
+              else nuovo[t[0]][f.id][k] = +v;
+            } else nuovo[t[0]][f.id][k] = m;
+          });
+          var c = nuovo[t[0]][f.id];
+          if (typeof c.pub === 'number' && typeof c.mem === 'number' && c.mem > c.pub) av.push(t[1] + ', ' + f.nome + ': the member price is higher than the public price.');
+        });
+      });
+      var ep = nuovo.intero.early.pub;
+      if (ep !== 'reg') av.push('Full pass, Early bird, public: the client decided that early bird is for members only. Usually this cell is «Regular».');
+      if (nuovo.intero.regular.pub === 'tba' || nuovo.intero.regular.mem === 'tba') av.push('Full pass, Regular: with «TBA», full passes cannot be sold during Regular.');
+      if (nuovo.intero.last.pub === 'tba') av.push('Full pass, Last minute: still «TBA». When the tier opens, full passes cannot be sold until you set the price.');
+      if (riepilogoErrori($('#er-matrice'), er, 'matrice')) return;
+      LIST = nuovo; matrice();
+      fatto('Prices saved.', av, salvaConfig('listino'));
+    });
+
+    /* ---------------- capienze ---------------- */
+    var held = { w01: 1, w04: 2 };
+    var POOL = [{ id: 'p1', nome: 'Full pass, exhibitor and complimentary', cap: D.evento.posti, conf: 3352, held: 35 }, { id: 'p2', nome: 'Companion (capacity to be defined)', cap: 300, conf: 64, held: 2 }]
+      .concat(D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { var h = Math.min(held[s.id] || 0, s.posti.res); return { id: s.id, nome: s.titolo + ' (' + CV.giorno(s.g).breve + ')', cap: s.posti.tot, conf: s.posti.tot - s.posti.res, held: h }; }));
     $('#righe-cap').innerHTML = POOL.map(function (p) {
-      return '<tr><th scope="row">' + p.nome + '</th><td class="num" data-label="Venduti">' + p.conf + '</td><td class="num" data-label="In riserva">' + p.held + '</td><td class="num" data-label="Minimo">' + (p.conf + p.held) + '</td>' +
-        '<td class="num" data-label="Capienza">' + num('c-' + p.id, p.cap, 'Capienza: ' + p.nome) + '</td></tr>';
+      return '<tr><th scope="row">' + p.nome + '</th><td class="num" data-label="Sold">' + p.conf + '</td><td class="num" data-label="Held">' + p.held + '</td><td class="num" data-label="Minimum">' + (p.conf + p.held) + '</td>' +
+        '<td class="num" data-label="Capacity"><input class="input input--num" id="c-' + p.id + '" type="number" min="0" step="1" value="' + p.cap + '" aria-label="Capacity: ' + p.nome + '"></td></tr>';
     }).join('');
     $('#salva-cap').addEventListener('click', function () {
       var er = [];
       POOL.forEach(function (p) {
         var v = $('#c-' + p.id).value;
-        if (v === '' || +v < 1) er.push('«' + p.nome + '»: scrivi una capienza da 1 in su.');
-        else if (+v < p.conf + p.held) er.push('«' + p.nome + '»: non puoi scendere sotto ' + (p.conf + p.held) + ', ci sono già posti venduti o in riserva.'); else p.cap = +v;
+        if (v === '' || +v < 1) er.push('«' + p.nome + '»: write a capacity of 1 or more.');
+        else if (+v < p.conf + p.held) er.push('«' + p.nome + '»: you cannot go below ' + (p.conf + p.held) + ', seats are already sold or held.'); else p.cap = +v;
       });
       if (riepilogoErrori($('#er-cap'), er, 'cap')) return;
-      CV.msg($('#st-cap'), 'ok', '<b>Capienze salvate</b> (simulato). Registrato nel registro audit.');
+      CV.msg($('#st-cap'), 'ok', '<b>Capacities saved</b> (simulated). Written to the audit log.');
+    });
+
+    $('#ripristina').addEventListener('click', function () {
+      try { localStorage.removeItem('cv-config'); } catch (e) { /* ignora */ }
+      location.reload();
     });
 
     fasce(); matrice();

@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Complimentary tickets · Admin · EAS8 Lisbon</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head"><h1 class="t-1">Complimentary tickets</h1></div>
+    <div class="avviso avviso--info misura" style="margin-bottom:var(--s-5)"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+      <div>For speakers and staff. A complimentary ticket is not for sale and goes through no payment: it becomes a €0 order, takes a seat like a full pass and appears in the partner export. As for every ticket, <b>the name cannot be changed</b> after it is issued.</div></div>
+
+    <section aria-labelledby="h-nuovo">
+      <h2 class="t-2" id="h-nuovo">Issue complimentary ticket</h2>
+      <form id="f" class="stack" novalidate style="max-width:40rem">
+        <fieldset class="campo"><legend class="etichetta">For whom</legend>
+          <label class="scelta"><input type="radio" name="cat" value="Speaker" checked><span>Speaker</span></label>
+          <label class="scelta"><input type="radio" name="cat" value="Staff"><span>Staff</span></label>
+        </fieldset>
+        <div class="campo" id="c-speaker"><label for="speaker">Speaker profile</label><select class="select" id="speaker" aria-describedby="a-speaker"></select>
+          <p class="campo__aiuto" id="a-speaker">Choose the profile: name and email are filled in from it. Speakers without a ticket are listed first.</p></div>
+        <div class="campo"><label for="nome">Full name on the ticket</label><input class="input" id="nome" autocomplete="off" aria-describedby="a-nome"><p class="campo__aiuto" id="a-nome">Exactly as on an ID document: it cannot be changed later.</p></div>
+        <div class="campo"><label for="email">Email</label><input class="input" id="email" type="email" autocomplete="off" aria-describedby="a-email"><p class="campo__aiuto" id="a-email">The ticket is sent here, and the person sees it in their account by logging in with this address.</p></div>
+        <div class="campo"><label for="tipo">Ticket</label><select class="select" id="tipo"><option>Full pass</option><option>Full pass and one workshop</option></select></div>
+        <div class="campo"><label for="nota">Internal note <span class="t-muted">(optional)</span></label><textarea class="textarea" id="nota"></textarea></div>
+        <label class="scelta"><input type="checkbox" id="invia" checked><span>Send the ticket by email now</span></label>
+        <div id="er" role="alert" aria-live="assertive"></div>
+        <div><button type="submit" class="btn btn--primary"><svg class="ic" aria-hidden="true"><use href="#i-gift"></use></svg>Issue complimentary ticket</button></div>
+        <div id="st" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <section aria-labelledby="h-elenco">
+      <h2 class="t-2" id="h-elenco">Issued</h2>
+      <p class="t-small t-muted" id="conto"></p>
+      <div id="st-elenco" role="status" aria-live="polite"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Complimentary tickets issued</caption>
+        <thead><tr><th scope="col">Who</th><th scope="col">For</th><th scope="col">Ticket</th><th scope="col">Issued</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, O = JSON.parse(JSON.stringify(AD.omaggi)), num = 1052;
+    function hanno(n) { return O.some(function (o) { return o.nome === n && o.stato !== 'revocato'; }); }
+    function speakerOpz() {
+      var l = D.speakers.slice().sort(function (a, b) { return (hanno(a.nome) - hanno(b.nome)) || a.cognome.localeCompare(b.cognome); });
+      $('#speaker').innerHTML = '<option value="">Choose a speaker…</option>' + l.map(function (p) { return '<option value="' + p.id + '">' + p.nome + (hanno(p.nome) ? ' (already has one)' : '') + '</option>'; }).join('');
+    }
+    function elenco() {
+      var att = O.filter(function (o) { return o.stato !== 'revocato'; });
+      $('#conto').textContent = att.length + ' active · ' + att.filter(function (o) { return o.cat === 'Speaker'; }).length + ' speakers, ' + att.filter(function (o) { return o.cat === 'Staff'; }).length + ' staff (example data).';
+      $('#righe').innerHTML = O.map(function (o) {
+        var rev = o.stato === 'revocato';
+        return '<tr><th scope="row" class="cella-testo">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></th><td data-label="For">' + o.cat + '</td><td data-label="Ticket">' + o.tipo + '</td>' +
+          '<td data-label="Issued">' + o.data + '<br><span class="t-small t-muted">by ' + o.da + ' · ' + o.ordine + '</span></td>' +
+          '<td data-label="Status">' + (rev ? '<span class="badge badge--err">' + AD.icona('x') + 'Revoked</span>' : '<span class="badge badge--ok">' + AD.icona('check') + 'Sent</span>') + '</td>' +
+          '<td data-label="">' + (rev ? '' : '<div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-reinvia="' + o.id + '">Resend<span class="sr-only"> to ' + o.nome + '</span></button><button type="button" class="btn btn--quiet btn--piccolo" data-revoca="' + o.id + '">Revoke<span class="sr-only"> ' + o.nome + '</span></button></div>') + '</td></tr>';
+      }).join('');
+    }
+    $$('input[name="cat"]').forEach(function (r) { r.addEventListener('change', function () { $('#c-speaker').hidden = r.value !== 'Speaker' || !r.checked; if (r.value === 'Staff' && r.checked) { $('#nome').value = ''; $('#email').value = ''; } }); });
+    $('#speaker').addEventListener('change', function (e) {
+      var p = CV.persona(e.target.value); if (!p) return;
+      $('#nome').value = p.nome; $('#email').value = p.nome.toLowerCase().replace(' ', '.') + '@example.test';
+    });
+    $('#righe').addEventListener('click', function (e) {
+      var r = e.target.closest('[data-revoca]'), s = e.target.closest('[data-reinvia]');
+      if (s) { var x = O.filter(function (o) { return o.id === s.getAttribute('data-reinvia'); })[0]; CV.msg($('#st-elenco'), 'ok', 'Ticket sent again to ' + x.email + ' (simulated). Same QR: nothing changes.'); return; }
+      if (!r) return;
+      var o = O.filter(function (y) { return y.id === r.getAttribute('data-revoca'); })[0];
+      if (!r.getAttribute('data-c')) { r.setAttribute('data-c', '1'); r.textContent = 'Confirm revoke'; r.className = 'btn btn--danger btn--piccolo'; CV.msg($('#st-elenco'), 'warn', 'Press «Confirm revoke» to cancel the ticket of ' + o.nome + '. The QR stops working at once.'); r.focus(); return; }
+      o.stato = 'revocato'; elenco(); speakerOpz(); CV.msg($('#st-elenco'), 'ok', 'Complimentary ticket of ' + o.nome + ' revoked (simulated). The seat is free again. Written to the audit log.');
+    });
+    $('#f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var er = [], cat = $('input[name="cat"]:checked').value, n = $('#nome').value.trim(), em = $('#email').value.trim();
+      $$('[aria-invalid]', $('#f')).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      if (!n) er.push(['nome', 'Write the full name on the ticket.']);
+      if (!/^\S+@\S+\.\S+$/.test(em)) er.push(['email', 'Check the email: the @ or the domain is missing.']);
+      if (n && hanno(n)) er.push(['nome', n + ' already has a complimentary ticket. Revoke it first if you need to issue a different one.']);
+      if (er.length) {
+        $('#er').innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he">Check ' + er.length + (er.length === 1 ? ' field' : ' fields') + '</h3><ul>' + er.map(function (x) { return '<li><a href="#' + x[0] + '">' + x[1] + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { $('#' + x[0]).setAttribute('aria-invalid', 'true'); }); $('#he').focus(); return;
+      }
+      $('#er').innerHTML = '';
+      var ord = 'CV-' + (++num), inviato = $('#invia').checked;
+      O.unshift({ id: 'on' + num, nome: n, email: em, cat: cat, tipo: $('#tipo').value, da: AD.RUOLI[AD.ruolo()].nome, data: CV.dataEn(D.oggi), stato: 'inviato', ordine: ord });
+      elenco(); speakerOpz(); $('#f').reset(); $('#c-speaker').hidden = false;
+      CV.msg($('#st'), 'ok', '<b>Complimentary ticket issued</b> (simulated): order ' + ord + ' at €0, no payment. ' + (inviato ?'The ticket with its QR code has been emailed to ' + em + '.' : 'Not sent yet: use «Resend» in the list.') + ' Written to the audit log.');
+    });
+    speakerOpz(); elenco();
+  });
+</script>
+</body>
+</html>

@@ -1,77 +1,78 @@
 <!doctype html>
 <!-- Autore: Giulio Occhipinti -->
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>Cruscotto · Admin · EAS8 Lisbon</title>
+  <meta name="color-scheme" content="light">
+  <title>Dashboard · Admin · EAS8 Lisbon</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="../styles.css">
 </head>
 <body class="senza-nav" data-area="admin">
-<a class="skip-link" href="#contenuto">Vai al contenuto</a>
-<header class="site-header">
-  <div class="wrap site-header__in">
-    <a class="brand" href="index.html" aria-label="EAS8 Lisbon, admin, cruscotto"><img src="../assets/eas-logo.png" width="84" height="47" alt="EAS, European Aligner Society"><span class="brand__testo">Admin</span></a>
-    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
-  </div>
-</header>
+<a class="skip-link" href="#contenuto">Skip to content</a>
+<header class="site-header"></header>
 <div class="wrap admin-shell">
-  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+  <details class="admin-menu" id="admin-menu"><summary>Panel menu</summary><nav class="admin-nav" id="admin-nav" aria-label="Admin panel"></nav></details>
 
   <main id="contenuto" class="admin-main">
     <div class="admin-head">
-      <h1 class="t-1">Cruscotto</h1>
-      <p class="t-small t-muted">Dati d’esempio, inventati.</p>
+      <h1 class="t-1">Dashboard</h1>
+      <p class="t-small t-muted">Example data, invented.</p>
     </div>
 
+    <section aria-labelledby="h-fascia">
+      <h2 class="t-2" id="h-fascia">Event and price tier</h2>
+      <dl class="meta-lista misura" id="evento"></dl>
+      <p data-admin="admin,organizzatore"><a class="btn btn--secondary btn--piccolo" href="biglietti.html">Edit dates and tiers</a></p>
+    </section>
+
     <section aria-labelledby="h-fare" data-admin="admin,commerciale">
-      <h2 class="t-2" id="h-fare">Da fare</h2>
+      <h2 class="t-2" id="h-fare">To do</h2>
       <ul class="elenco-pulito" id="da-fare"></ul>
     </section>
 
     <section aria-labelledby="h-vendite" data-admin="admin,commerciale">
-      <h2 class="t-2" id="h-vendite">Vendite per tipo e ruolo</h2>
+      <h2 class="t-2" id="h-vendite">Sales by ticket type and role</h2>
       <table class="tabella tabella--stack">
-        <caption class="sr-only">Biglietti venduti per tipo e per ruolo di prezzo, con importo a prezzo di listino</caption>
-        <thead><tr><th scope="col">Tipo</th><th scope="col" class="num">Pubblico</th><th scope="col" class="num">Membro</th><th scope="col" class="num">Totale</th></tr></thead>
+        <caption class="sr-only">Tickets sold by type and price role, with amount at list price</caption>
+        <thead><tr><th scope="col">Type</th><th scope="col" class="num">Public</th><th scope="col" class="num">Member</th><th scope="col" class="num">Total</th></tr></thead>
         <tbody id="vendite"></tbody>
         <tfoot id="vendite-tot"></tfoot>
       </table>
-      <p class="t-small t-muted misura">Numero di biglietti e, sotto, l’importo a prezzo di listino: non tiene conto di sconti e rimborsi. Le membership sono vendute a parte: <b id="n-mem"></b> attive.</p>
+      <p class="t-small t-muted misura">Number of tickets and, below, the amount at the current list price: discounts and refunds are not counted. Complimentary tickets are counted but worth €0. Memberships are sold separately: <b id="n-mem"></b> active.</p>
     </section>
 
     <section aria-labelledby="h-posti" data-admin="admin,organizzatore">
-      <h2 class="t-2" id="h-posti">Posti rimasti</h2>
+      <h2 class="t-2" id="h-posti">Seats left</h2>
       <table class="tabella tabella--stack">
-        <caption>Pass intero (6.000 posti)</caption>
-        <thead><tr><th scope="col">Pass</th><th scope="col" class="num">Capienza</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col">Rimasti</th></tr></thead>
+        <caption>Passes (6,000 seats)</caption>
+        <thead><tr><th scope="col">Pool</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">Sold</th><th scope="col" class="num">Held</th><th scope="col">Left</th></tr></thead>
         <tbody id="pool-giorni"></tbody>
       </table>
       <p class="t-small t-muted misura" id="nota-pass"></p>
       <table class="tabella tabella--stack" style="margin-top:var(--s-6)">
-        <caption>Sessioni a pagamento</caption>
-        <thead><tr><th scope="col">Sessione</th><th scope="col" class="num">Capienza</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col">Rimasti</th></tr></thead>
+        <caption>Workshops (10 × 20 seats)</caption>
+        <thead><tr><th scope="col">Workshop</th><th scope="col" class="num">Capacity</th><th scope="col" class="num">Sold</th><th scope="col" class="num">Held</th><th scope="col">Left</th></tr></thead>
         <tbody id="pool-sessioni"></tbody>
       </table>
     </section>
 
     <section aria-labelledby="h-partner" data-admin="admin,organizzatore">
-      <h2 class="t-2" id="h-partner">Check-in con il partner</h2>
-      <p class="t-muted misura">Il check-in all’ingresso lo fa un partner sul posto, che scansiona i biglietti digitali dei partecipanti. Qui si esporta l’elenco dei biglietti validi (solo ordini pagati e non rimborsati). La pagina <a href="../checkin.html">Check-in</a> resta come riferimento di come funzionerebbe.</p>
-      <p><button type="button" class="btn btn--primary" id="esporta"><svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>Esporta biglietti validi per il partner (CSV)</button></p>
+      <h2 class="t-2" id="h-partner">Check-in with the partner</h2>
+      <p class="t-muted misura">At the entrance, check-in is done by a partner on site who scans the attendees’ digital tickets. Here you export the list of valid tickets (paid and not refunded, plus complimentary tickets). The <a href="../checkin.html">Check-in</a> page stays as a reference of how it would work.</p>
+      <p><button type="button" class="btn btn--primary" id="esporta"><svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>Export valid tickets for the partner (CSV)</button></p>
       <div id="st-esporta" role="status" aria-live="polite"></div>
     </section>
 
     <section aria-labelledby="h-ultimi" data-admin="admin,commerciale">
-      <h2 class="t-2" id="h-ultimi">Ultimi ordini</h2>
+      <h2 class="t-2" id="h-ultimi">Latest orders</h2>
       <table class="tabella tabella--stack">
-        <caption class="sr-only">Ultimi ordini</caption>
-        <thead><tr><th scope="col">Ordine</th><th scope="col">Chi</th><th scope="col" class="num">Importo</th><th scope="col">Stato</th></tr></thead>
+        <caption class="sr-only">Latest orders</caption>
+        <thead><tr><th scope="col">Order</th><th scope="col">Who</th><th scope="col" class="num">Amount</th><th scope="col">Status</th></tr></thead>
         <tbody id="ultimi"></tbody>
       </table>
-      <p><a class="btn btn--secondary" href="ordini.html">Tutti gli ordini</a></p>
+      <p><a class="btn btn--secondary" href="ordini.html">All orders</a></p>
     </section>
   </main>
 </div>
@@ -80,57 +81,61 @@
 <script src="admin.js"></script>
 <script>
   CV.ready(function () {
-    var D = CV.DATA, $ = CV.qs, e = AD.euro;
+    var D = CV.DATA, $ = CV.qs, e = CV.euro, f = CV.fasciaAttiva(), n0 = function (x) { return x.toLocaleString('en-IE'); };
+
+    /* evento e fascia attiva */
+    $('#evento').innerHTML = '<div><dt>Event</dt><dd>EAS8 Lisbon · ' + D.evento.date + '</dd></div>' +
+      '<div><dt>Active tier</dt><dd>' + (f ? f.nome + ' · ends ' + CV.dataEn(f.al) + ' (' + CV.giorniTra(CV.oggi(), f.al) + ' days left)' : 'none: sales closed') + '</dd></div>' +
+      '<div><dt>Full pass now</dt><dd>' + (D.prezzi.intero.pub === null ? 'Price to be announced' : 'Public ' + e(D.prezzi.intero.pub) + ' · member ' + e(D.prezzi.intero.mem)) + '</dd></div>';
 
     /* da fare */
     var rev = AD.ordini.filter(function (o) { return o.stato === 'review'; }).length;
-    var el = AD.ordini.filter(function (o) { return o.stato === 'processing'; }).length;
+    var el = AD.ordini.filter(function (o) { return o.stato === 'pending'; }).length;
     $('#da-fare').innerHTML =
-      '<li class="azioni-riga"><span class="badge badge--warn">' + AD.icona('alert') + rev + ' da rivedere</span><span>Ordini con importo che non torna con Stripe</span><a class="btn btn--secondary btn--piccolo" href="ordini.html?id=CV-1048">Apri l’ordine</a></li>' +
-      '<li class="azioni-riga"><span class="badge badge--info">' + AD.icona('clock') + el + ' in elaborazione</span><span>Pagamenti in attesa di conferma da Stripe</span><a class="btn btn--secondary btn--piccolo" href="ordini.html?id=CV-1043">Apri l’ordine</a></li>';
+      '<li class="azioni-riga"><span class="badge badge--warn">' + AD.icona('alert') + rev + ' to review</span><span>Orders whose amount does not match Stripe</span><a class="btn btn--secondary btn--piccolo" href="ordini.html?id=CV-1048">Open the order</a></li>' +
+      '<li class="azioni-riga"><span class="badge badge--info">' + AD.icona('clock') + el + ' waiting for payment</span><span>Customers still on the Stripe page</span><a class="btn btn--secondary btn--piccolo" href="ordini.html?id=CV-1043">Open the order</a></li>' +
+      (f && f.id === 'last' && D.prezzi.intero.pub === null ? '<li class="azioni-riga"><span class="badge badge--err">' + AD.icona('alert') + 'Price missing</span><span>The last-minute price is not set: full passes cannot be sold</span><a class="btn btn--secondary btn--piccolo" href="biglietti.html#h-matrice">Set the price</a></li>' : '');
 
-    /* vendite */
-    // vendite d'esempio (inventate): 3.240 pass + 136 workshop; i prezzi sono quelli veri (fascia aperta oggi)
-    var V = [['Pass intero', { pub: 2410, mem: 830 }, D.prezzi.intero], ['Workshop (prezzo unico)', { pub: 82, mem: 54 }, D.prezzi.workshop]];
+    /* vendite (inventate); prezzi della fascia attiva */
+    var P = function (t, k) { var v = D.prezzi[t][k]; return typeof v === 'number' ? v : 0; };
+    var V = [['Full pass', { pub: 2410, mem: 830 }, 'intero'], ['Companion (placeholder price)', { pub: 51, mem: 13 }, 'companion'], ['Exhibitor / Sponsor pass (placeholder price)', { pub: 74, mem: 0 }, 'espositore'],
+      ['Workshop', { pub: 112, mem: 41 }, 'workshop'], ['Complimentary', { pub: 38, mem: 0 }, null]];
     var tot = { pub: 0, mem: 0 }, imp = { pub: 0, mem: 0 }, h = '';
     V.forEach(function (r) {
       var n = r[1].pub + r[1].mem, i = 0, c = '';
-      ['pub', 'mem'].forEach(function (k) { var v = r[1][k] * r[2][k]; tot[k] += r[1][k]; imp[k] += v; i += v; c += '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + r[1][k] + '<br><span class="t-small t-muted">' + e(v) + '</span></td>'; });
-      h += '<tr><th scope="row">' + r[0] + '</th>' + c + '<td class="num" data-label="Totale">' + n + '<br><span class="t-small t-muted">' + e(i) + '</span></td></tr>';
+      ['pub', 'mem'].forEach(function (k) { var v = r[2] ? r[1][k] * P(r[2], k) : 0; tot[k] += r[1][k]; imp[k] += v; i += v; c += '<td class="num" data-label="' + { pub: 'Public', mem: 'Member' }[k] + '">' + n0(r[1][k]) + '<br><span class="t-small t-muted">' + e(v) + '</span></td>'; });
+      h += '<tr><th scope="row">' + r[0] + '</th>' + c + '<td class="num" data-label="Total">' + n0(n) + '<br><span class="t-small t-muted">' + e(i) + '</span></td></tr>';
     });
     $('#vendite').innerHTML = h;
-    var n = tot.pub + tot.mem, iT = imp.pub + imp.mem;
-    $('#vendite-tot').innerHTML = '<tr><th scope="row">Totale</th>' + ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + tot[k] + '<br><span class="t-small">' + e(imp[k]) + '</span></td>'; }).join('') + '<td class="num" data-label="Totale">' + n + '<br><span class="t-small">' + e(iT) + '</span></td></tr>';
+    $('#vendite-tot').innerHTML = '<tr><th scope="row">Total</th>' + ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Public', mem: 'Member' }[k] + '">' + n0(tot[k]) + '<br><span class="t-small">' + e(imp[k]) + '</span></td>'; }).join('') + '<td class="num" data-label="Total">' + n0(tot.pub + tot.mem) + '<br><span class="t-small">' + e(imp.pub + imp.mem) + '</span></td></tr>';
     $('#n-mem').textContent = 905;
 
     /* posti */
     function riga(nome, cap, conf, held) {
       var ri = cap - conf - held, pc = Math.round((conf + held) / cap * 100), cl = ri === 0 ? ' barra--finito' : (ri <= cap * 0.2 ? ' barra--poco' : '');
-      var f = function (x) { return x.toLocaleString('it-IT'); };
-      return '<tr><th scope="row">' + nome + '</th><td class="num" data-label="Capienza">' + f(cap) + '</td><td class="num" data-label="Venduti">' + f(conf) + '</td><td class="num" data-label="In riserva">' + held + '</td>' +
-        '<td data-label="Rimasti"><b>' + f(ri) + '</b>' + (ri === 0 ? ' · esaurita' : '') + ' <span class="barra' + cl + '"><span style="width:' + pc + '%"></span></span> <span class="t-small t-muted">' + pc + '% occupato</span></td></tr>';
+      return '<tr><th scope="row">' + nome + '</th><td class="num" data-label="Capacity">' + n0(cap) + '</td><td class="num" data-label="Sold">' + n0(conf) + '</td><td class="num" data-label="Held">' + held + '</td>' +
+        '<td data-label="Left"><b>' + n0(ri) + '</b>' + (ri === 0 ? ' · sold out' : '') + ' <span class="barra' + cl + '"><span style="width:' + pc + '%"></span></span> <span class="t-small t-muted">' + pc + '% taken</span></td></tr>';
     }
-    // capienza vera: 6.000 posti; venduti e in riserva: inventati
-    var G = [['Pass intero (8–10 aprile)', D.evento.posti, 3240, 35]];
+    // capienza vera: 6.000 posti per i pass; venduti e in riserva inventati. Pass, omaggi ed espositori consumano lo stesso pool (ipotesi da confermare)
+    var G = [['Full pass, exhibitor and complimentary (' + D.evento.date + ')', D.evento.posti, 3240 + 74 + 38, 35], ['Companion (capacity to be defined)', 300, 64, 2]];
     $('#pool-giorni').innerHTML = G.map(function (g) { return riga(g[0], g[1], g[2], g[3]); }).join('');
-    var rim = G.map(function (g) { return g[1] - g[2] - g[3]; });
-    $('#nota-pass').textContent = 'Pass intero: ' + Math.min.apply(null, rim).toLocaleString('it-IT') + ' rimasti su ' + D.evento.posti.toLocaleString('it-IT') + '. Un pass intero vale per i tre giorni e consuma un solo posto di questa capienza. Venduti più in riserva non superano mai la capienza: lo garantisce il database.';
-    var held = { s03: 1, s09: 0, s10: 2, s15: 0, s05: 0 };
+    $('#nota-pass').textContent = 'A full pass is valid for the three days and takes one seat of the congress capacity. Sold plus held never exceed the capacity: the database guarantees it. Whether companions and exhibitors count against the 6,000 seats is to be confirmed.';
+    var held = { w01: 1, w03: 0, w04: 2 };
     $('#pool-sessioni').innerHTML = D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) {
-      var hh = held[s.id] || 0; return riga(s.titolo + ' (' + CV.giorno(s.g).breve + ')', s.posti.tot, s.posti.tot - s.posti.res - hh, hh);
+      var hh = Math.min(held[s.id] || 0, s.posti.res); return riga(s.titolo + ' (' + CV.giorno(s.g).breve + ', ' + CV.sala(s.sala).nome + ')', s.posti.tot, s.posti.tot - s.posti.res, hh);
     }).join('');
 
     /* esportazione per il partner: simulata, nessun file viene creato */
     $('#esporta').addEventListener('click', function () {
-      var x = AD.bigliettiValidi(), oggi = D.oggi;
-      CV.msg($('#st-esporta'), 'ok', '<b>CSV pronto (simulato):</b> <span class="t-num">biglietti-validi-eas8-' + oggi + '.csv</span>, ' + x.righe.length + (x.righe.length === 1 ? ' riga' : ' righe') +
-        ' (esempio: solo gli ordini d’esempio pagati). Colonne: <code>' + x.colonne.join(', ') + '</code>. Niente email né importi: al partner serve solo per far entrare le persone.' +
-        '<br>Prima di mandarlo serve un accordo sul trattamento dei dati con il partner (da verificare con la catena legale). Nel sito vero l’esportazione finisce nel registro audit.');
+      var x = AD.bigliettiValidi();
+      CV.msg($('#st-esporta'), 'ok', '<b>CSV ready (simulated):</b> <span class="t-num">valid-tickets-eas8-' + D.oggi + '.csv</span>, ' + x.righe.length + (x.righe.length === 1 ? ' row' : ' rows') +
+        ' (only the example orders that are paid or complimentary). Columns: <code>' + x.colonne.join(', ') + '</code>. No emails or amounts: the partner only needs it to let people in.' +
+        '<br>Before sending it, a data processing agreement with the partner is needed (to check with the legal chain). On the real site the export is written to the audit log.');
     });
 
     /* ultimi ordini */
     $('#ultimi').innerHTML = AD.ordini.slice(0, 6).map(function (o) {
-      return '<tr><th scope="row"><a href="ordini.html?id=' + o.id + '">' + o.id + '</a></th><td data-label="Chi">' + o.nome + '</td><td class="num" data-label="Importo">' + e(o.totale) + '</td><td data-label="Stato">' + AD.badgeOrd(o.stato) + '</td></tr>';
+      return '<tr><th scope="row"><a href="ordini.html?id=' + o.id + '">' + o.id + '</a></th><td data-label="Who">' + o.nome + '</td><td class="num" data-label="Amount">' + e(o.totale) + '</td><td data-label="Status">' + AD.badgeOrd(o.stato) + '</td></tr>';
     }).join('');
   });
 </script>
