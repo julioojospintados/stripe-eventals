@@ -126,6 +126,9 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 - `tests/Feature/StaffAccessTest.php`: accesso al pannello, permessi dei ruoli, comando `eas:create-admin`.
 - `tests/Feature/Shop/`: prezzi e codici sconto, riserva e checkout, pagamenti e conferma tardiva, webhook, membership.
 - `tests/Feature/Account/`: accesso con codice, area personale (IDOR), biglietti, QR ed email.
+- `tests/Feature/Panel/`: pagine e azioni per ruolo (403 fuori dal ruolo), omaggio, revoca, correzione del nome,
+  rimborso, fasce sovrapposte, codici sconto e prezzi, export (colonne, solo biglietti validi, coda e file privato).
+- `tests/Feature/PublicPagesTest.php`: pagine pubbliche (200, prezzi, posti, lingua).
 - `tests/Concurrency/`: ultimo posto, prezzo membro e pagamento confermato tre volte **in parallelo**, con processi
   separati (`tests/Concurrency/worker.php`) e transazioni vere che si aspettano sui lock. Usano `DatabaseTruncation`
   (dati confermati, tabelle svuotate prima di ogni test) e girano dopo `Feature`.
@@ -141,10 +144,12 @@ Stripe non viene mai chiamato nei test: `TestCase` mette nel container `Tests\Fa
 | `app/Models` | un model per tabella, con relazioni e `casts`; email salvate in minuscolo, codici sconto in maiuscolo |
 | `app/Enums` | stati e tipi (`OrderStatus` con le transizioni ammesse, `TicketKind`, `PriceRole`…) e `StaffRole` con i permessi |
 | `app/Database/CreatesTriggers.php` | creazione dei trigger nelle migrazioni, con `DB_TRIGGERS_OPTIONAL` |
-| `app/Services` | le regole di vendita: `PriceResolver`, `CapacityService`, `CheckoutService`, `PaymentService`, `TicketService`, `MembershipService`, `LoginCodeService`; `StripeGateway` (le sole chiamate a Stripe) |
-| `app/Jobs` | `ProcessStripeEvent`, `RefundOrderFully` (coda `critical`), `SendTicketsEmail` (coda `default`, con limite di invio) |
-| `app/Http/Controllers` | login con codice, carrello e checkout, area personale, membership, webhook Stripe |
-| `app/Mail`, `resources/views` | email (codice, biglietti con QR, avvisi allo staff) e pagine essenziali (l'aspetto arriva al passo 3) |
+| `app/Services` | le regole di vendita: `PriceResolver`, `CapacityService`, `CheckoutService`, `PaymentService`, `TicketService`, `MembershipService`, `LoginCodeService`, `ComplimentaryService`, `Catalog` (prezzi da mostrare), `CsvExports`; `StripeGateway` (le sole chiamate a Stripe) |
+| `app/Jobs` | `ProcessStripeEvent`, `RefundOrderFully` (coda `critical`), `SendTicketsEmail` (coda `default`, con limite di invio), `GenerateCsvExport` |
+| `app/Http/Controllers` | pagina dell'evento, login con codice, carrello e checkout, area personale, membership, webhook Stripe, scaricamento degli export |
+| `app/Mail`, `resources/views` | email (codice, biglietti con QR, avvisi allo staff), pagine pubbliche e area personale |
+| `app/Filament`, `app/Policies` | risorse del pannello, pagina Export, widget del cruscotto; una Policy per model |
+| `public/css/site.css`, `public/fonts/inter`, `lang/` | stile delle pagine pubbliche (senza build), Inter servito in locale, testi `lang/it.json` e `lang/{en,it}/*.php` |
 | `app/Console/Commands` | `eas:create-admin`, `eas:expire-orders`, `eas:resend-ticket` |
 | `app/Providers/Filament/AdminPanelProvider.php` | pannello `/admin`: login, MFA obbligatoria |
 | `config/tickets.php` | chiave di firma dei QR; Stripe è in `config/services.php` |
@@ -219,22 +224,85 @@ per questo il codice di accesso parte fuori coda e la pagina di successo conferm
 `php artisan queue:restart`. Se l'hosting vieta `proc_open`, righe di cron separate per `queue:work` ed
 `eas:expire-orders` (docs/architettura.md §8).
 
+## Passo 3: pannello e pagine
+
+### Pannello `/admin` e ruoli
+
+Le Policy (`app/Policies`) leggono i permessi di `App\Enums\StaffRole` (tabella di `docs/architettura.md` §5.3, con in
+più `consents.export`). Fuori dal ruolo la pagina risponde 403 e le azioni non compaiono.
+
+| Menu | Risorsa | admin | commerciale | organizzatore |
+|---|---|---|---|---|
+| Event | Evento, date e giorni | modifica | lettura | modifica |
+| Sales | Tipi di biglietto (con i pool), fasce, prezzi tipo × fascia × ruolo (in euro), capienze | modifica | lettura | modifica |
+| Sales | Codici sconto (autore e registro audit) | ✔ | ✔ | ✔ |
+| Orders | Ordini in lettura con righe, biglietti e rimborsi | ✔ | ✔ | senza importi |
+| Orders | Azione «Refund in full» (con `RefundOrderFully`, causa e motivo) | ✔ | ✔ | — |
+| Orders | «Issue complimentary ticket» e revoca dell'omaggio | ✔ | lettura | ✔ |
+| Orders | Biglietti; «Correct name» (refuso, massimo 3, motivo, audit; nuova email = nuovo QR e invio) | ✔ | lettura | lettura |
+| Orders | Membership in lettura (si cambiano in Stripe) | ✔ | ✔ | — |
+| Exports | Export CSV (vedi sotto) | tutti | tutti | check-in |
+| System | Utenti dello staff (ruolo, password di almeno 12 caratteri), registro audit | ✔ | — | — |
+
+Regole nel form, prima del database: fasce attive sovrapposte (messaggio con la fascia in conflitto; il trigger resta
+l'ultima difesa), capienza sotto i posti già presi, prezzo doppio per tipo × fascia × ruolo, forma del codice sconto.
+L'omaggio (`ComplimentaryService`) crea un ordine `complimentary` già pagato a 0 €, prende i posti su `confirmed` con
+lo stesso UPDATE condizionale (pool pieno = errore), manda il biglietto e scrive l'audit; la revoca libera i posti.
+Il rimborso dal pannello usa lo stesso job del rimborso automatico (`Idempotency-Key: staff-refund-<id>`, una sola
+volta per ordine); ordine e biglietti diventano `refunded` quando arriva `charge.refunded`.
+
+Il cruscotto mostra ordini in `needs_refund` (con link al filtro), ordini pagati e biglietti validi, biglietti venduti
+per tipo e fascia, posti rimasti per pool.
+
+### Export CSV
+
+Pagina «CSV exports». Ogni export va nel registro audit. Fino a 2.000 righe il file si scarica subito; oltre si prepara
+in coda (`GenerateCsvExport`) in `storage/app/private/exports/<id utente>/`, compare nella pagina e si scarica solo
+da chi l'ha chiesto (`/admin/exports/{file}`); lo scheduler cancella i file dopo 7 giorni. Testi che iniziano con
+`= + - @` escono preceduti da `'` (niente formule nei fogli di calcolo).
+
+| Export | Permesso | Colonne |
+|---|---|---|
+| Check-in partner | `attendees.export` (tutti) | `ticket_id`, `qr_version`, `short_code`, `attendee_name`, `ticket_type`, `ticket_name`, `days`, `status`: solo biglietti `valid` |
+| Ordini | `accounting.manage` (admin, commerciale) | id, date, stato, origine, email, ruolo, fascia, importi in euro, rimborsato, codice sconto, payment intent |
+| Consensi newsletter | `consents.export` (admin, commerciale) | `email`, `granted_at`, `source`, `locale`, `text_version`: l'ultima riga per email, solo se è un consenso |
+
+### Pagine pubbliche
+
+Blade senza JavaScript e senza build (`public/css/site.css`), aspetto del prototipo: Inter servito dal sito (con il
+font di sistema come riserva), grafite, arancio solo su fondo scuro, oro per l'azione principale; mobile-first,
+bersagli di almeno 44px, fuoco visibile, WCAG 2.2 AA.
+
+| Rotta | Pagina |
+|---|---|
+| `/` | evento: date, luogo, prezzo del pass nella fascia attiva (pubblico e membro), workshop, membership |
+| `/tickets` | fasce con prezzi pubblico e membro, nominativi del pass, workshop con posti liberi, codice sconto |
+| `/account/orders/{id}` | conferma dei nomi e pagamento, poi esito (pagato, in corso, scaduto, in rimborso) con i QR |
+| `/membership` | prezzo, cosa comprende, attivazione o portale Stripe |
+| `/login`, `/login/code` | accesso con codice via email |
+| `/account` | biglietti con QR, membership e portale, ordini |
+| `/language/{en,it}` | selettore della lingua (sessione e `users.locale`; senza scelta vale la lingua del browser) |
+
+Testi in inglese nelle viste, italiano in `lang/it.json`; stati in `lang/{en,it}/status.php`; contenuti tradotti con
+`localized()` e importi con `euro()` (`app/helpers.php`).
+
 ## Cosa c'è e cosa manca
 
 **Passo 1:** dipendenze, schema della Fase 1 con i vincoli, model, enum, factory, seeder dell'EAS8, ruoli e
 permessi, pannello `/admin` con accesso solo allo staff e MFA, comando `eas:create-admin`, test di schema.
 
-**Passo 2 (questo):** quanto sopra, con le tabelle `login_codes`, `sent_messages` e `refunds`, e i test di
-`tests/TODO-passo-2.md`. Non ancora: riconciliazione notturna (`ReconcileStripe`), contestazioni
-(`charge.dispute.*`), omaggi, accompagnatori e correzione del nominativo (sono azioni del pannello), pulizia dei
-payload Stripe dopo 90 giorni.
+**Passo 2:** vendita, Stripe, webhook, biglietti con QR, membership, area personale, con le tabelle `login_codes`,
+`sent_messages` e `refunds` e i test di `tests/TODO-passo-2.md`.
 
-**Passo 3:** sito pubblico EN/IT con l'aspetto definitivo, risorse Filament con le Policy (evento e date, tipi, fasce e prezzi, capienze, codici sconto, ordini e
-membership in lettura, utenti dello staff, registro audit, eventi Stripe, job falliti), export CSV per il partner del
-check-in e per la contabilità, export dei consensi, sessione dello staff più breve, elenco di IP ammessi se l'hosting
-lo permette; omaggi, accompagnatori, correzione del nominativo e fasce con errore leggibile nel form; riconciliazione
-notturna e contestazioni. Da decidere: `spatie/laravel-translatable` per i campi tradotti (l'ultima versione chiede
-PHP 8.4).
+**Passo 3 (questo):** pannello con Policy per ruolo, omaggi, correzione del nominativo, rimborso dal pannello,
+cruscotto, export CSV, pagine pubbliche EN/IT.
+
+**Ancora aperto nella Fase 1:** riconciliazione notturna (`ReconcileStripe`), contestazioni (`charge.dispute.*`),
+eventi Stripe e job falliti nel pannello, sessione dello staff più breve e IP ammessi (dipendono dall'hosting), pulizia
+dei payload Stripe dopo 90 giorni, raccolta del consenso newsletter nel checkout (la tabella e l'export ci sono),
+accompagnatori, pagine termini e privacy (dal cliente), messaggi di validazione in italiano (`lang/it/validation.php`).
+Scelte da confermare: URL senza prefisso `/en/` `/it/` (la lingua sta in sessione: niente `hreflang` per pagina, a
+differenza di §10 dell'architettura); il commerciale vede evento e vendita in sola lettura come in §5.3.
 
 **Fase 2** (fuori da questi passi): programma completo con sale, tracce e speaker (le colonne mancanti di
 `program_sessions` arrivano con lui), video, Mailchimp, codici d'invito per gli espositori, API del partner.

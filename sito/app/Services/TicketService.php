@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\TicketStatus;
+use App\Jobs\SendTicketsEmail;
+use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Models\User;
 use BaconQrCode\Renderer\GDLibRenderer;
 use BaconQrCode\Writer;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
@@ -37,6 +41,45 @@ class TicketService
                 ]);
             }
         }
+    }
+
+    public const MAX_CORRECTIONS = 3;
+
+    /**
+     * Correzione di un refuso nel nominativo, solo admin (architettura §6.7): contatore, autore e data nella stessa
+     * modifica (il trigger tickets_guard lo pretende), riga di audit nella stessa transazione. Se cambia l'email il
+     * QR cambia versione e il biglietto parte verso il nuovo indirizzo.
+     */
+    public function correctAttendee(Ticket $ticket, User $admin, string $name, string $email, string $reason): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $admin, $name, $email, $reason) {
+            $ticket = Ticket::lockForUpdate()->findOrFail($ticket->id);
+            if ($ticket->attendee_corrections_count >= self::MAX_CORRECTIONS) {
+                throw new ShopException('too_many_corrections');
+            }
+
+            $old = ['name' => $ticket->attendee_name, 'email' => $ticket->attendee_email];
+            $ticket->attendee_name = trim($name);
+            $ticket->attendee_email = $email;
+            $emailChanged = $ticket->attendee_email !== $old['email'];
+            if ($emailChanged) {
+                $ticket->qr_version++;
+                $ticket->attendee_user_id = User::where('email', $ticket->attendee_email)->value('id');
+            }
+            $ticket->attendee_corrections_count++;
+            $ticket->attendee_corrected_at = now();
+            $ticket->attendee_corrected_by = $admin->id;
+            $ticket->save();
+
+            AuditLog::record('ticket.attendee_corrected', $ticket, $admin, [
+                'old' => $old, 'new' => ['name' => $ticket->attendee_name, 'email' => $ticket->attendee_email], 'reason' => $reason,
+            ]);
+            if ($emailChanged && $ticket->status === TicketStatus::Valid) {
+                SendTicketsEmail::dispatch($ticket->attendee_email, [$ticket->id], "correction-{$ticket->id}-v{$ticket->qr_version}")->afterCommit();
+            }
+
+            return $ticket;
+        });
     }
 
     public function qrPayload(Ticket $ticket): string

@@ -18,4 +18,7 @@ return [
     'order_not_pending' => 'Questo ordine non si può più pagare.',
     'session_mismatch' => 'Il pagamento non appartiene a questo ordine.',
     'already_member' => 'Sei già membro.',
+    'too_many_corrections' => 'Questo biglietto è già stato corretto 3 volte.',
+    'order_not_revocable' => 'Si revoca solo un omaggio ancora valido.',
+    'price_tier_overlap' => 'Questa fascia si sovrappone a un\'altra fascia attiva dell\'evento: cambia le date o spegnine una.',
 ];

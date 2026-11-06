@@ -16,7 +16,7 @@ it('la pagina di successo conferma il pagamento senza aspettare il webhook', fun
     $this->stripe->pay($this->order->stripe_checkout_session_id);
 
     $this->actingAs($this->owner)->get("/account/orders/{$this->order->id}?session_id={$this->order->stripe_checkout_session_id}")
-        ->assertOk()->assertSee('paid')->assertSee($this->order->tickets()->sole()->short_code);
+        ->assertOk()->assertSee('Payment received')->assertSee($this->order->tickets()->sole()->short_code);
 
     expect($this->order->refresh()->status)->toBe(OrderStatus::Paid);
 });

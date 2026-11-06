@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MembershipPlan;
 use App\Services\MembershipService;
 use App\Services\StripeGateway;
 use Illuminate\Http\Request;
@@ -9,6 +10,20 @@ use Illuminate\Http\Request;
 /** Membership: avvio del Checkout in abbonamento, ritorno da Stripe (attivazione subito), Customer Portal. */
 class MembershipController
 {
+    public function show(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            $request->session()->put('url.intended', route('membership.show'));
+        }
+
+        return view('membership', [
+            'plan' => MembershipPlan::where('active', true)->first(),
+            'membership' => $user?->memberships()->latest('current_period_end')->first(),
+            'isMember' => (bool) $user?->isMemberUntil(now()),
+        ]);
+    }
+
     public function start(Request $request, MembershipService $memberships)
     {
         return redirect()->away($memberships->startCheckout($request->user()));

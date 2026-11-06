@@ -29,6 +29,11 @@ class Eas8Seeder extends Seeder
             $event = Event::create([
                 'slug' => 'eas8-lisbon-2027',
                 'title' => ['en' => 'EAS8 Lisbon', 'it' => 'EAS8 Lisbona'],
+                // Dal sito del cliente (docs/cliente/contenuti-eas-aligners/home.txt).
+                'summary' => [
+                    'en' => 'Mastering Clinical Challenges in Aligner Orthodontics — From Clinical Limitations to Predictable Outcomes',
+                    'it' => 'Mastering Clinical Challenges in Aligner Orthodontics — dai limiti clinici a risultati prevedibili',
+                ],
                 'status' => EventStatus::Published,
                 'timezone' => 'Europe/Lisbon',
                 'starts_on' => '2027-04-08',

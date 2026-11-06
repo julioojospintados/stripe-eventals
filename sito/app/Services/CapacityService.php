@@ -40,6 +40,21 @@ class CapacityService
         }
     }
 
+    /** Omaggio: posti presi direttamente su confirmed, con lo stesso UPDATE condizionale; esaurito = ShopException. */
+    public function confirmDirect(Order $order, array $quantities): void
+    {
+        foreach ($this->lockPools(array_keys($quantities)) as $pool) {
+            $n = $quantities[$pool->id];
+            $taken = CapacityPool::whereKey($pool->id)
+                ->whereRaw('held + confirmed + ? <= capacity', [$n])
+                ->increment('confirmed', $n);
+            if ($taken === 0) {
+                throw new ShopException('sold_out');
+            }
+            $order->holds()->create(['pool_id' => $pool->id, 'quantity' => $n, 'status' => CapacityHoldStatus::Converted]);
+        }
+    }
+
     /** Pagamento nei tempi: i posti in riserva diventano venduti. */
     public function convert(Order $order): void
     {

@@ -2,28 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PriceRole;
-use App\Enums\TicketChannel;
+use App\Enums\TicketKind;
+use App\Enums\TicketStatus;
 use App\Models\Event;
+use App\Services\Catalog;
 use App\Services\CheckoutService;
-use App\Services\PriceResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 /** Carrello (riserva dei posti) e avvio del pagamento. I prezzi li calcola sempre CheckoutService. */
 class ShopController
 {
-    public function index(Request $request, PriceResolver $prices)
+    public function index(Request $request, Catalog $catalog)
     {
         $event = Event::published()->latest('starts_on')->firstOrFail();
-        $role = $request->user()?->isMemberUntil(now()->addMinutes(CheckoutService::SESSION_MINUTES)) ? PriceRole::Member : PriceRole::Public;
-        $tier = $prices->activeTier($event, now());
+        if (! $request->user()) {
+            // Dopo il login si torna qui.
+            $request->session()->put('url.intended', route('shop.index'));
+        }
 
-        $types = $event->ticketTypes()->where('active', true)->where('channel', TicketChannel::Public)->get()
-            ->map(fn ($type) => ['type' => $type, 'price' => $prices->resolve($type, $role, $tier)])
-            ->filter(fn ($row) => $row['price'] !== null);
+        $hasPass = (bool) $request->user()?->tickets()->where('status', TicketStatus::Valid)
+            ->whereRelation('ticketType', 'kind', TicketKind::FullPass)->exists();
 
-        return view('shop.index', compact('event', 'types', 'role'));
+        return view('shop.index', $catalog->for($event, $request->user()) + ['event' => $event, 'hasPass' => $hasPass]);
     }
 
     /** lines[<ticket_type_id>][attendees][][name|email]: le righe vuote del form non contano. */
@@ -44,6 +45,10 @@ class ShopController
             'lines.*.attendees.*.name' => ['required', 'string', 'max:200'],
             'lines.*.attendees.*.email' => ['required', 'email', 'max:254'],
             'discount_code' => ['nullable', 'string', 'max:40'],
+        ], [], [
+            'lines.*.attendees.*.name' => __('attendee name'),
+            'lines.*.attendees.*.email' => __('attendee email'),
+            'discount_code' => __('discount code'),
         ])->validate();
 
         $event = Event::published()->latest('starts_on')->firstOrFail();

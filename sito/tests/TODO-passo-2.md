@@ -39,10 +39,14 @@ regole dei workshop e parametri della Checkout Session (`CheckoutTest`), QR firm
 
 ## Passano al passo 3 (azioni del pannello)
 
-- Fasce sovrapposte: errore leggibile nel form (lock sull'evento); il trigger c'è già (`SalesSchemaTest`).
+Fatte al passo 3 in `tests/Feature/Panel/` (`ActionsTest`, `PolicyTest`, `ExportTest`), salvo dove indicato.
+
+- Fasce sovrapposte: errore leggibile nel form; il trigger c'è già (`SalesSchemaTest`). Il lock sull'evento contro due
+  salvataggi in parallelo non c'è: lo copre il trigger.
 - Omaggio: a pool pieno rifiutato, revoca → posto liberato, registro audit.
-- Accompagnatore senza pass o secondo sullo stesso pass (le difese del database sono in `OrdersSchemaTest`).
-- Correzione del nominativo: commerciale → 403, quarta correzione, audit, `qr_version + 1`.
+- Accompagnatore senza pass o secondo sullo stesso pass (le difese del database sono in `OrdersSchemaTest`): ancora
+  da fare, il tipo è spento.
+- Correzione del nominativo: commerciale senza l'azione, quarta correzione, audit, `qr_version + 1`.
 - Espositore senza codice d'invito: già non acquistabile (canale `invite`, `CheckoutTest` «non vende tipi spenti o di un
   altro canale»); i codici d'invito sono della Fase 2.
 - Azioni Livewire e Filament su ordini e biglietti di un altro utente (IDOR nel pannello).

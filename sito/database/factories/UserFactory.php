@@ -45,9 +45,9 @@ class UserFactory extends Factory
         ]);
     }
 
-    /** Utente dello staff con un ruolo (il ruolo viene creato se manca). */
+    /** Utente dello staff con un ruolo (il ruolo viene creato se manca) e la MFA già attivata. */
     public function staff(StaffRole $role = StaffRole::Admin): static
     {
-        return $this->afterCreating(fn (User $user) => $user->assignRole(Role::findOrCreate($role->value)));
+        return $this->state(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->afterCreating(fn (User $user) => $user->assignRole(Role::findOrCreate($role->value)));
     }
 }

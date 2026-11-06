@@ -32,6 +32,7 @@ enum StaffRole: string
         'memberships.view' => 'Membership: lettura (le modifiche si fanno in Stripe)',
         'videos.manage' => 'Video e ruoli ammessi',
         'attendees.export' => 'Export dei partecipanti per il check-in',
+        'consents.export' => 'Export degli iscritti alla newsletter con consenso',
         'system.manage' => 'Utenti dello staff, ruoli, chiavi del partner, registro audit, eventi Stripe',
     ];
 
@@ -43,7 +44,7 @@ enum StaffRole: string
             self::Commerciale => [
                 'event.view', 'sales.view', 'discount_codes.manage', 'invite_codes.view', 'invite_codes.manage',
                 'orders.view', 'orders.view_amounts', 'orders.manage', 'complimentary.view', 'refunds.manage',
-                'accounting.manage', 'memberships.view', 'attendees.export',
+                'accounting.manage', 'memberships.view', 'attendees.export', 'consents.export',
             ],
             self::Organizzatore => [
                 'event.view', 'event.manage', 'sales.view', 'sales.manage', 'discount_codes.manage',

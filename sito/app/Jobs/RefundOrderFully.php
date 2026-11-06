@@ -11,8 +11,9 @@ use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
 
 /**
- * Rimborso automatico di un ordine needs_refund (pagato senza posti). Idempotente: stessa Idempotency-Key e una sola
- * riga refunds per ordine; lo stato refunded arriva poi dal webhook charge.refunded.
+ * Rimborso completo di un ordine. Automatico per needs_refund (pagato senza posti, causa no_capacity); dal pannello
+ * (commerciale o admin) anche per un ordine pagato, con la causa (event_cancelled, other). Idempotente: stessa
+ * Idempotency-Key e una sola riga refunds per ordine e origine; lo stato refunded arriva poi dal webhook charge.refunded.
  */
 class RefundOrderFully implements ShouldQueue
 {
@@ -22,22 +23,34 @@ class RefundOrderFully implements ShouldQueue
 
     public array $backoff = [60, 300, 900, 3600];
 
-    public function __construct(public string $orderId)
-    {
+    public function __construct(
+        public string $orderId,
+        public string $cause = 'no_capacity',
+        public ?int $requestedBy = null,
+        public ?string $reason = null,
+    ) {
         $this->onQueue('critical');
     }
 
     public function handle(StripeGateway $stripe): void
     {
         $order = Order::findOrFail($this->orderId);
-        if ($order->status !== OrderStatus::NeedsRefund || ! $order->stripe_payment_intent_id) {
+        $staff = $this->requestedBy !== null;
+        $refundable = $staff ? [OrderStatus::NeedsRefund, OrderStatus::Paid, OrderStatus::PartiallyRefunded] : [OrderStatus::NeedsRefund];
+        if (! in_array($order->status, $refundable, true) || ! $order->stripe_payment_intent_id) {
             return;
         }
 
-        $key = 'auto-refund-'.$order->id;
+        $key = ($staff ? 'staff-refund-' : 'auto-refund-').$order->id;
+        $paid = $order->stripe_amount_total_cents ?: $order->total_cents;
+        $refunded = (int) $order->refunds()->where('status', '!=', 'failed')->where('idempotency_key', '!=', $key)->sum('amount_cents');
+        if ($paid - $refunded <= 0) {
+            return;
+        }
         $refund = $order->refunds()->firstOrCreate(['idempotency_key' => $key], [
-            'amount_cents' => $order->stripe_amount_total_cents ?: $order->total_cents, 'currency' => $order->currency,
-            'cause' => 'no_capacity', 'status' => 'pending', 'source' => 'auto',
+            'amount_cents' => $paid - $refunded, 'currency' => $order->currency, 'cause' => $this->cause,
+            'reason' => $this->reason, 'status' => 'pending', 'source' => $staff ? 'staff' : 'auto',
+            'requested_by' => $this->requestedBy,
         ]);
         if ($refund->stripe_refund_id) {
             return;
@@ -46,7 +59,8 @@ class RefundOrderFully implements ShouldQueue
         $result = $stripe->createRefund([
             'payment_intent' => $order->stripe_payment_intent_id,
             'reason' => 'requested_by_customer',
-            'metadata' => ['order_id' => $order->id, 'cause' => 'no_capacity'],
+            'amount' => $refund->amount_cents,
+            'metadata' => ['order_id' => $order->id, 'cause' => $this->cause],
         ], $key);
 
         $refund->update(['stripe_refund_id' => $result['id'], 'status' => $result['status']]);

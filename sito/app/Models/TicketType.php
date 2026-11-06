@@ -59,6 +59,12 @@ class TicketType extends Model
         return $this->belongsToMany(CapacityPool::class, 'ticket_type_pools', 'ticket_type_id', 'pool_id');
     }
 
+    /** Posti liberi: il minimo tra i pool che il tipo consuma (null se non ne consuma). */
+    public function seatsLeft(): ?int
+    {
+        return $this->pools->min(fn (CapacityPool $pool) => $pool->capacity - $pool->held - $pool->confirmed);
+    }
+
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);

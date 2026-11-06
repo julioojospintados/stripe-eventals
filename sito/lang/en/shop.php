@@ -18,4 +18,7 @@ return [
     'order_not_pending' => 'This order can no longer be paid.',
     'session_mismatch' => 'The payment does not belong to this order.',
     'already_member' => 'You are already a member.',
+    'too_many_corrections' => 'This ticket has already been corrected 3 times.',
+    'order_not_revocable' => 'Only a complimentary order that is still valid can be revoked.',
+    'price_tier_overlap' => 'This tier overlaps another active tier of the event: change the dates or turn one off.',
 ];
