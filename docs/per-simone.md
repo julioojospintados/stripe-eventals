@@ -1,26 +1,26 @@
 # EAS8 Lisbona: a che punto siamo
 
-Autore: Giulio Occhipinti. Aggiornato al 06/11/2026.
+Autore: Giulio Occhipinti. Aggiornato al 06/11/2026 (Fase 1 sviluppata).
 
 Ciao Simone, qui trovi in un solo posto cosa è pronto, cosa ti chiediamo adesso e le poche decisioni che restano.
 Grazie per le risposte ai due moduli: le abbiamo usate tutte.
 
 ## In breve
 
-- L'architettura del sito (Laravel + Filament sul vostro hosting, MySQL/MariaDB, Stripe) e il prototipo cliccabile
-  sono pronti.
-- Le regole più delicate (posti, prezzo membro, pagamenti confermati due volte) sono state provate su MySQL 8 e
-  MariaDB 10.11.
-- **La vendita dei biglietti non può aprire subito:** la prima fase richiede circa 12–16 settimane di lavoro di uno
-  sviluppatore. L'apertura realistica è **tra metà gennaio e marzo 2027**, a seconda che lavorino uno o due
-  sviluppatori.
-- **Nel frattempo** può andare online in pochi giorni una **pagina di preregistrazione** che raccoglie le email nel
-  vostro Mailchimp: all'apertura scrivete a chi si è iscritto, e ai membri per l'early bird riservato.
+- **La Fase 1 è sviluppata:** applicazione Laravel 13 + Filament 5 in `sito/`, con vendita dei biglietti su Stripe,
+  membership, biglietti con QR via email, pannello `/admin` a tre ruoli ed export CSV. 189 test automatici verdi su
+  MariaDB.
+- **Non è ancora online:** mancano la prova con le vostre chiavi Stripe in modalità test, l'installazione sul vostro
+  hosting, il dominio e i contenuti definitivi (date delle fasce, testi).
+- Il prototipo e le proposte di layout restano pagine HTML statiche: servono a scegliere l'aspetto, non sono il
+  sito.
+- **Nel frattempo** può andare online la **pagina di preregistrazione** collegata al vostro Mailchimp.
 
 ## Cosa è pronto
 
 | Cosa | Dove | A cosa serve |
 |---|---|---|
+| **Applicazione Laravel della Fase 1** | `sito/` (leggi `sito/README.md`) | Il sito vero: vendita, pagamenti, biglietti, pannello, export |
 | Prototipo cliccabile del sito, in inglese | `prototipo/` (apri `index.html`) | Vedere pagine, prezzi per ruolo e fasce, area personale e pannello admin prima di sviluppare |
 | Pagina di preregistrazione | `preregistrazione/` | Da mettere online subito, collegata a Mailchimp, senza server nostro |
 | Script di verifica dell'hosting | `strumenti/verifica-hosting/` | Ci dice da solo se il vostro hosting ha tutto quello che serve |
@@ -31,7 +31,38 @@ Grazie per le risposte ai due moduli: le abbiamo usate tutte.
 Per aprire il prototipo sul tuo computer: `cd prototipo && python3 -m http.server 8000`, poi
 `http://localhost:8000`. In alto c'è il selettore «View as» per vedere i prezzi da visitatore, utente o membro.
 
-## Cosa ti chiediamo adesso (4 azioni)
+## Per te come sviluppatore
+
+Istruzioni complete in `sito/README.md`. In breve:
+
+```sh
+cd sito
+composer install
+cp .env.example .env && php artisan key:generate   # poi DB MySQL/MariaDB, Stripe test, SMTP, chiavi QR
+php artisan migrate:fresh --seed                    # dati EAS8 di esempio
+php artisan eas:create-admin                        # primo utente del pannello, con MFA
+php artisan test                                    # 189 test, su MySQL/MariaDB (non SQLite)
+php artisan serve                                   # sito su http://localhost:8000, pannello su /admin
+stripe listen --forward-to localhost:8000/stripe/webhook
+```
+
+| Dove guardare | Cosa c'è |
+|---|---|
+| `app/Services/` | Prezzi e fasce, riserve di posti, pagamenti, rimborsi, biglietti e QR, omaggi |
+| `app/Services/StripeGateway.php` | L'unico punto che parla con Stripe (nei test lo sostituisce `tests/Fakes/FakeStripe.php`) |
+| `app/Jobs/`, `routes/console.php` | Webhook elaborati in coda, scadenza degli ordini, rimborsi; pensati per cron ogni minuto su hosting condiviso |
+| `app/Filament/`, `app/Policies/` | Pannello e permessi per ruolo |
+| `database/migrations/` | Tabelle con i vincoli che proteggono posti e prezzo membro |
+| `tests/` | Test Pest, compresi quelli in parallelo in `tests/Concurrency/` |
+
+Scelte da confermare: QR firmato con Ed25519 (il partner verifica con la chiave pubblica, senza segreto); date delle
+fasce di esempio (early bird fino al 31/01/2027, regular fino al 31/03/2027); lo staff entra solo dal pannello con
+password e MFA, non con il codice via email dei clienti.
+
+Prima del lancio mancano: prova completa con Stripe in modalità test (anche Apple Pay e Google Pay), gestione del
+rimborso rifiutato da Stripe, riconciliazione notturna, contestazioni, lingua nell'indirizzo (`/en/`, `/it/`).
+
+## Cosa ti chiediamo adesso (5 azioni)
 
 | # | Azione | Istruzioni | Tempo stimato |
 |---|---|---|---|
@@ -39,6 +70,7 @@ Per aprire il prototipo sul tuo computer: `cd prototipo && python3 -m http.serve
 | 2 | Mandarci l'indirizzo del modulo Mailchimp per la preregistrazione (*Audience → Signup forms → Embedded forms*, l'indirizzo dopo `action=`) e dirci se la doppia conferma è attiva. **Non mandare la chiave API** | `preregistrazione/README.md` | 10 minuti |
 | 3 | Comprare `orthocongress.org` e dirci chi gestisce i DNS | — | Quando potete: senza dominio niente pagina online né email affidabili |
 | 4 | Iniziare a raccogliere i contenuti nei modelli: prima tipi di biglietto, fasce e prezzi, poi sale, speaker e sessioni | `contenuti/modelli/README.md` | Il programma serve più avanti, i prezzi subito |
+| 5 | Provare l'applicazione in locale con le chiavi Stripe **di test** del vostro account e dirci cosa non va | `sito/README.md` | Mezza giornata |
 
 Se lo script segnala un problema con i **trigger** del database, stampa anche un breve testo in inglese da girare
 all'assistenza dell'hosting: di solito lo risolvono in poco tempo.
@@ -85,7 +117,7 @@ Le domande sono spiegate una per una, con il motivo, in `docs/domande-simone-ter
 
 ## Prossimi passi
 
-1. Tu: le 4 azioni sopra, appena puoi.
-2. Noi: con l'indirizzo di Mailchimp mettiamo a punto la pagina di preregistrazione; con il riepilogo dello script
-   confermiamo l'hosting.
-3. Insieme: data di apertura e date delle fasce, poi si parte con lo sviluppo della prima fase.
+1. Tu: le 5 azioni sopra, appena puoi.
+2. Noi: con il riepilogo dello script prepariamo l'installazione sul vostro hosting; con l'indirizzo di Mailchimp
+   mettiamo online la preregistrazione.
+3. Insieme: data di apertura e date delle fasce, prova con Stripe in test, poi apertura delle vendite e Fase 2.

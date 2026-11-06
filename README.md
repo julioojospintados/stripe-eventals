@@ -7,10 +7,13 @@ prezzi per fascia (early bird, regular, last minute) e per ruolo (pubblico e mem
 sconto, tutto incassato con Stripe. Primo evento: EAS8, Lisbona, 8–10 aprile 2027; Laravel + Filament su hosting
 condiviso con MySQL o MariaDB.
 
-Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è ancora.
+Fase attuale: **Fase 1 sviluppata** (passi 1–3 fatti, 189 test verdi su MariaDB). L'applicazione Laravel è in [`sito/`](sito/README.md):
+schema con i vincoli, vendita con Stripe e biglietti con QR, pannello Filament con i ruoli, export CSV, sito pubblico
+EN/IT. Da fare prima dell'apertura: contenuti e date definitive dal cliente, hosting, prova con Stripe in test.
 
 | File | Cosa contiene |
 |---|---|
+| [`sito/`](sito/README.md) | applicazione Laravel 13 + Filament 5: schema della Fase 1 con i vincoli del database, vendita con Stripe, biglietti con QR, pannello `/admin` con le Policy per ruolo, export CSV, pagine pubbliche EN/IT, test Pest su MariaDB/MySQL; installazione e stato dei passi nel suo README |
 | [`docs/per-simone.md`](docs/per-simone.md) | riepilogo per il cliente: cosa è pronto, cosa serve da lui, decisioni |
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |
 | [`docs/cliente/`](docs/cliente/) | risposte del cliente (primo e secondo giro del 06/11/2026) |
