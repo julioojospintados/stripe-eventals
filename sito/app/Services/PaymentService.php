@@ -201,10 +201,10 @@ class PaymentService
         if ($order->discount_reserved) {
             $retaken = DB::table('discount_code_redemptions')->where('order_id', $order->id)->whereNotNull('released_at')
                 ->update(['released_at' => null, 'release_reason' => null]);
-            if ($retaken) {
-                DiscountCode::whereKey($order->discount_code_id)
-                    ->where(fn ($q) => $q->whereNull('max_redemptions')->orWhereColumn('redeemed_count', '<', 'max_redemptions'))
-                    ->increment('redeemed_count');
+            if ($retaken && DiscountCode::whereKey($order->discount_code_id)
+                ->where(fn ($q) => $q->whereNull('max_redemptions')->orWhereColumn('redeemed_count', '<', 'max_redemptions'))
+                ->increment('redeemed_count') === 0) {
+                StaffAlert::raise('discount_limit_late', ["Ordine {$order->id}: codice sconto oltre il limite dopo un pagamento tardivo."]);
             }
         }
     }

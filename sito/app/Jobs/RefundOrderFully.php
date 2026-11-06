@@ -43,7 +43,7 @@ class RefundOrderFully implements ShouldQueue
 
         $key = ($staff ? 'staff-refund-' : 'auto-refund-').$order->id;
         $paid = $order->stripe_amount_total_cents ?: $order->total_cents;
-        $refunded = (int) $order->refunds()->where('status', '!=', 'failed')->where('idempotency_key', '!=', $key)->sum('amount_cents');
+        $refunded = (int) $order->refunds()->where('status', '!=', 'failed')->where(fn ($q) => $q->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $key))->sum('amount_cents');
         if ($paid - $refunded <= 0) {
             return;
         }
