@@ -39,6 +39,20 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 
 Dettagli delle risposte: [`docs/cliente/risposte-2026-11-06.md`](cliente/risposte-2026-11-06.md).
 
+## Decisioni del cliente nel secondo giro (06/11/2026)
+
+| Tema | Scelta |
+|---|---|
+| Server | Hosting condiviso con SSH e MySQL/MariaDB, gestito da Simone |
+| Prezzi | Fasce early bird, regular e last minute con date modificabili; early bird (−30%) solo per i membri |
+| Biglietti | Nessun cambio di nome; solo carta; in più accompagnatori, omaggi per speaker e staff, espositori e sponsor |
+| Membership | Attiva subito dopo l'acquisto |
+| Lingua | Inglese predefinito, italiano come seconda lingua |
+| Video | Wistia e Vimeo, accesso per ruolo |
+| Fuori dalla prima apertura | Abstract e poster, attestati, crediti formativi |
+
+Dettagli: [`docs/cliente/risposte-2026-11-06-secondo-giro.md`](cliente/risposte-2026-11-06-secondo-giro.md).
+
 ## Fuori ambito per ora
 
 Codice dell'applicazione. Questa fase produce solo architettura informatica e UX/UI (documenti, schema dei dati,
