@@ -1,0 +1,125 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Speaker · Admin · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
+  </div>
+</header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head">
+      <h1 class="t-1">Speaker</h1>
+      <button type="button" class="btn btn--primary" id="nuovo">Aggiungi uno speaker</button>
+    </div>
+
+    <div class="layout-2" style="grid-template-columns:minmax(0,1fr)">
+      <section aria-labelledby="h-elenco">
+        <h2 class="t-2" id="h-elenco">Elenco</h2>
+        <div id="st-elenco" role="status" aria-live="polite"></div>
+        <table class="tabella tabella--stack">
+          <caption class="sr-only">Speaker</caption>
+          <thead><tr><th scope="col">Nome</th><th scope="col">Ruolo</th><th scope="col">Sessioni</th><th scope="col">Foto</th><th scope="col">Azioni</th></tr></thead>
+          <tbody id="righe"></tbody>
+        </table>
+      </section>
+
+      <section aria-labelledby="h-form" id="pannello-form" hidden style="margin-top:var(--s-7)">
+        <h2 class="t-2" id="h-form" tabindex="-1">Modifica speaker</h2>
+        <form id="f" class="stack" novalidate style="max-width:40rem">
+          <div class="campo"><label for="nome">Nome e cognome</label><input class="input" id="nome" autocomplete="off"></div>
+          <div class="campo"><label for="ruolo">Ruolo o professione</label><input class="input" id="ruolo" autocomplete="off"></div>
+          <div class="campo"><label for="ente">Ente o organizzazione</label><input class="input" id="ente" autocomplete="off"></div>
+          <div class="campo"><label for="bio">Biografia</label><textarea class="textarea" id="bio" aria-describedby="a-bio"></textarea><p class="campo__aiuto" id="a-bio">Poche righe, in terza persona.</p></div>
+          <div class="campo">
+            <label for="foto">Foto</label>
+            <input class="input" id="foto" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="a-foto">
+            <p class="campo__aiuto" id="a-foto">JPEG, PNG o WebP, al massimo 2 MB (limite d’esempio). Le foto degli speaker sono pubbliche: non caricare altro.</p>
+          </div>
+          <div class="campo"><label for="alt">Testo alternativo della foto</label><input class="input" id="alt" aria-describedby="a-alt" autocomplete="off"><p class="campo__aiuto" id="a-alt">Obbligatorio se c’è una foto. Descrive chi si vede, per esempio «Ritratto di Marta Valsecchi in una biblioteca».</p></div>
+          <fieldset class="campo"><legend class="etichetta">Sessioni in cui parla</legend><div id="sessioni" class="stack" style="--stack:0"></div></fieldset>
+          <label class="scelta"><input type="checkbox" id="pub" checked><span>Visibile sul sito pubblico</span></label>
+          <div id="er" role="alert" aria-live="assertive"></div>
+          <div class="azioni-riga"><button type="submit" class="btn btn--primary">Salva lo speaker</button><button type="button" class="btn btn--quiet" id="annulla">Chiudi senza salvare</button></div>
+          <div id="st" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, SP = JSON.parse(JSON.stringify(D.speakers)), corrente = null, nuovi = 0;
+    var sessioniDi = function (id) { return D.sessioni.filter(function (s) { return s.sp.indexOf(id) > -1; }); };
+
+    function elenco() {
+      $('#righe').innerHTML = SP.map(function (p) {
+        var n = sessioniDi(p.id).length;
+        return '<tr><th scope="row">' + p.nome + '</th><td data-label="Ruolo">' + p.ruolo + '</td><td data-label="Sessioni">' + n + '</td>' +
+          '<td data-label="Foto">' + (p.foto ? '<span class="badge badge--ok">' + AD.icona('check') + 'Caricata</span>' : '<span class="badge badge--warn">' + AD.icona('alert') + 'Manca</span>') + '</td>' +
+          '<td data-label="Azioni"><div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-mod="' + p.id + '">Modifica<span class="sr-only"> ' + p.nome + '</span></button>' +
+          '<button type="button" class="btn btn--quiet btn--piccolo" data-del="' + p.id + '">Elimina<span class="sr-only"> ' + p.nome + '</span></button></div></td></tr>';
+      }).join('');
+    }
+    function apri(p) {
+      corrente = p;
+      $('#pannello-form').hidden = false; $('#er').innerHTML = ''; $('#st').innerHTML = '';
+      $('#h-form').textContent = p.nuovo ? 'Nuovo speaker' : 'Modifica: ' + p.nome;
+      $('#nome').value = p.nome; $('#ruolo').value = p.ruolo; $('#ente').value = p.ente; $('#bio').value = (p.bio || []).join('\n\n'); $('#alt').value = p.alt || ''; $('#foto').value = '';
+      $('#sessioni').innerHTML = D.sessioni.map(function (s) {
+        return '<label class="scelta"><input type="checkbox" value="' + s.id + '"' + (s.sp.indexOf(p.id) > -1 ? ' checked' : '') + '><span>' + CV.giorno(s.g).breve + ' ' + s.da + ' · ' + s.titolo + '</span></label>';
+      }).join('');
+      $('#h-form').focus();
+    }
+    $('#righe').addEventListener('click', function (e) {
+      var m = e.target.closest('[data-mod]'), x = e.target.closest('[data-del]');
+      if (m) apri(SP.filter(function (p) { return p.id === m.getAttribute('data-mod'); })[0]);
+      if (x) {
+        var p = SP.filter(function (q) { return q.id === x.getAttribute('data-del'); })[0], n = sessioniDi(p.id).length;
+        if (n) { CV.msg($('#st-elenco'), 'err', 'Non si elimina ' + p.nome + ': parla in ' + n + (n === 1 ? ' sessione' : ' sessioni') + '. Toglilo prima dalle sessioni.'); return; }
+        if (!x.getAttribute('data-c')) { x.setAttribute('data-c', '1'); x.textContent = 'Conferma eliminazione'; CV.msg($('#st-elenco'), 'warn', 'Premi ancora «Conferma eliminazione» per cancellare ' + p.nome + '.'); return; }
+        SP = SP.filter(function (q) { return q.id !== p.id; }); elenco(); CV.msg($('#st-elenco'), 'ok', p.nome + ' eliminato (simulato). Registrato nel registro audit.');
+      }
+    });
+    $('#nuovo').addEventListener('click', function () { apri({ id: 'spn' + (++nuovi), nome: '', ruolo: '', ente: '', bio: [], nuovo: true }); });
+    $('#annulla').addEventListener('click', function () { $('#pannello-form').hidden = true; });
+    $('#f').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var er = [], f = $('#foto').files[0];
+      $$('[aria-invalid]', $('#f')).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+      if (!$('#nome').value.trim()) er.push(['nome', 'Scrivi nome e cognome.']);
+      if (!$('#ruolo').value.trim()) er.push(['ruolo', 'Scrivi il ruolo o la professione.']);
+      if (f && !/\.(jpe?g|png|webp)$/i.test(f.name)) er.push(['foto', 'La foto deve essere JPEG, PNG o WebP.']);
+      else if (f && f.size > 2 * 1024 * 1024) er.push(['foto', 'La foto pesa più di 2 MB: riducila prima di caricarla.']);
+      if ((f || corrente.foto) && !$('#alt').value.trim()) er.push(['alt', 'Scrivi il testo alternativo della foto: serve a chi non la vede.']);
+      if (er.length) {
+        $('#er').innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he">Controlla ' + er.length + (er.length === 1 ? ' campo' : ' campi') + '</h3><ul>' + er.map(function (x) { return '<li><a href="#' + x[0] + '">' + x[1] + '</a></li>'; }).join('') + '</ul></div>';
+        er.forEach(function (x) { $('#' + x[0]).setAttribute('aria-invalid', 'true'); }); $('#he').focus(); return;
+      }
+      $('#er').innerHTML = '';
+      corrente.nome = $('#nome').value.trim(); corrente.ruolo = $('#ruolo').value.trim(); corrente.ente = $('#ente').value.trim();
+      corrente.bio = $('#bio').value.split(/\n\s*\n/).filter(Boolean); corrente.alt = $('#alt').value.trim(); if (f) corrente.foto = true;
+      if (corrente.nuovo) { delete corrente.nuovo; corrente.cognome = corrente.nome.split(' ').pop(); corrente.tono = 1; SP.push(corrente); }
+      elenco(); CV.msg($('#st'), 'ok', '<b>Speaker salvato</b> (simulato). Registrato nel registro audit.');
+    });
+    elenco();
+  });
+</script>
+</body>
+</html>

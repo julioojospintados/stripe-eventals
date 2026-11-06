@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Sessione · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap" id="sessione">
+      <!-- Riempito da script. Senza JavaScript il prototipo non mostra i dati; nel sito vero questa pagina e' HTML generato dal server. -->
+      <p>Caricamento della sessione… <a href="agenda.html">Torna al programma</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, s = CV.sessione(CV.param('id'));
+    var box = $('#sessione');
+    if (!s) {
+      box.innerHTML = '<h1 class="t-1">Sessione non trovata</h1><p class="misura">Il link non corrisponde a nessuna sessione del programma.</p><p><a class="btn btn--primary" href="agenda.html">Torna al programma</a></p>';
+      return;
+    }
+    document.title = s.titolo + ' · Convegno 2027';
+    var g = CV.giorno(s.g), prenotata = false, attesa = false;
+
+    function durata(a, b) { return (CV.min(b) - CV.min(a)) + ' min'; }
+    function sottosezioni() {
+      if (!s.subs.length) return '';
+      var h = '<section aria-labelledby="h-sub" class="stack"><h2 class="t-2" id="h-sub">Interventi in questa sessione</h2><div>';
+      s.subs.forEach(function (x, i) {
+        var fine = s.subs[i + 1] ? s.subs[i + 1].ora : s.a;
+        h += '<details class="acc"><summary><time>' + x.ora + '</time> ' + x.titolo + CV.ic('chev') + '</summary><div class="acc__corpo"><p class="t-small"><b>Chi interviene:</b> ' + x.chi + '</p><p class="t-small t-muted">Durata: ' + durata(x.ora, fine) + '</p></div></details>';
+      });
+      return h + '</div></section>';
+    }
+
+    box.innerHTML =
+      '<nav class="breadcrumb" aria-label="Percorso"><a href="agenda.html">Programma</a> / ' + g.lungo + '</nav>' +
+      '<header class="stack" style="--stack:var(--s-3);margin-bottom:var(--s-5)">' +
+      '<p class="sessione__tag">' + CV.chipTraccia(s.t) + CV.badgeAccesso(s) + '</p>' +
+      '<h1 class="t-1">' + s.titolo + '</h1>' +
+      '<dl class="meta-lista misura"><div><dt>Quando</dt><dd>' + g.lungo + ', <time>' + s.da + '</time>–<time>' + s.a + '</time></dd></div>' +
+      '<div><dt>Dove</dt><dd>' + CV.sala(s.sala).nome + ' (' + CV.sala(s.sala).nota + ')</dd></div>' +
+      '<div><dt>Tipo</dt><dd>' + D.tipi[s.tipo] + '</dd></div>' +
+      '<div><dt>Chi parla</dt><dd>' + CV.nomiSpeaker(s) + '</dd></div></dl></header>' +
+      '<div class="layout-2 layout-2--lato-primo">' +
+      '<aside class="layout-2__lato" aria-label="Prezzo e prenotazione"><div class="scheda" id="azione"></div></aside>' +
+      '<div class="stack" style="--stack:var(--s-6)">' +
+      '<div class="stack"><p class="t-lead misura">' + s.desc + '</p></div>' + sottosezioni() +
+      '<section aria-labelledby="h-sp"><h2 class="t-2" id="h-sp">Speaker</h2>' + s.sp.map(function (i) { return CV.speakerCard(CV.persona(i)); }).join('') + '</section>' +
+      '</div></div>';
+
+    function pannello() {
+      var st = CV.stato, p = s.posti, pass = st.pass, h = '';
+      if (!s.pagamento) {
+        h += '<h2 class="t-3">Inclusa nel pass</h2><p class="t-small">Vale con il pass intero e con il pass giornaliero di ' + g.lungo.toLowerCase() + '.</p><p>' + CV.postiHTML(s) + '</p>';
+        if (!pass) {
+          h += '<p class="t-small"><b>Per partecipare ti serve un pass.</b> Pass intero:</p>' + CV.prezzoHTML(D.prezzi.intero) +
+            '<a class="btn btn--primary btn--block" href="biglietti.html">Compra un pass</a>';
+        } else if (p.libero) {
+          h += '<div class="avviso avviso--ok" role="status"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b>Hai il pass.</b> Per questa sessione non serve prenotare.</div></div>';
+        } else if (p.nd) {
+          h += '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Le prenotazioni per questa sessione non sono ancora aperte.</div></div>' +
+            '<button class="btn btn--block" aria-disabled="true">Prenotazione non ancora disponibile</button>';
+        } else if (prenotata) {
+          h += '<div class="avviso avviso--ok" role="status"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b tabindex="-1" data-focus>Posto prenotato.</b> Conferma nella tua area personale e via email.</div></div>' +
+            '<button class="btn btn--secondary btn--block" data-azione="annulla">Annulla la prenotazione</button>';
+        } else if (p.res === 0) {
+          h += '<div class="avviso avviso--err"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Posti esauriti.</b> Se qualcuno annulla, il posto si libera.</div></div>' +
+            '<button class="btn btn--block" aria-disabled="true">Posti esauriti</button>' +
+            (attesa ? '<div class="avviso avviso--ok" role="status"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b tabindex="-1" data-focus>Sei in lista d’attesa.</b> Ti scriviamo se si libera un posto.</div></div>'
+                    : '<button class="btn btn--secondary btn--block" data-azione="attesa">Avvisami se si libera un posto</button>');
+        } else {
+          h += '<button class="btn btn--primary btn--block" data-azione="prenota">Prenota il mio posto, gratis</button><p class="t-small t-muted">Prenotare serve a tenere il posto: puoi annullare quando vuoi.</p>';
+        }
+      } else {
+        h += '<h2 class="t-3">A pagamento</h2><p class="t-small">Prezzo per questa sessione, a parte rispetto al pass.</p>' + CV.prezzoHTML(s.pagamento) + '<p>' + CV.postiHTML(s) + '</p>';
+        if (p.res === 0) {
+          h += '<button class="btn btn--block" aria-disabled="true">Posti esauriti</button>' +
+            (attesa ? '<div class="avviso avviso--ok" role="status"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b tabindex="-1" data-focus>Sei in lista d’attesa.</b> Ti scriviamo se si libera un posto.</div></div>'
+                    : '<button class="btn btn--secondary btn--block" data-azione="attesa">Avvisami se si libera un posto</button>');
+        } else if (pass) {
+          h += '<a class="btn btn--primary btn--block" href="biglietti.html?sessione=' + s.id + '&modo=aggiunta">Aggiungi al mio pass</a>';
+        } else {
+          h += '<a class="btn btn--primary btn--block" href="biglietti.html?sessione=' + s.id + '&modo=solo">Acquista questa sessione</a>' +
+            '<p class="t-small t-muted">Si può acquistare anche senza pass. <a href="biglietti.html">Vedi i pass</a>.</p>';
+        }
+        h += '<p class="t-small t-muted">Il pagamento avviene su Stripe: non inseriamo qui i dati della carta.</p>';
+      }
+      var a = $('#azione');
+      a.innerHTML = h;
+      var f = a.querySelector('[data-focus]');
+      if (f && a.getAttribute('data-ha-agito')) f.focus();
+    }
+
+    $('#azione').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-azione]');
+      if (!b) return;
+      var az = b.getAttribute('data-azione');
+      if (az === 'prenota') { prenotata = true; if (s.posti.res) s.posti.res--; }
+      if (az === 'annulla') { prenotata = false; if (typeof s.posti.res === 'number') s.posti.res++; }
+      if (az === 'attesa') attesa = true;
+      $('#azione').setAttribute('data-ha-agito', '1');
+      pannello();
+    });
+    document.addEventListener('cv:stato', function () { $('#azione').removeAttribute('data-ha-agito'); pannello(); });
+    pannello();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Il mio account · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="site-header__destra"><a class="header-link" href="account.html" aria-current="page">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap">
+      <!-- Non connesso -->
+      <div data-ruoli="visitatore" class="stack">
+        <h1 class="t-1">Il mio account</h1>
+        <div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
+          <div><p>Per vedere biglietti, agenda, membership e ordini devi accedere.</p><p><a class="btn btn--primary" href="accesso.html?next=account.html">Accedi con un codice via email</a></p></div></div>
+      </div>
+
+      <!-- Connesso -->
+      <div id="area" hidden data-ruoli="pubblico,membro,membro-scaduto" class="stack" style="--stack:var(--s-5)">
+        <div class="admin-head" style="margin-bottom:0">
+          <div>
+            <h1 class="t-1">Il mio account</h1>
+            <p class="t-muted">Alessia Demo · alessia.demo@example.test (dati inventati)</p>
+          </div>
+          <button type="button" class="btn btn--secondary" id="esci">Esci</button>
+        </div>
+
+        <div class="tabs tabs--wrap" role="tablist" aria-label="Sezioni dell’account" id="tabs">
+          <button class="tab" role="tab" id="tab-biglietti" aria-controls="p-biglietti" aria-selected="true" data-p="biglietti">I miei biglietti</button>
+          <button class="tab" role="tab" id="tab-agenda" aria-controls="p-agenda" aria-selected="false" tabindex="-1" data-p="agenda">La mia agenda</button>
+          <button class="tab" role="tab" id="tab-membership" aria-controls="p-membership" aria-selected="false" tabindex="-1" data-p="membership">Membership</button>
+          <button class="tab" role="tab" id="tab-ordini" aria-controls="p-ordini" aria-selected="false" tabindex="-1" data-p="ordini">Ordini e ricevute</button>
+        </div>
+
+        <!-- I miei biglietti -->
+        <section role="tabpanel" id="p-biglietti" aria-labelledby="tab-biglietti" tabindex="0" class="tabpanel stack">
+          <h2 class="t-2">I miei biglietti</h2>
+          <p class="t-muted misura">Un biglietto per persona. Mostra il QR all’ingresso con la luminosità alta: il QR non contiene il nome di chi partecipa.</p>
+          <div id="lista-biglietti" class="stack" style="--stack:var(--s-4)"></div>
+        </section>
+
+        <!-- La mia agenda -->
+        <section role="tabpanel" id="p-agenda" aria-labelledby="tab-agenda" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">La mia agenda</h2>
+          <p class="t-muted misura">Sessioni prenotate e sessioni a pagamento già acquistate. Le sessioni incluse a ingresso libero non compaiono: basta il pass.</p>
+          <div id="conflitti-agenda" role="status" aria-live="polite"></div>
+          <div id="st-agenda" role="status" aria-live="polite"></div>
+          <div id="lista-agenda"></div>
+          <p><a class="btn btn--secondary" href="agenda.html">Prenota altre sessioni</a></p>
+        </section>
+
+        <!-- Membership -->
+        <section role="tabpanel" id="p-membership" aria-labelledby="tab-membership" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Membership</h2>
+          <div class="campo" style="max-width:24rem">
+            <label for="sim-mem">Prototipo: simula lo stato dell’abbonamento</label>
+            <select class="select" id="sim-mem">
+              <option value="nessuna">Nessuna membership</option>
+              <option value="attiva">Attiva, rinnovo automatico</option>
+              <option value="fine">Attiva, disdetta a fine periodo</option>
+              <option value="fallito">Pagamento del rinnovo non riuscito</option>
+              <option value="scaduta">Scaduta</option>
+            </select>
+          </div>
+          <div id="stato-mem" class="stack"></div>
+          <div id="portale" hidden>
+            <div class="stripe-box">
+              <div class="stripe-box__testa">Portale clienti ospitato da Stripe · simulazione</div>
+              <div class="stripe-box__corpo">
+                <p><b>Qui, su Stripe, puoi:</b></p>
+                <ul class="elenco-pulito" style="color:#1a1f36">
+                  <li>cambiare il metodo di pagamento</li>
+                  <li>vedere e scaricare le fatture</li>
+                  <li>annullare l’abbonamento a fine periodo</li>
+                </ul>
+                <button type="button" class="btn btn--primary btn--block" id="chiudi-portale">Torna all’area personale</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Ordini -->
+        <section role="tabpanel" id="p-ordini" aria-labelledby="tab-ordini" tabindex="0" class="tabpanel stack" hidden>
+          <h2 class="t-2">Ordini e ricevute</h2>
+          <div id="st-ordini" role="status" aria-live="polite"></div>
+          <table class="tabella tabella--stack">
+            <caption class="sr-only">Elenco ordini</caption>
+            <thead><tr><th scope="col">Ordine</th><th scope="col">Data</th><th scope="col">Contenuto</th><th scope="col" class="num">Importo</th><th scope="col">Stato</th><th scope="col">Azioni</th></tr></thead>
+            <tbody id="righe-ordini"></tbody>
+          </table>
+          <p class="t-small t-muted misura">I biglietti non sono rimborsabili: se non puoi venire, cambia il nominativo gratis fino a 48 ore prima dell’inizio. Rimborsiamo solo se l’evento viene annullato o se il pagamento arriva quando i posti sono finiti, senza bisogno di chiederlo.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa;
+
+    /* ---------------- schede ---------------- */
+    var tabs = $$('.tab');
+    function scegli(t, sposta) {
+      tabs.forEach(function (x) {
+        var on = x === t;
+        x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1;
+        $('#' + x.getAttribute('aria-controls')).hidden = !on;
+      });
+      if (sposta) t.focus();
+      if (history.replaceState) history.replaceState(null, '', '#' + t.getAttribute('data-p'));
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { scegli(t, false); });
+      t.addEventListener('keydown', function (e) {
+        var n = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (n === undefined) return; e.preventDefault(); scegli(tabs[(n + tabs.length) % tabs.length], true);
+      });
+    });
+    var h0 = tabs.filter(function (t) { return '#' + t.getAttribute('data-p') === location.hash; })[0];
+    if (h0) scegli(h0, false);
+    $('#esci').addEventListener('click', function () { CV.setStato({ ruolo: 'visitatore' }); });
+
+    /* ---------------- biglietti ---------------- */
+    var T = [
+      { id: 't1', tipo: 'Pass intero', nome: 'Alessia Demo', tu: true, giorni: 'Tutti e tre i giorni', code: 'K7M2QX4P', prezzo: D.prezzi.intero, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't2', tipo: 'Pass intero', nome: 'Marco Prova', email: 'marco.prova@example.test', giorni: 'Tutti e tre i giorni', code: 'R3T9WB6N', prezzo: { pub: D.prezzi.intero.pub, mem: D.prezzi.intero.pub }, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't3', tipo: 'Workshop · Progettare un servizio culturale in due ore', nome: 'Alessia Demo', tu: true, giorni: 'Giovedì 14 ottobre, 11:00–13:00, Sala Officina', code: 'D5H8LC2Y', prezzo: CV.sessione('s03').pagamento, stato: 'valido', cambi: 0, ver: 1 },
+      { id: 't4', tipo: 'Pass giornaliero · Venerdì 15 ottobre', nome: 'Nora Esempio', email: 'nora.esempio@example.test', giorni: 'Venerdì 15 ottobre', code: 'W2Y6PV9A', prezzo: { pub: D.prezzi.giornaliero.pub, mem: D.prezzi.giornaliero.pub }, stato: 'rimborsato', cambi: 0, ver: 1, rimborso: D.prezzi.giornaliero.pub + ' € il 25/02/2027' }
+    ];
+    var MAXCAMBI = 2;
+    function pagato(t) {
+      var k = CV.CHIAVE[CV.stato.ruolo], p = t.tu ? t.prezzo[k || 'pub'] : t.prezzo.pub;
+      var nome = !t.tu || !k || k === 'pub' ? 'prezzo pubblico' : 'prezzo membro';
+      return { v: p, nome: nome, ridotto: t.tu && p < t.prezzo.pub };
+    }
+    function biglietti(focusId, messaggio) {
+      var h = '';
+      T.forEach(function (t) {
+        var pg = pagato(t), rev = t.stato !== 'valido';
+        var cedibile = !pg.ridotto && !rev && t.cambi < MAXCAMBI;
+        var motivo = rev ? '' : (pg.ridotto ? 'Prezzo ridotto: il biglietto non si cede. Per correggere un errore di battitura scrivi all’organizzazione.' : (t.cambi >= MAXCAMBI ? 'Hai usato i ' + MAXCAMBI + ' cambi consentiti.' : ''));
+        h += '<article class="biglietto' + (rev ? ' biglietto--revocato' : '') + '" aria-labelledby="bt-' + t.id + '">' +
+          (rev ? '<div class="biglietto__qr">QR revocato: biglietto rimborsato</div>'
+               : '<div class="biglietto__qr">' + CV.qrSvg(t.id + t.code + t.ver, 'QR segnaposto del biglietto ' + t.tipo + ' di ' + t.nome) + '</div>') +
+          '<div class="biglietto__corpo"><h3 class="t-3" id="bt-' + t.id + '" tabindex="-1">' + t.tipo + '</h3>' +
+          '<p><b>' + t.nome + '</b>' + (t.tu ? ' (tu)' : '') + '</p>' +
+          '<p class="t-small t-muted">' + t.giorni + '</p>' +
+          '<p><span class="biglietto__codice" aria-label="Codice breve ' + t.code.split('').join(' ') + '">' + t.code + '</span> <span class="t-small t-muted">codice breve</span></p>' +
+          '<p>' + (rev ? '<span class="badge badge--err">' + CV.ic('x') + 'Rimborsato</span> <span class="t-small">' + t.rimborso + '. Il QR non vale più.</span>'
+                       : '<span class="badge badge--ok">' + CV.ic('check') + 'Valido</span> <span class="t-small">Pagato ' + CV.euro(pg.v) + ' (' + pg.nome + ')' + (t.ver > 1 ? ' · QR versione ' + t.ver : '') + '</span>') + '</p>' +
+          (rev ? '' : '<div class="azioni-riga"><button type="button" class="btn btn--secondary btn--piccolo" data-az="pdf" data-id="' + t.id + '">' + CV.ic('download') + 'Scarica PDF</button>' +
+            '<button type="button" class="btn btn--secondary btn--piccolo" data-az="wallet" data-id="' + t.id + '">' + CV.ic('wallet') + 'Aggiungi al wallet</button></div>') +
+          '<div id="st-' + t.id + '" role="status" aria-live="polite">' + (focusId === t.id && messaggio ? messaggio : '') + '</div>' +
+          (rev ? '' : (cedibile
+            ? '<details class="acc"><summary>Cambia il nominativo (' + (MAXCAMBI - t.cambi) + ' cambi rimasti)' + CV.ic('chev') + '</summary>' +
+              '<form class="acc__corpo stack" data-cambio="' + t.id + '" novalidate>' +
+              '<div class="campo"><label for="n-' + t.id + '">Nome e cognome di chi partecipa</label><input class="input" id="n-' + t.id + '" autocomplete="off"></div>' +
+              '<div class="campo"><label for="e-' + t.id + '">Email di chi partecipa</label><input class="input" id="e-' + t.id + '" type="email" autocomplete="off" aria-describedby="a-' + t.id + '"><p class="campo__aiuto" id="a-' + t.id + '">Il QR attuale smette di funzionare. Il nuovo biglietto arriva a questa email. Gratis fino a 48 ore prima dell’inizio dell’evento.</p></div>' +
+              '<p class="campo__errore" id="er-' + t.id + '" role="alert" hidden></p><button class="btn btn--primary" type="submit">Cambia nominativo</button></form></details>'
+            : '<p class="t-small t-muted">' + motivo + '</p>')) +
+          '</div></article>';
+      });
+      $('#lista-biglietti').innerHTML = h;
+      var f = focusId && $('#bt-' + focusId); if (f) f.focus();
+    }
+    $('#lista-biglietti').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-az]'); if (!b) return;
+      var st = $('#st-' + b.getAttribute('data-id'));
+      if (b.getAttribute('data-az') === 'pdf') CV.msg(st, 'ok', 'PDF pronto (simulato). Nel sito vero parte il download e arriva anche per email.');
+      else CV.msg(st, 'info', 'Simulato: l’aggiunta al wallet (Apple o Google) è un’estensione possibile, non prevista nella prima versione.');
+    });
+    $('#lista-biglietti').addEventListener('submit', function (e) {
+      var fm = e.target.closest('[data-cambio]'); if (!fm) return; e.preventDefault();
+      var id = fm.getAttribute('data-cambio'), t = T.filter(function (x) { return x.id === id; })[0];
+      var n = $('#n-' + id).value.trim(), em = $('#e-' + id).value.trim(), er = $('#er-' + id);
+      if (!n || !/^\S+@\S+\.\S+$/.test(em)) {
+        er.hidden = false; er.innerHTML = CV.ic('alert') + '<span>' + (!n ? 'Scrivi nome e cognome di chi partecipa.' : 'Controlla l’email: manca la chiocciola o il dominio.') + '</span>';
+        $(!n ? '#n-' + id : '#e-' + id).focus(); return;
+      }
+      t.nome = n; t.email = em; t.cambi++; t.ver++; t.tu = false;
+      biglietti(id, '<div class="avviso avviso--ok"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b>Nominativo cambiato.</b> Il QR di prima non vale più; il nuovo è arrivato a ' + em + '. Cambi usati: ' + t.cambi + ' di ' + MAXCAMBI + '.</div></div>');
+    });
+
+    /* ---------------- agenda ---------------- */
+    var AG = [ { s: 's02', t: 'prenotata' }, { s: 's03', t: 'pagata' }, { s: 's11', t: 'prenotata' }, { s: 's09', t: 'pagata' } ];
+    function agenda(testo) {
+      var list = AG.map(function (a) { return { a: a, s: CV.sessione(a.s) }; }).sort(function (x, y) { return x.s.g.localeCompare(y.s.g) || CV.min(x.s.da) - CV.min(y.s.da); });
+      var cf = [];
+      for (var i = 0; i < list.length; i++) for (var j = i + 1; j < list.length; j++) if (CV.sovrapposte(list[i].s, list[j].s)) cf.push([list[i], list[j]]);
+      $('#conflitti-agenda').innerHTML = cf.map(function (c) {
+        var annullabile = c[0].a.t === 'prenotata' ? c[0] : (c[1].a.t === 'prenotata' ? c[1] : null);
+        return '<div class="avviso avviso--warn" style="margin-bottom:var(--s-3)"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Orari sovrapposti.</b><p>«' + c[0].s.titolo + '» (' + c[0].s.da + '–' + c[0].s.a + ') e «' + c[1].s.titolo + '» (' + c[1].s.da + '–' + c[1].s.a + ') si accavallano.</p>' +
+          (annullabile ? '<p><button type="button" class="btn btn--secondary btn--piccolo" data-annulla="' + annullabile.a.s + '">Annulla la prenotazione di «' + annullabile.s.titolo + '»</button></p>' : '<p>Sono entrambe a pagamento: scegli quale seguire. Le sessioni a pagamento non sono rimborsabili.</p>') + '</div></div>';
+      }).join('');
+      if (testo) CV.msg($('#st-agenda'), 'ok', testo);
+      if (!list.length) { $('#lista-agenda').innerHTML = '<p class="vuoto">Nessuna sessione prenotata o acquistata. Quando prenoti compare qui.</p>'; return; }
+      var h = '', g = '';
+      list.forEach(function (x) {
+        if (x.s.g !== g) { g = x.s.g; h += (h ? '</ul>' : '') + '<h3 class="t-3" style="margin-top:var(--s-5)">' + CV.giorno(g).lungo + '</h3><ul class="elenco-pulito">'; }
+        h += '<li><p class="t-num"><b>' + x.s.da + '–' + x.s.a + '</b> · ' + CV.sala(x.s.sala).nome + '</p>' +
+          '<p><a href="sessione.html?id=' + x.s.id + '">' + x.s.titolo + '</a></p>' +
+          '<p class="azioni-riga">' + (x.a.t === 'prenotata'
+            ? '<span class="badge badge--inclusa">' + CV.ic('check') + 'Prenotata</span><button type="button" class="btn btn--quiet btn--piccolo" data-annulla="' + x.a.s + '">Annulla la prenotazione</button>'
+            : '<span class="badge badge--pagamento">' + CV.ic('ticket') + 'Pagata</span><span class="t-small t-muted">Il biglietto è in «I miei biglietti».</span>') + '</p></li>';
+      });
+      $('#lista-agenda').innerHTML = h + '</ul>';
+    }
+    $('#p-agenda').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-annulla]'); if (!b) return;
+      var id = b.getAttribute('data-annulla'), s = CV.sessione(id);
+      AG = AG.filter(function (a) { return a.s !== id; });
+      agenda('Prenotazione annullata: «' + s.titolo + '». Il posto torna disponibile.');
+    });
+
+    /* ---------------- membership ---------------- */
+    var memDaRuolo = { membro: 'attiva', 'membro-scaduto': 'scaduta' };
+    function membership() {
+      var s = $('#sim-mem').value, h = '';
+      var riga = function (k, v) { return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; };
+      if (s === 'nessuna') h = '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div><p>Non sei membro. La membership annuale costa ' + CV.euro(D.prezzi.membership) + ' e dà il prezzo membro.</p><p><a class="btn btn--primary" href="membership.html">Vedi la membership</a></p></div></div>';
+      else {
+        var badge = { attiva: '<span class="badge badge--ok">' + CV.ic('check') + 'Attiva</span>', fine: '<span class="badge badge--warn">' + CV.ic('clock') + 'Attiva, non si rinnova</span>', fallito: '<span class="badge badge--err">' + CV.ic('alert') + 'Pagamento non riuscito</span>', scaduta: '<span class="badge badge--err">' + CV.ic('x') + 'Scaduta</span>' }[s];
+        h = '<dl class="meta-lista misura">' + riga('Stato', badge) +
+          riga(s === 'scaduta' ? 'Scaduta il' : (s === 'fine' ? 'Valida fino al' : 'Prossimo rinnovo'), '30/09/2027 (data d’esempio)') +
+          (s === 'scaduta' ? '' : riga('Pagamento', 'Carta •••• 4242 (esempio)')) + '</dl>';
+        if (s === 'fine') h += '<div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Hai annullato il rinnovo: il prezzo membro vale fino alla data indicata. Per riattivare apri il portale clienti.</div></div>';
+        if (s === 'fallito') h += '<div class="avviso avviso--err" role="alert"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Il pagamento del rinnovo non è riuscito.</b> Finché non lo sistemi non vale come membro per nuovi acquisti (regola proposta, da confermare). Aggiorna il metodo di pagamento sul portale.</div></div>';
+        if (s === 'scaduta') h += '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>La membership è scaduta.</b> Paghi il prezzo pubblico finché non rinnovi.</div></div><p><a class="btn btn--primary" href="membership.html">Rinnova la membership</a></p>';
+        else h += '<p><button type="button" class="btn ' + (s === 'fallito' ? 'btn--primary' : 'btn--secondary') + '" id="apri-portale">' + CV.ic('external') + (s === 'fallito' ? 'Aggiorna il metodo di pagamento su Stripe' : 'Gestisci su Stripe (portale clienti)') + '</button></p>';
+      }
+      $('#stato-mem').innerHTML = h; $('#portale').hidden = true;
+    }
+    $('#sim-mem').addEventListener('change', function () { membership(); });
+    $('#stato-mem').addEventListener('click', function (e) {
+      if (!e.target.closest('#apri-portale')) return;
+      $('#portale').hidden = false; $('#stato-mem').hidden = true; $('#chiudi-portale').focus();
+    });
+    $('#chiudi-portale').addEventListener('click', function () { $('#portale').hidden = true; $('#stato-mem').hidden = false; var b = $('#apri-portale'); if (b) b.focus(); });
+
+    /* ---------------- ordini ---------------- */
+    var ORD = [
+      { id: 'CV-1042', d: '12/03/2027', c: 'Pass intero e un workshop', v: 135, s: 'paid' },
+      { id: 'CV-1043', d: '12/03/2027', c: 'Due pass giornalieri', v: 130, s: 'processing' },
+      { id: 'CV-1031', d: '01/03/2027', c: 'Pass intero', v: 150, s: 'failed' },
+      { id: 'CV-1020', d: '28/02/2027', c: 'Un workshop', v: 40, s: 'expired' },
+      { id: 'CV-1011', d: '20/02/2027', c: 'Pass giornaliero', v: 65, s: 'refunded' }
+    ];
+    var STATO = {
+      paid: ['ok', 'check', 'Pagato'], processing: ['info', 'clock', 'In elaborazione'], failed: ['err', 'alert', 'Non riuscito'],
+      expired: ['warn', 'clock', 'Scaduto'], refunded: ['err', 'x', 'Rimborsato']
+    };
+    var NOTA = { processing: 'Stiamo aspettando la conferma da Stripe. Non pagare di nuovo.', failed: 'Nessun addebito. Puoi riprovare.', expired: 'La sessione di pagamento è scaduta: nessun addebito.', refunded: 'Rimborsati 65 € il 25/02/2027.' };
+    function ordini() {
+      $('#righe-ordini').innerHTML = ORD.map(function (o) {
+        var s = STATO[o.s];
+        return '<tr><th scope="row">' + o.id + '</th><td data-label="Data">' + o.d + '</td><td data-label="Contenuto">' + o.c + (NOTA[o.s] ? '<br><span class="t-small t-muted">' + NOTA[o.s] + '</span>' : '') + '</td>' +
+          '<td class="num" data-label="Importo">' + CV.euro(o.v) + '</td>' +
+          '<td data-label="Stato"><span class="badge badge--' + s[0] + '">' + CV.ic(s[1]) + s[2] + '</span></td>' +
+          '<td data-label="Azioni">' + (o.s === 'paid' || o.s === 'refunded' ? '<button type="button" class="btn btn--secondary btn--piccolo" data-ric="' + o.id + '">' + CV.ic('download') + 'Ricevuta</button>' : (o.s === 'failed' || o.s === 'expired' ? '<a class="btn btn--secondary btn--piccolo" href="biglietti.html">Riprova</a>' : '')) + '</td></tr>';
+      }).join('');
+    }
+    $('#righe-ordini').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-ric]'); if (!b) return;
+      CV.msg($('#st-ordini'), 'ok', 'Ricevuta dell’ordine ' + b.getAttribute('data-ric') + ' pronta (simulata). Nel sito vero è la ricevuta di Stripe; la fattura è da definire.');
+    });
+
+    /* ---------------- avvio e cambi di ruolo ---------------- */
+    function inizia() {
+      $('#sim-mem').value = memDaRuolo[CV.stato.ruolo] || 'nessuna';
+      biglietti(); agenda(); membership(); ordini();
+    }
+    inizia();
+    document.addEventListener('cv:stato', function () {
+      inizia();   // cambio di ruolo dal selettore o dall'accesso: riallinea tutte le schede
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Speaker · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html" aria-label="Convegno 2027, pagina iniziale">Convegno 2027</a>
+    <nav class="nav-main" aria-label="Principale">
+      <a href="agenda.html"><svg class="ic" aria-hidden="true"><use href="#i-calendar"></use></svg>Programma</a>
+      <a href="speaker.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-person"></use></svg>Speaker</a>
+      <a href="biglietti.html"><svg class="ic" aria-hidden="true"><use href="#i-ticket"></use></svg>Biglietti</a>
+      <a href="membership.html"><svg class="ic" aria-hidden="true"><use href="#i-card"></use></svg>Membership</a>
+    </nav>
+    <span class="site-header__destra"><a class="header-link" href="account.html">Account</a><span class="badge badge--ruolo"><span class="solo-desktop">Vista: </span><span data-ruolo-label>Visitatore</span></span></span>
+  </div>
+</header>
+
+<main id="contenuto">
+  <section class="sezione">
+    <div class="wrap">
+      <h1 class="t-1">Speaker</h1>
+      <p class="t-muted misura">Dieci persone, in ordine alfabetico per cognome. I ritratti sono segnaposto: le foto vere arrivano dall’organizzatore.</p>
+      <p class="t-small t-muted" id="conteggio" role="status"></p>
+      <div class="griglia-speaker" id="elenco"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Convegno 2027 è un nome segnaposto. Persone, luoghi, date e prezzi di questo prototipo sono inventati.</p>
+    <p>Condizioni di vendita, privacy e rimborsi: pagine in preparazione.</p>
+  </div>
+</footer>
+
+<script src="prototipo.js"></script>
+<script>
+  CV.ready(function () {
+    var l = CV.DATA.speakers.slice().sort(function (a, b) { return a.cognome.localeCompare(b.cognome, 'it'); });
+    CV.qs('#conteggio').textContent = l.length + ' speaker';
+    CV.qs('#elenco').innerHTML = l.map(CV.speakerCard).join('');
+  });
+</script>
+</body>
+</html>

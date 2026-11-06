@@ -1,0 +1,151 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Ordini · Admin · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
+  </div>
+</header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head"><h1 class="t-1">Ordini</h1></div>
+
+    <section aria-labelledby="h-cerca">
+      <h2 class="t-2 sr-only" id="h-cerca">Cerca</h2>
+      <form class="grid-2" role="search" id="cerca" onsubmit="return false" style="align-items:end">
+        <div class="campo"><label for="q">Cerca per numero, nome o email</label><input class="input" id="q" type="search" autocomplete="off" placeholder="CV-1042, Alessia, @example.test"></div>
+        <div class="campo"><label for="stato">Stato</label><select class="select" id="stato"></select></div>
+      </form>
+      <p class="t-small t-muted" id="conto" role="status" aria-live="polite" style="margin-block:var(--s-3)"></p>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Ordini</caption>
+        <thead><tr><th scope="col">Ordine</th><th scope="col">Data</th><th scope="col">Chi</th><th scope="col" class="num">Importo</th><th scope="col">Stato</th><th scope="col"><span class="sr-only">Azioni</span></th></tr></thead>
+        <tbody id="righe"></tbody>
+      </table>
+      <div id="vuoto" class="vuoto" hidden>Nessun ordine corrisponde alla ricerca.</div>
+    </section>
+
+    <section id="dett" aria-labelledby="h-dett" hidden></section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var $ = CV.qs, $$ = CV.qa, O = JSON.parse(JSON.stringify(AD.ordini)), e = AD.euro, aperto = null;
+    $('#stato').innerHTML = '<option value="">Tutti gli stati</option>' + Object.keys(AD.STATO_ORD).map(function (k) { return '<option value="' + k + '">' + AD.STATO_ORD[k][2] + '</option>'; }).join('');
+    if (AD.param('filtro') === 'review') $('#stato').value = 'review';
+
+    function elenco() {
+      var q = $('#q').value.trim().toLowerCase(), s = $('#stato').value;
+      var l = O.filter(function (o) { return (!s || o.stato === s) && (!q || (o.id + ' ' + o.nome + ' ' + o.email).toLowerCase().indexOf(q) > -1); });
+      $('#righe').innerHTML = l.map(function (o) {
+        return '<tr><th scope="row">' + o.id + '</th><td data-label="Data">' + o.data + '</td><td data-label="Chi" class="cella-testo">' + o.nome + '<br><span class="t-small t-muted">' + o.email + '</span></td><td class="num" data-label="Importo">' + e(o.totale) + '</td><td data-label="Stato">' + AD.badgeOrd(o.stato) + '</td>' +
+          '<td data-label=""><button type="button" class="btn btn--secondary btn--piccolo" data-apri="' + o.id + '">Dettaglio<span class="sr-only"> ordine ' + o.id + '</span></button></td></tr>';
+      }).join('');
+      $('#vuoto').hidden = l.length > 0; $('#conto').textContent = l.length + (l.length === 1 ? ' ordine' : ' ordini');
+    }
+    $('#q').addEventListener('input', elenco); $('#stato').addEventListener('change', elenco);
+    $('#righe').addEventListener('click', function (x) { var b = x.target.closest('[data-apri]'); if (b) dettaglio(b.getAttribute('data-apri'), true); });
+
+    function quota(o, r) { var somma = o.righe.reduce(function (a, x) { return a + x.v; }, 0); return r.v - (o.sconto ? Math.round(o.sconto * r.v / somma) : 0); }
+    function dettaglio(id, fuoco, msg) {
+      var o = O.filter(function (x) { return x.id === id; })[0]; if (!o) return; aperto = id;
+      var pannello = $('#dett'); pannello.hidden = false;
+      var h = '<div class="admin-head" style="margin-top:var(--s-7)"><h2 class="t-2" id="h-dett" tabindex="-1">Ordine ' + o.id + '</h2>' + AD.badgeOrd(o.stato) + '</div>' +
+        '<div id="st-dett" role="status" aria-live="polite">' + (msg || '') + '</div>' +
+        '<div class="layout-2"><div class="stack" style="--stack:var(--s-5)">' +
+        (o.nota ? '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><b>Da rivedere.</b> ' + o.nota + '</div></div>' : '') +
+        '<table class="tabella tabella--stack"><caption>Che cosa contiene</caption><thead><tr><th scope="col">Voce</th><th scope="col">Biglietto</th><th scope="col" class="num">Prezzo</th></tr></thead><tbody>' +
+        o.righe.map(function (r) { return '<tr><th scope="row">' + r.t + '</th><td data-label="Biglietto">' + (r.tk === 'valido' ? '<span class="badge badge--ok">' + AD.icona('check') + 'Valido</span>' : (r.tk === 'rimborsato' ? '<span class="badge badge--err">' + AD.icona('x') + 'Rimborsato</span>' : '<span class="badge badge--info">' + AD.icona('clock') + 'Non emesso</span>')) + '</td><td class="num" data-label="Prezzo">' + e(r.v) + '</td></tr>'; }).join('') + '</tbody>' +
+        '<tfoot>' + (o.sconto ? '<tr><th scope="row" colspan="2">Codice ' + o.codice + '</th><td class="num" data-label="Sconto">−' + e(o.sconto) + '</td></tr>' : '') + '<tr><th scope="row" colspan="2">Totale</th><td class="num" data-label="Totale">' + e(o.totale) + '</td></tr></tfoot></table>' +
+        '<div><h3 class="t-3">Che cosa è successo</h3><ul class="elenco-pulito">' + o.eventi.map(function (v) { return '<li><span class="t-num t-muted">' + v[0] + '</span> · <b>' + v[1] + '</b><br><span class="t-small">' + v[2] + '</span></li>'; }).join('') + '</ul></div>' +
+        '</div><div class="layout-2__lato stack">' +
+        '<dl class="meta-lista"><div><dt>Chi</dt><dd>' + o.nome + '</dd></div><div><dt>Email</dt><dd class="cella-testo">' + o.email + '</dd></div><div><dt>Prezzo di</dt><dd>' + { membro: 'Membro', pubblico: 'Pubblico' }[o.ruolo] + '</dd></div><div><dt>Pagamento</dt><dd class="t-num">' + o.pi + '</dd></div></dl>' +
+        '<div class="stack" style="--stack:var(--s-2)">' +
+        '<button type="button" class="btn btn--secondary btn--block" data-az="stripe">' + AD.icona('external') + 'Apri il pagamento su Stripe</button>' +
+        (o.stato === 'paid' || o.stato === 'partial' ? '<button type="button" class="btn btn--block" data-az="rimborsa">Rimborsa…</button>' : '') +
+        (o.stato === 'review' ? '<button type="button" class="btn btn--primary btn--block" data-az="riconcilia">Segna come riconciliato</button>' : '') +
+        (o.stato === 'processing' ? '<button type="button" class="btn btn--secondary btn--block" data-az="ricontrolla">' + AD.icona('refresh') + 'Ricontrolla su Stripe</button>' : '') +
+        '</div><div class="avviso avviso--info"><svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg><div>Rimborsa solo da qui. Un rimborso fatto direttamente nella Dashboard di Stripe non si collega ai biglietti: l’ordine finisce in «Da rivedere» e va sistemato a mano.</div></div>' +
+        '</div></div><div id="rimborso"></div>';
+      pannello.innerHTML = h;
+      if (fuoco) $('#h-dett').focus();
+    }
+    $('#dett').addEventListener('click', function (x) {
+      var b = x.target.closest('[data-az]'); if (!b) return;
+      var o = O.filter(function (y) { return y.id === aperto; })[0], az = b.getAttribute('data-az');
+      if (az === 'stripe') CV.msg($('#st-dett'), 'info', 'Nel sito vero si apre la Dashboard di Stripe in una nuova scheda, sul pagamento <b>' + o.pi + '</b>. Qui puoi guardare, non rimborsare.');
+      if (az === 'ricontrolla') CV.msg($('#st-dett'), 'info', 'Stripe non ha ancora confermato il pagamento. Ricontrollo automatico ogni minuto; non rimborsare e non rifare l’ordine.');
+      if (az === 'riconcilia') {
+        o.stato = 'paid'; o.nota = ''; o.eventi.push(['ora', 'Riconciliazione manuale', 'importo verificato su Stripe, ordine segnato come pagato']);
+        dettaglio(o.id, true, '<div class="avviso avviso--ok"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div>Ordine riconciliato (simulato). Registrato nel registro audit.</div></div>'); elenco();
+      }
+      if (az === 'rimborsa') rimborso(o);
+    });
+
+    /* rimborso: scelta, conferma, invio a Stripe, esito */
+    function rimborso(o) {
+      var idx = []; o.righe.forEach(function (r, i) { if (r.tk === 'valido') idx.push(i); });
+      var h = '<section class="scheda" aria-labelledby="h-rimb" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-rimb" tabindex="-1">Rimborso dell’ordine ' + o.id + '</h3>' +
+        '<form id="f-rimb" class="stack" novalidate><fieldset class="campo"><legend class="etichetta">Quali biglietti rimborsare</legend>' +
+        idx.map(function (i) { return '<label class="scelta"><input type="checkbox" value="' + i + '" checked><span>' + o.righe[i].t + ' · <b>' + e(quota(o, o.righe[i])) + '</b></span></label>'; }).join('') + '</fieldset>' +
+        '<p class="t-small t-muted">L’importo è il prezzo pagato meno la quota di sconto.</p>' +
+        '<label class="scelta"><input type="checkbox" id="rimetti" checked><span>Rimetti in vendita i posti liberati</span></label>' +
+        '<div class="campo"><label for="motivo">Motivo</label><select class="select" id="motivo"><option value="">Scegli…</option><option>Evento annullato</option><option>Pagato senza posti</option></select></div>' +
+        '<div class="campo"><label for="nota-r">Nota interna</label><textarea class="textarea" id="nota-r"></textarea></div>' +
+        '<div id="er-rimb" role="alert" aria-live="assertive"></div>' +
+        '<div class="azioni-riga"><button type="submit" class="btn btn--primary">Continua</button><button type="button" class="btn btn--quiet" id="chiudi-rimb">Annulla</button></div></form></section>';
+      $('#rimborso').innerHTML = h; $('#h-rimb').focus();
+      $('#chiudi-rimb').addEventListener('click', function () { $('#rimborso').innerHTML = ''; });
+      $('#f-rimb').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var sel = $$('#f-rimb input[type=checkbox][value]:checked').map(function (c) { return +c.value; }), er = [];
+        var mot = $('#motivo').value;
+        if (!sel.length) er.push('Scegli almeno un biglietto da rimborsare.');
+        if (!mot) er.push('Scegli il motivo del rimborso.');
+        if (er.length) { $('#er-rimb').innerHTML = '<div class="riepilogo-errori"><ul>' + er.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul></div>'; return; }
+        $('#er-rimb').innerHTML = '';
+        var tot = sel.reduce(function (a, i) { return a + quota(o, o.righe[i]); }, 0), rimetti = $('#rimetti').checked;
+        $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-conf" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-conf" tabindex="-1">Conferma il rimborso di ' + e(tot) + '</h3>' +
+          '<ul class="elenco-pulito">' + sel.map(function (i) { return '<li>' + o.righe[i].t + ' · ' + e(quota(o, o.righe[i])) + '</li>'; }).join('') + '</ul>' +
+          '<div class="avviso avviso--warn"><svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg><div><ul><li>I biglietti diventano <b>non validi subito</b>: il QR non passa più al check-in.</li><li>I posti ' + (rimetti ? 'tornano in vendita' : 'restano occupati') + '.</li><li>La commissione di Stripe non viene restituita: è un costo.</li><li>Il denaro arriva sulla carta nei tempi della banca.</li></ul></div></div>' +
+          '<div class="azioni-riga"><button type="button" class="btn btn--danger" id="vai">Rimborsa ' + e(tot) + ' su Stripe</button><button type="button" class="btn btn--quiet" id="indietro">Indietro</button></div></section>';
+        $('#h-conf').focus();
+        $('#indietro').addEventListener('click', function () { rimborso(o); });
+        $('#vai').addEventListener('click', function () {
+          sel.forEach(function (i) { o.righe[i].tk = 'rimborsato'; });
+          var tutti = o.righe.every(function (r) { return r.tk !== 'valido'; });
+          o.eventi.push(['ora', 'Rimborso creato su Stripe', e(tot) + ' · biglietti revocati · ' + mot]);
+          $('#rimborso').innerHTML = '<section class="scheda" aria-labelledby="h-ok" style="margin-top:var(--s-6)"><h3 class="t-3" id="h-ok" tabindex="-1">Rimborso inviato a Stripe</h3>' +
+            '<div class="avviso avviso--info" role="status"><svg class="ic" aria-hidden="true"><use href="#i-clock"></use></svg><div>In attesa della conferma di Stripe. I biglietti sono già revocati.</div></div>' +
+            '<p><button type="button" class="btn btn--secondary" id="conferma">Simula: Stripe conferma</button></p></section>';
+          $('#h-ok').focus();
+          $('#conferma').addEventListener('click', function () {
+            o.stato = tutti ? 'refunded' : 'partial'; o.eventi.push(['ora', 'charge.refunded', 'rimborso confermato da Stripe']);
+            dettaglio(o.id, true, '<div class="avviso avviso--ok"><svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg><div><b>Rimborso confermato</b> (simulato). Il cliente riceve un’email. Registrato nel registro audit.</div></div>'); elenco();
+          });
+        });
+      });
+    }
+
+    elenco();
+    var pre = AD.param('id'); if (pre) dettaglio(pre, false);
+  });
+</script>
+</body>
+</html>

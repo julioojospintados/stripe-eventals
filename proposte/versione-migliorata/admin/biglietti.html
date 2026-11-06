@@ -1,0 +1,185 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Biglietti e prezzi · Admin · Convegno 2027</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="senza-nav" data-area="admin">
+<a class="skip-link" href="#contenuto">Vai al contenuto</a>
+<header class="site-header">
+  <div class="wrap site-header__in">
+    <a class="brand" href="index.html">Convegno 2027 · Admin</a>
+    <span class="badge badge--ok"><svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>Sessione con MFA verificata</span>
+  </div>
+</header>
+<div class="wrap admin-shell">
+  <details class="admin-menu" id="admin-menu"><summary>Menu del pannello</summary><nav class="admin-nav" id="admin-nav" aria-label="Pannello admin"></nav></details>
+
+  <main id="contenuto" class="admin-main">
+    <div class="admin-head">
+      <h1 class="t-1">Biglietti e prezzi</h1>
+      <p class="t-small t-muted">Cambiare un prezzo non tocca gli ordini già pagati.</p>
+    </div>
+
+    <section aria-labelledby="h-matrice">
+      <h2 class="t-2" id="h-matrice">Prezzi per ruolo, oggi</h2>
+      <div class="campo" style="max-width:16rem;margin-bottom:var(--s-4)">
+        <label for="oggi">Prototipo: simula la data di oggi</label>
+        <input class="input" type="date" id="oggi" value="2027-03-10">
+      </div>
+      <p class="t-muted misura">I pass prendono il prezzo dalla fascia di vendita in corso (sezione sotto). Le sessioni a pagamento si modificano qui. Due prezzi: pubblico e membro; il prezzo membro vale solo sul biglietto del membro che compra.</p>
+      <table class="tabella tabella--stack" id="matrice">
+        <caption class="sr-only">Prezzi per tipo di biglietto e ruolo</caption>
+        <thead><tr><th scope="col">Tipo di biglietto</th><th scope="col" class="num">Pubblico (€)</th><th scope="col" class="num">Membro (€)</th></tr></thead>
+        <tbody id="righe-matrice"></tbody>
+      </table>
+      <div id="er-matrice" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-matrice">Salva i prezzi delle sessioni</button></div>
+      <div id="st-matrice" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="h-fasce">
+      <h2 class="t-2" id="h-fasce">Fasce di vendita (early bird)</h2>
+      <p class="t-muted misura">Per ogni pass, una fascia ha date di inizio e fine e i due prezzi. La fascia aperta è quella che si vede anche sul sito pubblico. Due fasce dello stesso pass non devono sovrapporsi.</p>
+      <div id="attive" role="status" aria-live="polite" class="stack" style="margin-bottom:var(--s-4)"></div>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Fasce di vendita</caption>
+        <thead><tr><th scope="col">Fascia</th><th scope="col">Pass</th><th scope="col">Dal</th><th scope="col">Al</th><th scope="col" class="num">Pubblico</th><th scope="col" class="num">Membro</th><th scope="col"><span class="sr-only">Azioni</span></th></tr></thead>
+        <tbody id="righe-fasce"></tbody>
+      </table>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--secondary" id="add-fascia">Aggiungi una fascia</button><button type="button" class="btn btn--primary" id="salva-fasce">Salva le fasce</button></div>
+      <div id="er-fasce" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
+      <div id="st-fasce" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="h-cap">
+      <h2 class="t-2" id="h-cap">Capienze</h2>
+      <p class="t-muted misura">Un pass intero consuma un posto in ognuno dei tre giorni. Non si può scendere sotto i posti già venduti o in riserva.</p>
+      <table class="tabella tabella--stack">
+        <caption class="sr-only">Capienze</caption>
+        <thead><tr><th scope="col">Posti</th><th scope="col" class="num">Venduti</th><th scope="col" class="num">In riserva</th><th scope="col" class="num">Minimo</th><th scope="col" class="num">Capienza</th></tr></thead>
+        <tbody id="righe-cap"></tbody>
+      </table>
+      <div id="er-cap" role="alert" aria-live="assertive" style="margin-top:var(--s-3)"></div>
+      <div class="azioni-riga" style="margin-top:var(--s-3)"><button type="button" class="btn btn--primary" id="salva-cap">Salva le capienze</button></div>
+      <div id="st-cap" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+</div>
+
+<script src="../prototipo.js"></script>
+<script src="admin.js"></script>
+<script>
+  CV.ready(function () {
+    var D = CV.DATA, $ = CV.qs, $$ = CV.qa, nuovo = 0;
+    var fmt = function (iso) { var p = iso.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
+    // le fasce sono la stessa fonte del sito pubblico (CV.DATA.fasce): una copia da modificare
+    var FASCE = JSON.parse(JSON.stringify(D.fasce));
+    var SES = D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { return { id: s.id, titolo: s.titolo, g: s.g, p: JSON.parse(JSON.stringify(s.pagamento)) }; });
+    var NOMI = { intero: 'Pass intero', giornaliero: 'Pass giornaliero' };
+    var num = function (id, v, lab) { return '<input class="input input--num" id="' + id + '" type="number" min="0" step="1" value="' + v + '" aria-label="' + lab + '">'; };
+
+    function attiva(tipo) { var o = $('#oggi').value; return FASCE.filter(function (f) { return f.tipo === tipo && f.dal <= o && o <= f.al; }); }
+    function matrice() {
+      var h = '';
+      ['intero', 'giornaliero'].forEach(function (t) {
+        var a = attiva(t), f = a[0];
+        h += '<tr><th scope="row">' + NOMI[t] + '<br><span class="t-small t-muted">' + (a.length === 1 ? 'fascia ' + f.nome : (a.length ? 'fasce sovrapposte: da correggere' : 'nessuna fascia aperta')) + '</span></th>' +
+          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + (a.length === 1 ? f[k] + ' €' : '—') + '</td>'; }).join('') + '</tr>';
+      });
+      SES.forEach(function (s) {
+        h += '<tr><th scope="row">' + s.titolo + '<br><span class="t-small t-muted">' + CV.giorno(s.g).breve + ' · sessione a pagamento</span></th>' +
+          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '">' + num('m-' + s.id + '-' + k, s.p[k], { pub: 'Prezzo pubblico', mem: 'Prezzo membro' }[k] + ': ' + s.titolo) + '</td>'; }).join('') + '</tr>';
+      });
+      $('#righe-matrice').innerHTML = h;
+      var msg = '';
+      ['intero', 'giornaliero'].forEach(function (t) { var a = attiva(t); msg += '<div class="avviso avviso--' + (a.length === 1 ? 'info' : 'warn') + '"><svg class="ic" aria-hidden="true"><use href="#i-' + (a.length === 1 ? 'info' : 'alert') + '"></use></svg><div><b>' + NOMI[t] + ':</b> ' + (a.length === 1 ? 'in vendita con la fascia «' + a[0].nome + '» fino al ' + fmt(a[0].al) + '.' : (a.length ? 'più fasce aperte nello stesso giorno.' : 'oggi nessuna fascia è aperta: il pass non si può comprare.')) + '</div></div>'; });
+      $('#attive').innerHTML = msg;
+    }
+    function fasce() {
+      $('#righe-fasce').innerHTML = FASCE.map(function (f) {
+        return '<tr data-id="' + f.id + '"><td data-label="Fascia"><input class="input" data-k="nome" value="' + f.nome + '" aria-label="Nome della fascia"></td>' +
+          '<td data-label="Pass"><select class="select" data-k="tipo" aria-label="Pass della fascia ' + f.nome + '"><option value="intero"' + (f.tipo === 'intero' ? ' selected' : '') + '>Pass intero</option><option value="giornaliero"' + (f.tipo === 'giornaliero' ? ' selected' : '') + '>Pass giornaliero</option></select></td>' +
+          '<td data-label="Dal"><input class="input" type="date" data-k="dal" value="' + f.dal + '" aria-label="Dal, fascia ' + f.nome + '"></td><td data-label="Al"><input class="input" type="date" data-k="al" value="' + f.al + '" aria-label="Al, fascia ' + f.nome + '"></td>' +
+          ['pub', 'mem'].map(function (k) { return '<td class="num" data-label="' + { pub: 'Pubblico', mem: 'Membro' }[k] + '"><input class="input input--num" type="number" min="0" step="1" data-k="' + k + '" value="' + f[k] + '" aria-label="' + { pub: 'Prezzo pubblico', mem: 'Prezzo membro' }[k] + ', fascia ' + f.nome + '"></td>'; }).join('') +
+          '<td data-label=""><button type="button" class="btn btn--quiet btn--piccolo" data-rm="' + f.id + '">Rimuovi<span class="sr-only"> la fascia ' + f.nome + '</span></button></td></tr>';
+      }).join('');
+    }
+    function leggiFasce() {
+      $$('#righe-fasce tr').forEach(function (tr) {
+        var f = FASCE.filter(function (x) { return x.id === tr.getAttribute('data-id'); })[0];
+        $$('[data-k]', tr).forEach(function (i) { var k = i.getAttribute('data-k'); f[k] = (k === 'pub' || k === 'mem') ? (i.value === '' ? NaN : +i.value) : i.value; });
+      });
+    }
+    $('#righe-fasce').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-rm]'); if (!b) return; leggiFasce();
+      FASCE = FASCE.filter(function (f) { return f.id !== b.getAttribute('data-rm'); }); fasce(); matrice(); AD.annuncio('Fascia rimossa.');
+      var p = $('#add-fascia'); p.focus();
+    });
+    $('#add-fascia').addEventListener('click', function () {
+      leggiFasce(); var id = 'fn' + (++nuovo);
+      FASCE.push({ id: id, nome: 'Nuova fascia', tipo: 'intero', dal: '', al: '', pub: 0, mem: 0 }); fasce();
+      var i = $('#righe-fasce tr[data-id="' + id + '"] input'); i.focus(); i.select();
+    });
+    $('#oggi').addEventListener('change', matrice);
+
+    function riepilogoErrori(box, er, prefisso) {
+      if (!er.length) { box.innerHTML = ''; return false; }
+      box.innerHTML = '<div class="riepilogo-errori"><h3 class="t-3" tabindex="-1" id="he-' + prefisso + '">Controlla ' + er.length + (er.length === 1 ? ' punto' : ' punti') + '</h3><ul>' + er.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+      $('#he-' + prefisso).focus(); return true;
+    }
+    $('#salva-fasce').addEventListener('click', function () {
+      leggiFasce(); var er = [], av = [];
+      FASCE.forEach(function (f) {
+        var n = f.nome || 'senza nome';
+        if (!f.dal || !f.al) er.push('Fascia «' + n + '»: scrivi le date di inizio e di fine.');
+        else if (f.dal > f.al) er.push('Fascia «' + n + '»: la fine (' + fmt(f.al) + ') è prima dell’inizio (' + fmt(f.dal) + ').');
+        ['pub', 'mem'].forEach(function (k) { if (isNaN(f[k]) || f[k] < 0) er.push('Fascia «' + n + '»: il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' deve essere un numero da 0 in su.'); });
+        if (f.mem > f.pub) av.push('Fascia «' + n + '»: il prezzo membro è più alto del pubblico, quindi il membro non avrebbe vantaggio.');
+      });
+      FASCE.forEach(function (a, i) { FASCE.slice(i + 1).forEach(function (b) { if (a.tipo === b.tipo && a.dal && b.dal && a.dal <= b.al && b.dal <= a.al) er.push('Le fasce «' + a.nome + '» e «' + b.nome + '» (' + NOMI[a.tipo] + ') si sovrappongono.'); }); });
+      if (riepilogoErrori($('#er-fasce'), er, 'fasce')) return;
+      matrice(); CV.msg($('#st-fasce'), av.length ? 'warn' : 'ok', '<b>Fasce salvate</b> (simulato). Registrato nel registro audit.' + (av.length ? '<br>' + av.join('<br>') : ''));
+    });
+    $('#salva-matrice').addEventListener('click', function () {
+      var er = [], av = [];
+      SES.forEach(function (s) {
+        ['pub', 'mem'].forEach(function (k) {
+          var v = $('#m-' + s.id + '-' + k).value;
+          if (v === '' || +v < 0) er.push('«' + s.titolo + '»: scrivi il prezzo ' + { pub: 'pubblico', mem: 'membro' }[k] + ' (anche 0).'); else s.p[k] = +v;
+        });
+        if (s.p.mem > s.p.pub) av.push('«' + s.titolo + '»: il prezzo membro supera il pubblico, non avrà effetto.');
+      });
+      if (riepilogoErrori($('#er-matrice'), er, 'matrice')) return;
+      CV.msg($('#st-matrice'), av.length ? 'warn' : 'ok', '<b>Prezzi salvati</b> (simulato). Gli ordini già pagati restano al prezzo pagato.' + (av.length ? '<br>' + av.join('<br>') : ''));
+    });
+
+    /* capienze */
+    var held = { s03: 1, s09: 0, s10: 2, s15: 0, s05: 0 };
+    var POOL = [{ id: 'p1', nome: 'Giovedì 14 (pass)', cap: 300, conf: 212, held: 6 }, { id: 'p2', nome: 'Venerdì 15 (pass)', cap: 300, conf: 190, held: 4 }, { id: 'p3', nome: 'Sabato 16 (pass)', cap: 300, conf: 145, held: 0 }]
+      .concat(D.sessioni.filter(function (s) { return s.pagamento; }).map(function (s) { var h = held[s.id] || 0; return { id: s.id, nome: s.titolo, cap: s.posti.tot, conf: s.posti.tot - s.posti.res - h, held: h }; }));
+    $('#righe-cap').innerHTML = POOL.map(function (p) {
+      return '<tr><th scope="row">' + p.nome + '</th><td class="num" data-label="Venduti">' + p.conf + '</td><td class="num" data-label="In riserva">' + p.held + '</td><td class="num" data-label="Minimo">' + (p.conf + p.held) + '</td>' +
+        '<td class="num" data-label="Capienza">' + num('c-' + p.id, p.cap, 'Capienza: ' + p.nome) + '</td></tr>';
+    }).join('');
+    $('#salva-cap').addEventListener('click', function () {
+      var er = [];
+      POOL.forEach(function (p) {
+        var v = $('#c-' + p.id).value;
+        if (v === '' || +v < 1) er.push('«' + p.nome + '»: scrivi una capienza da 1 in su.');
+        else if (+v < p.conf + p.held) er.push('«' + p.nome + '»: non puoi scendere sotto ' + (p.conf + p.held) + ', ci sono già posti venduti o in riserva.'); else p.cap = +v;
+      });
+      if (riepilogoErrori($('#er-cap'), er, 'cap')) return;
+      CV.msg($('#st-cap'), 'ok', '<b>Capienze salvate</b> (simulato). Registrato nel registro audit.');
+    });
+
+    fasce(); matrice();
+  });
+</script>
+</body>
+</html>
