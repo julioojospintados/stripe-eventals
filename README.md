@@ -10,9 +10,11 @@ Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è anc
 | File | Cosa contiene |
 |---|---|
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |
-| [`docs/architettura.md`](docs/architettura.md) | stack, componenti, Stripe, ruoli di prezzo, capienza, sicurezza, costi, MVP, domande aperte |
+| [`docs/architettura.md`](docs/architettura.md) | stack Laravel + Filament, componenti, Stripe, ruoli, capienza, hosting, sicurezza, costi, MVP, domande aperte |
 | [`docs/decisioni.md`](docs/decisioni.md) | registro delle decisioni |
-| [`db/schema.sql`](db/schema.sql) | bozza dello schema Postgres 16 (Supabase) |
+| [`db/modello-dati.md`](db/modello-dati.md) | modello dei dati per Laravel: tabelle, vincoli, indici, dove sta ogni regola |
+| [`db/migrazioni-bozza/`](db/migrazioni-bozza/) | migrazioni Laravel di esempio per ordini, capienza, prezzo membro, eventi Stripe |
+| [`db/archivio/`](db/archivio/) | schema Postgres per Supabase del 05/11/2026, solo come riferimento storico |
 | [`docs/ux/architettura-informazioni.md`](docs/ux/architettura-informazioni.md) | mappa del sito, flussi, casi limite, accessibilità |
 | [`prototipo/`](prototipo/index.html) | prototipo cliccabile in HTML statico: sito pubblico, area personale, admin, check-in |
 

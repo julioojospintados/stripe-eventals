@@ -260,7 +260,7 @@ details.proto-bar > summary .ic { margin-left: auto; width: 1.1em; height: 1.1em
 details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .proto-bar__corpo { padding: var(--s-2) var(--gutter) var(--s-3); display: grid; gap: var(--s-2); }
 .proto-bar__nav { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); }
-.proto-bar__nav a { color: #f5f5f5; display: inline-flex; align-items: center; min-height: 2.75rem; }
+.proto-bar__nav a { color: #f5f5f5; display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; min-width: 2.75rem; }
 
 /* ---------- Intestazione e navigazione (scure) ---------- */
 .site-header { background: var(--nav-bg); color: var(--nav-ink); border-bottom: 1px solid var(--nav-line); }
@@ -288,6 +288,9 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
   background: var(--nav-bg); color: var(--nav-ink); border: 1px solid var(--nav-ink-2); color-scheme: dark; cursor: pointer;
 }
 .lang-avviso { margin-top: var(--s-4); }
+.lang-avviso:empty { display: none; }   /* vuoto: niente fascia chiara tra intestazione e hero */
+.site-header .select--lang { width: 4rem; min-width: 4rem; flex: none; padding: 0 var(--s-2); background: var(--nav-bg); color: var(--nav-ink); border: 1px solid var(--nav-ink-2); }
+.site-header .header-link { flex: none; padding-inline: var(--s-4); }
 
 .nav-main {
   position: fixed; inset: auto 0 0 0; z-index: 40;
@@ -557,7 +560,10 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .hero__giorni b { font: 900 3rem / 0.9 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; color: var(--c-orange); }
 .hero__giorni span { color: var(--hero-ink-2); }
 @keyframes entra { from { transform: translateY(14px); } to { transform: none; } }
-.hero__prezzi { max-width: 26rem; color: var(--hero-ink); }
+.hero__prezzi { max-width: 26rem; color: var(--hero-ink); background: var(--c-social); border: 1px solid var(--nav-line); border-radius: var(--r-l); padding: var(--s-5); }
+.hero__corpo > * { min-width: 0; }
+/* link nel testo: area cliccabile >= 44px senza cambiare l'impaginazione */
+.sezione p a:not(.btn), .admin-main p a:not(.btn) { display: inline-block; padding-block: 0.75rem; margin-block: -0.75rem; }
 .hero__prezzi .prezzo-riga { border-color: rgb(245 245 245 / 0.4); }
 .hero__prezzi .prezzo-nota, .hero__prezzi .prezzo-altri, .hero__prezzi .prezzo-barrato, .hero__prezzi .t-muted, .hero__prezzi .t-small { color: var(--hero-ink-2); }
 .hero .badge--ruolo { background: #f5f5f5; color: #111111; border-color: #f5f5f5; }
@@ -595,6 +601,7 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .tabella tfoot td, .tabella tfoot th { border-top: 3px solid var(--c-ink); font-weight: 700; }
 .tabella a { display: inline-flex; align-items: center; min-height: 2.75rem; }
 @media (max-width: 39.99rem) {
+  .tabella--stack caption:not(.sr-only) { display: block; width: 100%; }
   .tabella--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .tabella--stack, .tabella--stack tbody, .tabella--stack tr, .tabella--stack th, .tabella--stack td, .tabella--stack tfoot { display: block; }
   .tabella--stack tr { border-top: 3px solid var(--c-ink); padding: var(--s-2) 0; }
@@ -620,9 +627,10 @@ details.proto-bar[open] > summary .ic { transform: rotate(180deg); }
 .input[disabled], .select[disabled] { background: var(--c-surface-2); color: var(--c-ink-2); border-style: dashed; }
 .campo--errore .input, .campo--errore .select { border: 2px solid var(--c-err-fg); }
 fieldset.campo { border: 0; padding: 0; margin: 0; min-width: 0; }
-.scelta { display: flex; align-items: center; gap: var(--s-3); min-height: 3rem; cursor: pointer; }
-.scelta input { width: 1.5rem; height: 1.5rem; flex: none; margin: 0; }
-.scelta--inline { display: inline-flex; }
+/* l'intera riga della label e' l'area cliccabile (>= 44px di altezza e tutta la larghezza); la casella resta visibile a 28px */
+.scelta { display: flex; align-items: center; gap: var(--s-3); min-height: 2.75rem; padding-block: var(--s-1); cursor: pointer; }
+.scelta input { width: 1.75rem; height: 1.75rem; flex: none; margin: 0; }
+.scelta--inline { display: inline-flex; min-width: 2.75rem; padding-inline: var(--s-1); }
 .opzione { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--s-3); padding: var(--s-4); background: var(--c-surface); border: 1px solid var(--c-line-strong); border-radius: var(--r-m); cursor: pointer; }
 .opzione input { width: 1.5rem; height: 1.5rem; margin: 0.1rem 0 0; }
 .opzione:has(input:checked) { border: 2px solid var(--c-accent-text); padding: calc(var(--s-4) - 1px); background: var(--c-accent-soft); }
@@ -665,6 +673,9 @@ fieldset.campo { border: 0; padding: 0; margin: 0; min-width: 0; }
   position: sticky; bottom: var(--nav-h); z-index: 20; background: var(--c-surface); border-top: 1px solid var(--c-ink);
   box-shadow: var(--shadow); padding: var(--s-3) var(--gutter) var(--s-3); display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
 }
+/* biglietti su telefono: barra fissa sopra la barra in basso (visibile solo con almeno un articolo), area sicura inclusa */
+.barra-azione--mobile { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); z-index: 30; }
+.sezione:has(.barra-azione--mobile) { padding-bottom: calc(var(--s-7) + 5rem); }
 .barra-azione__totale { line-height: 1.1; }
 .barra-azione__totale small { display: block; font-size: var(--fs-xs); color: var(--c-ink-2); }
 .barra-azione__totale b { font: 700 1.5rem / 1.1 var(--font-display); font-variant-numeric: tabular-nums; }

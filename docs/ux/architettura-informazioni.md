@@ -253,7 +253,7 @@ Gli obiettivi sono ipotesi di lavoro, non misure.
 ## 10. Area personale, admin e check-in (seconda parte)
 
 File: `prototipo/accesso.html`, `account.html`, `admin/*.html`, `checkin.html`. Coerente con `docs/architettura.md`
-(ruoli derivati dai dati, ordini, check-in con QR firmato). Nota: `docs/architettura.md` e `db/schema.sql` descrivono ancora il ruolo studente e vanno allineati alla decisione del 05/11/2026 (nessuno studente).
+(ruoli derivati dai dati, ordini, check-in con QR firmato). Il modello dei dati è in `db/modello-dati.md` (Laravel + Filament dal 06/11/2026).
 
 ### 10.1 Accesso
 

@@ -160,7 +160,7 @@
     </div>
     <div class="barra-azione barra-azione--mobile" role="region" aria-label="Totale e pagamento">
       <div class="barra-azione__totale"><small>Totale</small><b id="totale-barra">0 €</b></div>
-      <button type="submit" form="ordine" class="btn btn--primary">Paga</button>
+      <button type="submit" form="ordine" class="btn btn--primary">Vai al pagamento</button>
     </div>
   </section>
 
@@ -296,6 +296,7 @@
       $('#righe').innerHTML = h;
       $('#totale').textContent = CV.euro(c.totale);
       $('#totale-barra').textContent = CV.euro(c.totale);
+      $('.barra-azione--mobile').hidden = !c.righe.length;   // la barra fissa compare solo con almeno un articolo
 
       /* la membership conviene? Solo per chi non e' gia' membro */
       var r = CV.stato.ruolo, nota = '';

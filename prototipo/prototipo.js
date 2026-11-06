@@ -470,5 +470,15 @@
     sessioneRiga: sessioneRiga, speakerCard: speakerCard, qrSvg: qrSvg, msg: msg, BASE: BASE, BREVE: BREVE
   };
 
-  ready(function () { barra(); lingua(); piede(); applica(); });
+  // La barra in basso (telefono) sta DOPO <main> nel DOM, cosi' l'ordine di tabulazione e' intestazione, contenuto, barra.
+  // Da 64rem torna nell'intestazione, prima dei controlli di destra. Resta fissa in basso solo con CSS.
+  function navPosizione() {
+    var nav = qs('.nav-main'), dx = qs('.site-header__destra'), main = qs('main');
+    if (!nav || !dx || !main) return;
+    var mq = w.matchMedia('(min-width: 64rem)');
+    function p() { if (mq.matches) dx.parentNode.insertBefore(nav, dx); else main.insertAdjacentElement('afterend', nav); }
+    p(); if (mq.addEventListener) mq.addEventListener('change', p);
+  }
+
+  ready(function () { barra(); lingua(); piede(); navPosizione(); applica(); });
 }(window, document));
