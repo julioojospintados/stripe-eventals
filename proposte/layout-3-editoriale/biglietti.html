@@ -1,0 +1,216 @@
+<!doctype html>
+<!-- Autore: Giulio Occhipinti. Proposta di layout 3 «Editoriale» per EAS8, pagina Tickets. Posti dei workshop: valori d'esempio. -->
+<!-- Ipotesi da confermare con l'organizzatore: durante l'Early bird (solo membri) i non membri comprano al prezzo Regular pubblico. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tickets · EAS8 Lisbon · 8–10 April 2027</title>
+  <meta name="description" content="Tickets for EAS8 Lisbon, 8–10 April 2027: full pass, hands-on workshops and EAS membership.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="masthead on-navy">
+  <div class="wrap masthead__in">
+    <a class="masthead__logo" href="index.html"><img src="assets/eas-logo.png" width="250" height="140" alt="European Aligner Society, EAS8 home"></a>
+    <div class="masthead__right">
+      <a class="login" href="#">Login</a>
+      <button class="menu-btn no-js-hide" type="button" aria-expanded="false" aria-controls="nav"><span class="menu-btn__bars" aria-hidden="true"></span>Menu</button>
+    </div>
+    <nav class="nav" id="nav" aria-label="Main" data-open="false">
+      <ul>
+        <li><a href="index.html#programme">Programme</a></li>
+        <li><a href="index.html#speakers">Speakers</a></li>
+        <li><a href="biglietti.html" aria-current="page">Tickets</a></li>
+        <li><a href="index.html#membership">Membership</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">EAS8 · Lisbon · 8–10 April 2027</p>
+      <h1>Tickets</h1>
+      <p class="lede">One full pass for the three days, hands-on workshops on top, and the Society membership that unlocks the member prices. Card payment through Stripe.</p>
+    </header>
+
+    <section class="pricelist" aria-labelledby="h-prices">
+      <h2 class="sr-only" id="h-prices">Price list for the full pass, three days</h2>
+      <div class="pl-head" aria-hidden="true"><span>Full pass · 3 days</span><span>Public</span><span>Member</span></div>
+
+      <div class="pl-row pl-row--active">
+        <div class="pl-tier">
+          <h3>Early bird</h3>
+          <span class="tag tag--now">On sale now</span>
+          <span class="pl-when">Members only · end date to be announced</span>
+        </div>
+        <div class="pl-cell"><span class="lab">Public</span><span class="val--na">Not available. Non-members pay the Regular public price, €695.</span></div>
+        <div class="pl-cell"><span class="lab">Member</span><span class="val num">€276.50</span><span class="sub">−30% on €395</span></div>
+      </div>
+
+      <div class="pl-row">
+        <div class="pl-tier">
+          <h3>Regular</h3>
+          <span class="tag">Next</span>
+          <span class="pl-when">Dates to be announced</span>
+        </div>
+        <div class="pl-cell"><span class="lab">Public</span><span class="val num">€695</span></div>
+        <div class="pl-cell"><span class="lab">Member</span><span class="val num">€395</span></div>
+      </div>
+
+      <div class="pl-row pl-row--later">
+        <div class="pl-tier">
+          <h3>Last minute</h3>
+          <span class="tag">Later</span>
+          <span class="pl-when">Dates to be announced</span>
+        </div>
+        <div class="pl-cell"><span class="lab">Public</span><span class="val--na">Price to be announced</span></div>
+        <div class="pl-cell"><span class="lab">Member</span><span class="val--na">Price to be announced</span></div>
+      </div>
+    </section>
+
+    <form class="order" id="order" action="#" novalidate>
+      <div class="order__main">
+
+        <section class="step" id="pass" aria-labelledby="h-pass">
+          <div class="step__head">
+            <p class="section__no">Step 1</p>
+            <h2 id="h-pass">Full pass, 3 days</h2>
+            <p>All plenary and parallel sessions, 8–10 April. Workshops are booked separately.</p>
+          </div>
+
+          <div class="line" data-item="pass-public" data-price="695" data-label="Full pass, public price">
+            <p class="line__name">Public price<span class="line__desc">Regular tier, for non-members</span></p>
+            <p class="line__price num">€695</p>
+            <div class="line__ctrl">
+              <div class="qty" role="group" aria-label="Quantity, full pass public price">
+                <button type="button" data-step="-1" aria-label="Remove one full pass, public price">−</button>
+                <output aria-live="polite">0</output>
+                <button type="button" data-step="1" data-max="10" aria-label="Add one full pass, public price">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="line line--locked" data-item="pass-member" data-price="276.5" data-label="Full pass, Early bird member price" data-needs-member>
+            <p class="line__name">Early bird, member price<span class="line__desc">One per member · <s>€395</s> −30%</span></p>
+            <p class="line__price num">€276.50</p>
+            <div class="line__ctrl">
+              <div class="qty" role="group" aria-label="Quantity, full pass Early bird member price">
+                <button type="button" data-step="-1" aria-label="Remove the Early bird member pass">−</button>
+                <output aria-live="polite">0</output>
+                <button type="button" data-step="1" data-max="1" aria-label="Add the Early bird member pass" aria-describedby="member-hint">+</button>
+              </div>
+            </div>
+            <p class="line__hint" id="member-hint">Members only. <a href="#membership">Add the membership in step 3</a> or <a href="#">log in</a> to unlock it.</p>
+          </div>
+        </section>
+
+        <section class="step" id="workshops" aria-labelledby="h-ws">
+          <div class="step__head">
+            <p class="section__no">Step 2</p>
+            <h2 id="h-ws">Hands-on workshops</h2>
+            <p>€100 each, same price for members and public. 20 seats per workshop. Seat counts here are sample values for this proposal.</p>
+          </div>
+          <ul>
+            <li class="ws-row"><span class="no">W01</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W01"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W02</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W02"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">12 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W03</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W03"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W04</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W04"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--low">Only 3 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W05</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W05"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+            <li class="ws-row ws-row--out"><span class="no">W06</span><div class="body"><label class="check"><input type="checkbox" disabled><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--out">Sold out</span></p></div></li>
+            <li class="ws-row"><span class="no">W07</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W07"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W08</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W08"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">9 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W09</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W09"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+            <li class="ws-row"><span class="no">W10</span><div class="body"><label class="check"><input type="checkbox" data-ws data-price="100" data-label="Workshop W10"><span>Workshop title placeholder</span></label><p class="meta"><span>Day and time to be announced · €100</span><span class="seats seats--ok">20 of 20 seats left</span></p></div></li>
+          </ul>
+        </section>
+
+        <section class="step" id="membership" aria-labelledby="h-member">
+          <div class="step__head">
+            <p class="section__no">Step 3 · optional</p>
+            <h2 id="h-member">EAS membership</h2>
+            <p>Active right after payment, so the member price applies to this order.</p>
+          </div>
+          <div class="member-box">
+            <div class="line" style="border:0;padding:0">
+              <label class="check line__name"><input type="checkbox" id="member" data-price="200" data-label="EAS membership, 1 year"><span>Add membership, 1 year</span></label>
+              <p class="line__price num">€200</p>
+            </div>
+            <ul>
+              <li>Early access to the Early bird price, members only</li>
+              <li>Member price on the full pass: €395 instead of €695</li>
+              <li>Member area with videos of past congresses</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <aside class="order__aside" aria-labelledby="h-summary">
+        <section class="summary">
+          <h2 id="h-summary">Your order</h2>
+          <ul class="summary__lines" id="lines"><li class="empty">Nothing selected yet.</li></ul>
+          <p class="summary__total"><span>Total</span><output id="total" class="num" aria-live="polite">€0</output></p>
+          <button class="btn btn--buy btn--block" type="submit" aria-describedby="pay-msg">Continue to payment</button>
+          <p class="summary__msg" id="pay-msg" role="status"></p>
+          <p class="summary__note">Card payment through Stripe, in euro. One name per ticket; tickets cannot be transferred to another name.</p>
+        </section>
+      </aside>
+    </form>
+    <!-- Barra a portata di pollice su telefono: resta in fondo allo schermo per tutta la pagina -->
+    <div class="paybar on-navy">
+      <p class="paybar__total"><span>Total</span><output id="total-bar" class="num">€0</output></p>
+      <button class="btn btn--buy" type="submit" form="order">Continue to payment</button>
+    </div>
+  </div>
+</main>
+
+<footer class="footer on-navy">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <p class="footer__logo"><img src="assets/eas-logo.png" width="250" height="140" alt="European Aligner Society"></p>
+        <p style="margin-top:1rem;color:#dfe3e6">EAS8 · Lisbon · 8–10 April 2027</p>
+      </div>
+      <nav aria-label="Congress">
+        <h2>Congress</h2>
+        <ul>
+          <li><a href="index.html#programme">Programme</a></li>
+          <li><a href="index.html#speakers">Speakers</a></li>
+          <li><a href="biglietti.html">Tickets</a></li>
+          <li><a href="index.html#membership">Membership</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="Society">
+        <h2>Society</h2>
+        <ul>
+          <li><a href="#">About EAS</a></li>
+          <li><a href="#">FAQ</a></li>
+          <li><a href="mailto:office@eas-aligners.com">Contact</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h2>Contact</h2>
+        <address>European Aligner Society<br>La Réserve – 2525 Route de Bandol<br>83110 Sanary-sur-Mer, France<br><a href="mailto:office@eas-aligners.com">office@eas-aligners.com</a></address>
+      </div>
+    </div>
+    <div class="footer__legal">
+      <p>© 2026 EAS – European Aligner Society</p>
+      <ul style="display:flex;gap:0 1.5rem;flex-wrap:wrap">
+        <li><a href="#">Terms of sale</a></li>
+        <li><a href="#">Privacy policy</a></li>
+        <li><a href="#">Cookie policy</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+<script src="tickets.js"></script>
+</body>
+</html>

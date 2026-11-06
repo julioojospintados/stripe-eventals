@@ -24,6 +24,7 @@ Fase attuale: **architettura e UX/UI**. Il codice dell'applicazione non c'è anc
 | [`strumenti/verifica-hosting/`](strumenti/verifica-hosting/README.md) | script PHP da lanciare via SSH che verifica l'hosting (PHP, estensioni, limiti, funzioni, Composer, cron, disco, rete, MySQL o MariaDB con prove reali di vincoli, lock e trigger) e stampa un riepilogo da incollare |
 | [`contenuti/modelli/`](contenuti/modelli/README.md) | modelli CSV (EN/IT) per raccogliere sale, speaker, sessioni, interventi, tipi di biglietto, fasce e prezzi, coerenti con il modello dati e l'import di Filament |
 | [`docs/ux/architettura-informazioni.md`](docs/ux/architettura-informazioni.md) | mappa del sito, flussi, casi limite, accessibilità |
+| [`proposte/`](proposte/README.md) | tre layout alternativi (Notte di Lisbona, Clinico, Editoriale) da proporre al cliente |
 | [`prototipo/`](prototipo/index.html) | prototipo cliccabile in HTML statico: sito pubblico, area personale, admin, check-in |
 
 ## Aprire il prototipo

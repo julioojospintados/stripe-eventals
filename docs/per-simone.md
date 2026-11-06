@@ -25,6 +25,7 @@ Grazie per le risposte ai due moduli: le abbiamo usate tutte.
 | Pagina di preregistrazione | `preregistrazione/` | Da mettere online subito, collegata a Mailchimp, senza server nostro |
 | Script di verifica dell'hosting | `strumenti/verifica-hosting/` | Ci dice da solo se il vostro hosting ha tutto quello che serve |
 | Modelli per i contenuti | `contenuti/modelli/` | File da compilare in Excel o Google Sheets con sale, speaker, sessioni, biglietti e prezzi |
+| Tre proposte di layout alternative (home e biglietti) | `proposte/` (leggi `proposte/README.md`) | Da mostrare al tuo capo: tre direzioni visive diverse dallo stile attuale |
 | Architettura e modello dei dati | `docs/architettura.md`, `db/modello-dati.md` | Per chi svilupperà: componenti, regole, piano di lavoro |
 
 Per aprire il prototipo sul tuo computer: `cd prototipo && python3 -m http.server 8000`, poi

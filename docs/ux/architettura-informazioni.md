@@ -14,7 +14,7 @@ Dal secondo giro di risposte del cliente (06/11/2026) il prototipo è **in ingle
 
 ## 1. Direzione visiva
 
-> **Superata il 06/11/2026.** Il cliente vuole la coerenza con eas-aligners.com: vedi il capitolo 11 («Identità EAS e scostamenti per accessibilità»). La tabella qui sotto descrive la versione editoriale precedente, conservata in `proposte/versione-migliorata/`.
+> **Superata il 06/11/2026.** Il cliente vuole la coerenza con eas-aligners.com: vedi il capitolo 11 («Identità EAS e scostamenti per accessibilità»). La tabella qui sotto descrive la versione editoriale precedente, tolta il 06/11/2026: le alternative sono i tre layout in `proposte/`.
 
 | Scelta | Perché |
 |---|---|
@@ -325,7 +325,7 @@ Pensato per desktop (menu a sinistra), usabile a 390px (menu a tendina, tabelle 
 Autore: Giulio Occhipinti. Prototipo rivestito il 06/11/2026 con l'identità di eas-aligners.com (misurata dal CSS e dagli stili calcolati della
 pagina pubblica; robots.txt consente `/`). Il cliente vuole coerenza col suo sito: stessa aria, senza rompere WCAG 2.2 AA.
 I contrasti sono calcolati a mano con la formula WCAG 2.x (elenco in testa a `prototipo/styles.css`); la misura sulla build la fa `ux-reviewer`.
-La versione editoriale precedente resta in `proposte/versione-migliorata/`, non toccata.
+Le alternative di aspetto sono i tre layout in `proposte/`.
 
 ### 11.1 Cosa è stato preso dal sito del cliente
 

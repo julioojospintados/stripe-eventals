@@ -34,7 +34,7 @@ Un sito per gestire e vendere l'accesso a eventi (conferenze, festival, giornate
 |---|---|
 | Stack | Laravel + Filament sul server del cliente, dati in UE (al posto di Next.js + Supabase su Vercel) |
 | Evento | EAS8, Lisbona, 8–10 aprile 2027 (come il sito pubblico; il modulo diceva 10-14, da confermare) |
-| Aspetto | Coerente con eas-aligners.com; la versione migliorata resta in `proposte/` da proporre dopo |
+| Aspetto | Coerente con eas-aligners.com; tre layout alternativi in `proposte/` da proporre al cliente e al suo capo |
 | Legale e fisco | Non si chiedono più a Giulio: li gestisce il cliente a lavoro ultimato |
 
 Dettagli delle risposte: [`docs/cliente/risposte-2026-11-06.md`](cliente/risposte-2026-11-06.md).
