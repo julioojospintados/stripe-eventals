@@ -35,6 +35,12 @@ it('firma il QR con ticket, versione, evento e chiave, senza il nome', function 
     [$prefix, $message, $signature] = explode('.', $payload);
     $forged = rtrim(strtr(base64_encode(json_encode(['t' => $ticket->id, 'v' => 2, 'e' => $ticket->event_id, 'k' => 'k1'])), '+/', '-_'), '=');
     expect($service->verify("$prefix.$forged.$signature"))->toBeNull();
+
+    // Stessa chiave k1 nota, firma alterata di un byte.
+    $bytes = base64_decode(strtr($signature, '-_', '+/'));
+    $bytes[0] = chr(ord($bytes[0]) ^ 1);
+    $altered = rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+    expect($service->verify("$prefix.$message.$altered"))->toBeNull();
 });
 
 it('verifica i QR firmati con la chiave precedente dopo la rotazione e rifiuta le chiavi sconosciute', function () {

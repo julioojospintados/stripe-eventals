@@ -198,3 +198,18 @@ it('l\'admin cambia prezzo e Price ID della membership: il Checkout usa il nuovo
     $this->actingAs(User::factory()->create())->post('/membership');
     expect($this->stripe->callsTo('createCheckoutSession')[0][1]['line_items'][0]['price'])->toBe('price_New123');
 });
+
+it('un biglietto non valido non si rimanda: azione nascosta nel pannello, servizio e comando rifiutano', function () {
+    Queue::fake([SendTicketsEmail::class]);
+    $ticket = paidTicket();
+    $ticket->update(['status' => \App\Enums\TicketStatus::Disputed]);
+    $sent = Queue::pushed(SendTicketsEmail::class)->count();   // le email dell'acquisto
+
+    $this->actingAs(User::factory()->staff(StaffRole::Commerciale)->create());
+    Livewire::test(ManageTickets::class)->assertActionHidden(TestAction::make('resend')->table($ticket));
+    expect(fn () => app(\App\Services\TicketService::class)->resend($ticket))->toThrow(\App\Services\ShopException::class, 'ticket_not_valid');
+    $this->artisan('eas:resend-ticket', ['ticket' => $ticket->short_code])->assertFailed();
+
+    Queue::assertPushed(SendTicketsEmail::class, $sent);
+    expect(AuditLog::where('action', 'ticket.resent')->count())->toBe(0);
+});

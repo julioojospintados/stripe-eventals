@@ -57,7 +57,8 @@ class DisputeService
             }
 
             if ($dispute['status'] === 'lost') {
-                $tickets->where('status', TicketStatus::Disputed)->update(['status' => TicketStatus::Cancelled, 'cancelled_at' => now()]);
+                // Anche i Valid: il created può essere perso o arrivare dopo. I posti si liberano una volta (solo i converted).
+                $tickets->whereIn('status', [TicketStatus::Valid, TicketStatus::Disputed])->update(['status' => TicketStatus::Cancelled, 'cancelled_at' => now()]);
                 $this->capacity->releaseConfirmed($order, 'dispute_lost');
                 $order->update(['review_reason' => 'dispute_lost']);
                 StaffAlert::raise('Contestazione persa: biglietti revocati', [$line]);

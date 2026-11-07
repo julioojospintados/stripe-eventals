@@ -217,6 +217,34 @@ it('contestazione persa revoca i biglietti e libera i posti; un evento arrivato 
     alerted('Contestazione persa');
 });
 
+it('contestazione persa senza created (evento perso): biglietti valid revocati, posti liberati una volta sola', function () {
+    $other = closuresPaid();   // un altro ordine tiene i suoi posti: il conteggio non deve scendere sotto
+    $confirmedByOther = (int) CapacityPool::sum('confirmed');
+    $order = closuresPaid();
+    closuresWebhook('charge.dispute.closed', dispute($order, 'lost'));
+    $again = closuresWebhook('charge.dispute.closed', dispute($order, 'lost'));
+
+    expect($order->tickets()->sole()->status)->toBe(TicketStatus::Cancelled)
+        ->and($other->tickets()->sole()->status)->toBe(TicketStatus::Valid)
+        ->and((int) CapacityPool::sum('confirmed'))->toBe($confirmedByOther)
+        ->and(Dispute::sole()->status)->toBe('lost')
+        ->and($again->status)->toBe(StripeEventStatus::Processed);
+    Mail::assertQueued(StaffAlert::class, fn ($m) => str_contains($m->title, 'Contestazione persa'));
+    expect(Mail::queued(StaffAlert::class, fn ($m) => str_contains($m->title, 'Contestazione persa')))->toHaveCount(1);
+});
+
+it('contestazione updated o won senza created: updated sospende con avviso, won lascia i biglietti validi', function () {
+    $order = closuresPaid();
+    closuresWebhook('charge.dispute.updated', dispute($order, 'under_review'));
+    expect($order->tickets()->sole()->status)->toBe(TicketStatus::Disputed);
+    alerted('Pagamento contestato');
+
+    $won = closuresPaid();
+    closuresWebhook('charge.dispute.closed', dispute($won, 'won', 'du_test_2'));
+    expect($won->tickets()->sole()->status)->toBe(TicketStatus::Valid)
+        ->and(Dispute::where('stripe_dispute_id', 'du_test_2')->sole()->closed_at)->not->toBeNull();
+});
+
 it('i biglietti contestati non escono nell\'export del check-in e le contestazioni si vedono in sola lettura', function () {
     $order = closuresPaid();
     closuresWebhook('charge.dispute.created', dispute($order, 'needs_response'));
@@ -272,6 +300,43 @@ it('riconciliazione: pagato su Stripe ma non qui → rielaborato dallo stesso jo
         ->and(AuditLog::where('action', 'stripe.reconciled')->get()->flatMap(fn ($l) => $l->data['differences'])->pluck('type')->all())
         ->toBe(['paid_on_stripe_only']);
     alerted('Riconciliazione Stripe');
+});
+
+it('riconciliazione: ordine needs_review pagato su Stripe è già a posto, scaduto e pagato viene rielaborato', function () {
+    $review = closuresMismatch();
+    $buyer = User::factory()->create();
+    $expired = reserveAndCheckout($buyer, [line(passType(), $buyer)]);
+    $this->stripe->expireCheckoutSession($expired->stripe_checkout_session_id);
+    $this->payments->close($expired, OrderStatus::Expired, 'checkout_expired', $this->stripe->retrieveCheckoutSession($expired->stripe_checkout_session_id));
+    $this->stripe->sessions[$expired->stripe_checkout_session_id]['status'] = 'open';
+    $this->stripe->pay($expired->stripe_checkout_session_id);   // pagato tardi, webhook perso
+
+    $this->artisan('eas:reconcile')->assertSuccessful();
+
+    $differences = AuditLog::where('action', 'stripe.reconciled')->sole()->data['differences'];
+    expect($differences)->toBe([['type' => 'paid_on_stripe_only', 'order' => $expired->id,
+        'session' => $expired->stripe_checkout_session_id, 'status' => 'expired']])
+        ->and(StripeEvent::sole()->status)->toBe(StripeEventStatus::Processed)
+        ->and($expired->refresh()->status)->toBeIn(OrderStatus::moneyTaken())
+        ->and($review->refresh()->status)->toBe(OrderStatus::NeedsReview);
+});
+
+it('riconciliazione: un evento evt_reconcile_ rimasto failed si rimette in coda, processed no', function () {
+    Queue::fake([ProcessStripeEvent::class]);
+    $buyer = User::factory()->create();
+    $order = reserveAndCheckout($buyer, [line(passType(), $buyer)]);
+    $this->stripe->pay($order->stripe_checkout_session_id);
+    $id = 'evt_reconcile_'.$order->stripe_checkout_session_id;
+
+    $this->artisan('eas:reconcile')->assertSuccessful();
+    StripeEvent::whereKey($id)->update(['status' => StripeEventStatus::Failed, 'attempts' => 5]);
+    $this->artisan('eas:reconcile')->assertSuccessful();
+    StripeEvent::whereKey($id)->update(['status' => StripeEventStatus::Processed, 'processed_at' => now()]);
+    $this->artisan('eas:reconcile')->assertSuccessful();
+
+    Queue::assertPushed(ProcessStripeEvent::class, 2);
+    Queue::assertPushed(ProcessStripeEvent::class, fn ($job) => $job->eventId === $id);
+    expect(StripeEvent::count())->toBe(1);
 });
 
 it('riconciliazione: pagato qui ma non su Stripe e rimborso non registrato → segnalati', function () {

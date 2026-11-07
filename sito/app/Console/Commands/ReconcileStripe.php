@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\OrderOrigin;
 use App\Enums\OrderStatus;
+use App\Enums\StripeEventStatus;
 use App\Jobs\ProcessStripeEvent;
 use App\Mail\StaffAlert;
 use App\Models\AuditLog;
@@ -78,7 +79,10 @@ class ReconcileStripe extends Command
         return self::SUCCESS;
     }
 
-    /** Stesso percorso del webhook: un evento in stripe_events (id fisso per sessione, quindi una volta sola) e il job. */
+    /**
+     * Stesso percorso del webhook: un evento in stripe_events (id fisso per sessione, quindi una volta sola) e il job;
+     * rimesso in coda se è rimasto failed.
+     */
     private function reprocess(array $session, bool $livemode): void
     {
         $id = 'evt_reconcile_'.$session['id'];
@@ -88,7 +92,8 @@ class ReconcileStripe extends Command
                 'stripe_created_at' => now(), 'object_id' => $session['id'],
                 'payload' => json_encode(['id' => $id, 'type' => 'checkout.session.completed', 'data' => ['object' => $session]]),
             ]);
-            if ($inserted === 1) {
+            // Già presente ma failed (tentativi esauriti): si rimette in coda, il job esce da solo se nel frattempo è processed.
+            if ($inserted === 1 || StripeEvent::whereKey($id)->where('status', StripeEventStatus::Failed)->exists()) {
                 ProcessStripeEvent::dispatch($id);
             }
         });
