@@ -321,6 +321,9 @@ bersagli di almeno 44px, fuoco visibile, WCAG 2.2 AA.
 | `/tickets` | fasce con prezzi pubblico e membro, nominativi del pass, workshop con posti liberi, codice sconto |
 | `/account/orders/{id}` | conferma dei nomi e pagamento, poi esito (pagato, in corso, scaduto, in rimborso) con i QR |
 | `/membership` | prezzo, cosa comprende, attivazione o portale Stripe |
+| `/programme` | programma per giorno, filtro per sala e traccia: elenco per orario su telefono, griglia per sala da 64rem (scorre di lato dentro la sua cornice; `?view=list` per l'elenco) |
+| `/programme/{slug}` | sessione con orari di Lisbona, sala, speaker, interventi, accesso (compresa o workshop) |
+| `/speakers`, `/speakers/{slug}` | speaker in ordine alfabetico e scheda con bio, link e sessioni |
 | `/login`, `/login/code` | accesso con codice via email |
 | `/account` | biglietti con QR, membership e portale, ordini |
 | `/language/{en,it}` | selettore della lingua (sessione e `users.locale`; senza scelta vale la lingua del browser) |
@@ -349,5 +352,18 @@ accompagnatori, pagine termini e privacy (dal cliente), messaggi di validazione 
 Scelte da confermare: URL senza prefisso `/en/` `/it/` (la lingua sta in sessione: niente `hreflang` per pagina, a
 differenza di §10 dell'architettura); il commerciale vede evento e vendita in sola lettura come in §5.3.
 
-**Fase 2** (fuori da questi passi): programma completo con sale, tracce e speaker (le colonne mancanti di
-`program_sessions` arrivano con lui), video, Mailchimp, codici d'invito per gli espositori, API del partner.
+**Fase 2, primo blocco (programma e speaker):** migrazioni `2026_11_09_080000` (tabelle degli import di Filament e
+notifiche) e `2026_11_09_090000` (sale, tracce, colonne nuove di `program_sessions`, interventi, speaker); risorse
+Programme nel pannello con import CSV dei modelli di `contenuti/modelli/`; pagine pubbliche sopra. Regole:
+- sala occupata: trigger `program_sessions_no_room_overlap_*` + `ProgramService::save()` (lock sulla sala, messaggio
+  leggibile nel form e nell'import);
+- import (`app/Filament/Imports/`): ordine `rooms` → `speakers` → `sessions` → `session_parts`; il codice è la chiave,
+  righe `EXAMPLE-` saltate, righe sbagliate nel file degli errori scaricabile; gira nella coda (cron), la notifica di
+  fine arriva nella campanella del pannello. Sessioni nuove **non pubblicate** (azione di massa «Publish»);
+- `paid=yes` crea al primo import tipo di biglietto spento, pool e prezzo base; dopo si cambiano in Sales;
+- foto: si copiano in `storage/app/private/speaker-photos/` prima dell'import di `speakers.csv` (o si caricano nel
+  form); il sito pubblica una copia quadrata 800 px senza EXIF sul disco `public` (serve `storage:link`, già nel
+  deploy). Manca la prova a vuoto prima dell'import descritta in `contenuti/modelli/README.md`.
+
+**Fase 2, ancora da fare:** prenotazione delle sessioni `included_booking` (i posti di `seats` con `paid=no` non si
+salvano ancora), prezzi per ruolo nel programma, video, Mailchimp, codici d'invito per gli espositori, API del partner.

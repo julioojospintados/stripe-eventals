@@ -1,6 +1,6 @@
 # Regole di business: dove sono garantite e quale test le prova
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026 sul codice di `sito/` (263 test Pest su MariaDB).
+Autore: Giulio Occhipinti. Aggiornato al 07/11/2026 sul codice di `sito/` (304 test Pest su MariaDB).
 
 Percorsi relativi a `sito/`; i test a `sito/tests/`. Vincoli e trigger hanno il nome che si trova in
 [database.md](database.md); le righe indicate sono quelle del 07/11/2026 e si spostano con le modifiche: il nome del
@@ -126,6 +126,20 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Export scaricabili solo da chi li ha chiesti e ha il permesso | POL `Http/Controllers/ExportDownloadController.php` r. 16; rotta con nome file vincolato | `ExportTest.php` › «prepara in coda un export grande, scaricabile solo da chi l'ha chiesto»; `MoneyEdgeCasesTest.php` › «export: nessun accesso al file di un altro staff…» |
 | Consensi e registro audit solo in aggiunta | TRG `consents_no_update`, `consents_no_delete`, `audit_log_no_update`, `audit_log_no_delete` | `OtherTablesSchemaTest.php` › «tiene consensi e registro audit solo in aggiunta» |
 | Membership: niente secondo Checkout per chi è membro; eventi vecchi ignorati; niente attivazione per un altro utente | SRV `MembershipService` r. 21, 66, `activateFromCheckout()`; DB `memberships_stripe_subscription_id_unique` | `MembershipTest.php` (8 test) |
+
+## Programma e speaker (Fase 2)
+
+| Regola | Dove | Test |
+|---|---|---|
+| Due sessioni nella stessa sala non si sovrappongono (possono toccarsi) | TRG `program_sessions_no_room_overlap_insert`, `program_sessions_no_room_overlap_update`; SRV `Services/ProgramService.php` `save()` (lock sulla sala) e `overlap()`; form `ProgramSessionResource::roomFree()` | `Feature/Program/ProgramRulesTest.php` › «il trigger rifiuta due sessioni sovrapposte…», «rifiuta la sala occupata con un messaggio…», «accetta sessioni che si toccano…», «dà un errore leggibile se la sala è occupata…»; `ProgramImportTest.php` › «segnala gli errori riga per riga…» |
+| Fine dopo l'inizio; sala solo con orari | DB `program_sessions_times_valid`, `program_sessions_room_has_times`, `session_parts_times_valid` | `ProgramRulesTest.php` › «rifiuta una fine non dopo l'inizio e una sala senza orari» |
+| Giorno dell'evento ricavato dall'ora di inizio a Lisbona, mai fuori dalle date | SRV `ProgramService::prepare()` | `ProgramRulesTest.php` › «rifiuta un giorno fuori dalle date dell'evento» |
+| Codici d'import unici e nel formato del foglio; capienza della sala > 0 | DB `rooms_event_id_code_unique`, `speakers_code_unique`, `program_sessions_event_id_code_unique`, `*_code_format`, `rooms_capacity_positive` | `ProgramRulesTest.php` › «rifiuta codici doppi, codici fuori formato e capienza zero» |
+| Import CSV: il codice è la chiave (reimportare aggiorna), righe `EXAMPLE-` saltate, errori riga per riga, una transazione per riga | SRV `Filament/Imports/*Importer.php` | `ProgramImportTest.php` (5 test) |
+| `paid=yes`: tipo di biglietto del workshop (spento), pool e prezzo creati una volta sola; poi non si torna a `paid=no` dal foglio | SRV `ProgramSessionImporter::createWorkshopTicket()` | `ProgramImportTest.php` › «workshop: paid=yes crea una volta sola…» |
+| Foto degli speaker ritagliate e ricodificate senza EXIF; email mai pubblica | SRV `Services/SpeakerPhoto.php`, `Speaker::booted()`, `#[Hidden(['email'])]` | `ProgramImportTest.php` › «pubblica la foto ricodificata…»; `ProgramPagesTest.php` › «risponde 200…» (`assertDontSee` dell'email) |
+| Sul sito solo sessioni pubblicate e speaker con almeno una sessione pubblicata | SRV `ProgramController`, `SpeakerController`, `Speaker::scopeVisible()` | `ProgramPagesTest.php` › «nasconde sessioni non pubblicate e chi parla solo lì» |
+| Programma, sale, tracce, speaker e import solo a organizzatore e admin | POL `RoomPolicy`, `TrackPolicy`, `ProgramSessionPolicy` (`import`), `SpeakerPolicy` | `Panel/PermissionsTest.php` › matrice; `Panel/PolicyTest.php` › pagine per ruolo, «mostra l'import del programma solo a chi ha program.import» |
 
 ## Regole senza test
 

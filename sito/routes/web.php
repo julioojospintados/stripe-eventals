@@ -5,13 +5,19 @@ use App\Http\Controllers\ExportDownloadController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/membership', [MembershipController::class, 'show'])->name('membership.show');
+Route::get('/programme', [ProgramController::class, 'index'])->name('program.index');
+Route::get('/programme/{slug}', [ProgramController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('program.show');
+Route::get('/speakers', [SpeakerController::class, 'index'])->name('speakers.index');
+Route::get('/speakers/{slug}', [SpeakerController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('speakers.show');
 
 // Selettore della lingua: resta in sessione e, per chi ha un account, in users.locale.
 Route::get('/language/{locale}', function (string $locale) {

@@ -40,8 +40,10 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            // Avviso di fine import CSV del programma (la coda gira nel cron, quindi arriva come notifica salvata).
+            ->databaseNotifications()
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->navigationGroups(['Event', 'Sales', 'Orders', 'Exports', 'System'])
+            ->navigationGroups(['Event', 'Programme', 'Sales', 'Orders', 'Exports', 'System'])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
