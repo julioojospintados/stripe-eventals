@@ -20,11 +20,13 @@ class CompanionClaim extends Model
         return ['slot' => 'integer', 'released_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Ticket, $this> */
     public function hostTicket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class, 'host_ticket_id');
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

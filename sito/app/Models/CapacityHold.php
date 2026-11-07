@@ -23,11 +23,13 @@ class CapacityHold extends Model
         ];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
+    /** @return BelongsTo<CapacityPool, $this> */
     public function pool(): BelongsTo
     {
         return $this->belongsTo(CapacityPool::class, 'pool_id');

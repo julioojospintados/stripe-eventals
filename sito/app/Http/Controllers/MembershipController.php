@@ -42,7 +42,7 @@ class MembershipController
     public function portal(Request $request, MembershipService $memberships)
     {
         $url = $memberships->portalUrl($request->user());
-        abort_unless($url, 404);
+        abort_if(! $url, 404);
 
         return redirect()->away($url);
     }

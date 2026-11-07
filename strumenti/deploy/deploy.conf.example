@@ -1,0 +1,17 @@
+# Configurazione di deploy.sh e rollback.sh. Copiala in deploy.conf (accanto agli script) e adattala.
+# Niente segreti qui: stanno in $DEPLOY_PATH/shared/.env.
+
+# Cartella del sito sull'hosting: releases/, shared/ e il link current.
+DEPLOY_PATH="$HOME/eas8"
+# Repository e tag o branch da installare (ignorati se si passa un archivio a deploy.sh).
+REPO_URL="git@github.com:<account>/stripe-eventals.git"
+GIT_REF="main"
+# Sottocartella del repository con l'applicazione Laravel.
+APP_SUBDIR="sito"
+# PHP e Composer da riga di comando (per esempio /opt/cpanel/ea-php84/root/usr/bin/php).
+PHP="php"
+COMPOSER="composer"
+# Rilasci da tenere (quello attivo compreso).
+KEEP_RELEASES=5
+# Backup lanciato prima delle migrazioni: se fallisce, il deploy si ferma.
+BACKUP_CMD="$HOME/eas8/strumenti/backup/backup.sh"

@@ -25,11 +25,13 @@ class PriceTier extends Model
         ];
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return HasMany<TicketPrice, $this> */
     public function prices(): HasMany
     {
         return $this->hasMany(TicketPrice::class);

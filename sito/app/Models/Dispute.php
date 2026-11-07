@@ -22,6 +22,7 @@ class Dispute extends Model
         return ['amount_cents' => 'integer', 'evidence_due_by' => 'datetime', 'closed_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

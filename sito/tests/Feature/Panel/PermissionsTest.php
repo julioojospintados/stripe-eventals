@@ -4,6 +4,7 @@
 // pannello, «Resend ticket» e prezzo della membership.
 
 use App\Enums\StaffRole;
+use App\Enums\TicketStatus;
 use App\Filament\Resources\MembershipPlans\Pages\ManageMembershipPlans;
 use App\Filament\Resources\Roles\Pages\ManageRoles;
 use App\Filament\Resources\Tickets\Pages\ManageTickets;
@@ -22,6 +23,8 @@ use App\Models\TicketPrice;
 use App\Models\TicketType;
 use App\Models\User;
 use App\Services\PaymentService;
+use App\Services\ShopException;
+use App\Services\TicketService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Actions\EditAction;
 use Filament\Actions\Testing\TestAction;
@@ -202,12 +205,12 @@ it('l\'admin cambia prezzo e Price ID della membership: il Checkout usa il nuovo
 it('un biglietto non valido non si rimanda: azione nascosta nel pannello, servizio e comando rifiutano', function () {
     Queue::fake([SendTicketsEmail::class]);
     $ticket = paidTicket();
-    $ticket->update(['status' => \App\Enums\TicketStatus::Disputed]);
+    $ticket->update(['status' => TicketStatus::Disputed]);
     $sent = Queue::pushed(SendTicketsEmail::class)->count();   // le email dell'acquisto
 
     $this->actingAs(User::factory()->staff(StaffRole::Commerciale)->create());
     Livewire::test(ManageTickets::class)->assertActionHidden(TestAction::make('resend')->table($ticket));
-    expect(fn () => app(\App\Services\TicketService::class)->resend($ticket))->toThrow(\App\Services\ShopException::class, 'ticket_not_valid');
+    expect(fn () => app(TicketService::class)->resend($ticket))->toThrow(ShopException::class, 'ticket_not_valid');
     $this->artisan('eas:resend-ticket', ['ticket' => $ticket->short_code])->assertFailed();
 
     Queue::assertPushed(SendTicketsEmail::class, $sent);

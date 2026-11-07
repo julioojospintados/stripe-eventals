@@ -28,17 +28,23 @@ class ProgramSession extends Model
         ];
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsTo<EventDay, $this> */
     public function eventDay(): BelongsTo
     {
         return $this->belongsTo(EventDay::class);
     }
 
-    /** Il tipo di biglietto del workshop. */
+    /**
+     * Il tipo di biglietto del workshop.
+     *
+     * @return HasOne<TicketType, $this>
+     */
     public function ticketType(): HasOne
     {
         return $this->hasOne(TicketType::class);

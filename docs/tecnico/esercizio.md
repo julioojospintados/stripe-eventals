@@ -71,6 +71,11 @@ serve Node.
 
 ## 4. Deploy di una nuova versione
 
+**Con lo script** [`strumenti/deploy/`](../../strumenti/deploy/README.md): `deploy.sh` fa i passi qui sotto (backup
+compreso, con [`strumenti/backup/backup.sh`](../../strumenti/backup/README.md)) e tiene 5 rilasci; `rollback.sh` torna
+al precedente e avvisa se il rilascio attivo ha migrazioni nuove. Il seeder dei permessi (passo 5) resta a mano.
+A mano:
+
 1. **Backup del database** (§8) e controllo che sia leggibile.
 2. Copia del codice in `releases/<data nuova>`, link a `shared/.env` e `shared/storage`.
 3. `composer install --no-dev --optimize-autoloader --no-interaction`
@@ -80,7 +85,7 @@ serve Node.
 7. `ln -sfn ~/eas8/releases/<data nuova> ~/eas8/current`
 8. `php artisan queue:restart` (il worker del cron prende il codice nuovo al giro dopo).
 9. Prova: home, `/tickets`, `/admin`, un evento di test dalla Dashboard Stripe (§6).
-10. Tieni le ultime 3 release. **Ritorno indietro:** link `current` alla release precedente e `queue:restart`; se la
+10. Tieni le ultime 5 release. **Ritorno indietro:** link `current` alla release precedente e `queue:restart`; se la
     versione aveva migrazioni non compatibili, ripristino dal backup (§8) e riconciliazione.
 
 ## 5. Cron
@@ -164,16 +169,21 @@ può creare QR validi), poi reinvio di tutti i biglietti validi e avviso ai part
 
 ## 8. Backup e prova di ripristino
 
+**Con lo script** [`strumenti/backup/`](../../strumenti/backup/README.md): `backup.sh` fa dump cifrato del database e
+dei file (credenziali da `~/.my.cnf` con permessi 600) con rotazione giornaliera e settimanale; `restore-test.sh` fa la
+prova di ripristino qui sotto (righe nelle tabelle principali, trigger, archivio dei file) in un database di prova.
+Provati il 07/11/2026 su MariaDB 10.11. A mano:
+
 **Database.** Ogni ora durante le vendite, ogni giorno negli altri periodi:
 
 ```
-mysqldump --single-transaction --routines --triggers --hex-blob --default-character-set=utf8mb4 \
-  -h <host> -u <utente> -p<password> <db> | gzip | openssl enc -aes-256-cbc -pbkdf2 -pass file:$HOME/.backup-pass \
+mysqldump --defaults-extra-file=$HOME/.my.cnf --single-transaction --routines --triggers --hex-blob \
+  --no-tablespaces --default-character-set=utf8mb4 <db> | gzip | openssl enc -aes-256-cbc -pbkdf2 -pass file:$HOME/.backup-pass \
   > ~/backup/eas8-$(date +%Y%m%d-%H%M).sql.gz.enc
 ```
 
-(meglio le credenziali in `~/.my.cnf` con permessi 600 che sulla riga di comando). Cifrare è obbligatorio: il dump
-contiene dati personali, hash delle password e dati MFA dello staff.
+(credenziali in `~/.my.cnf` con permessi 600, mai sulla riga di comando; `--defaults-extra-file` va per primo).
+Cifrare è obbligatorio: il dump contiene dati personali, hash delle password e dati MFA dello staff.
 
 **File.** `shared/storage/app` (foto degli speaker e file privati; gli export si cancellano dopo 7 giorni) ogni giorno.
 `.env` e chiave dei QR **non** vanno nei backup: stanno nel gestore di password.

@@ -1,0 +1,12 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+        - config
+        - database
+        - routes
+    level: 5
+    # I modelli dichiarano i cast nel metodo casts(): senza questa opzione Larastan non li vede.
+    parseModelCastsMethod: true
