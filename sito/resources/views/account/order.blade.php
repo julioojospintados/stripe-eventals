@@ -31,6 +31,11 @@
                 <div class="avviso avviso--warn" role="status">
                     <p>{{ __('The payment arrived after the seats were sold out. We refund the full amount automatically: you do not need to do anything.') }}</p>
                 </div>
+            @elseif ($status === 'needs_review')
+                <h1 class="t-1">{{ __('We are checking your payment') }}</h1>
+                <div class="avviso avviso--info" role="status">
+                    <p>{{ __('We received your payment and are checking it. We send the tickets by email or refund you: you do not need to do anything.') }}</p>
+                </div>
             @elseif (in_array($status, ['refunded', 'partially_refunded']))
                 <h1 class="t-1">{{ __('Order refunded') }}</h1>
                 <div class="avviso avviso--info" role="status"><p>{{ __('The refund goes back to the card you paid with.') }}</p></div>

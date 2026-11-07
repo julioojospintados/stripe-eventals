@@ -11,6 +11,7 @@ return [
     'cancelled' => 'Cancelled',
     'partially_refunded' => 'Partially refunded',
     'refunded' => 'Refunded',
+    'needs_review' => 'Being checked',
     'ticket' => [
         'valid' => 'Valid',
         'cancelled' => 'Cancelled',

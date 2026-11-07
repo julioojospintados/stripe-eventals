@@ -19,7 +19,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use UnitEnum;
 
-/** Biglietti in sola lettura; «Correct name» (refuso, non cambio di intestatario) solo per l'admin, al massimo 3 volte. */
+/** Biglietti in sola lettura; «Correct name» (refuso, non cambio di intestatario, al massimo 3 volte) e «Resend ticket». */
 class TicketResource extends Resource
 {
     protected static ?string $model = Ticket::class;
@@ -45,7 +45,26 @@ class TicketResource extends Resource
                 TextColumn::make('issued_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon'),
             ])
             ->filters([SelectFilter::make('status')->options(TicketStatus::class)])
-            ->recordActions([self::correctAction()]);
+            ->recordActions([self::correctAction(), self::resendAction()]);
+    }
+
+    /** Rimanda l'email con il QR (con il limite di invio), all'intestatario o a un altro indirizzo; va nel registro audit. */
+    public static function resendAction(): Action
+    {
+        return Action::make('resend')
+            ->label('Resend ticket')
+            ->icon(Heroicon::OutlinedEnvelope)
+            ->authorize('resend')
+            ->visible(fn (Ticket $record) => $record->status === TicketStatus::Valid)
+            ->schema([TextInput::make('to')->label('Send to')->email()->maxLength(254)->placeholder('Attendee email')])
+            ->action(function (Ticket $record, array $data) {
+                try {
+                    $to = app(TicketService::class)->resend($record, $data['to'] ?? null, auth()->user());
+                    Notification::make()->success()->title("Ticket queued for $to")->send();
+                } catch (ShopException $e) {
+                    Notification::make()->danger()->title(__('shop.'.$e->getMessage()))->send();
+                }
+            });
     }
 
     public static function correctAction(): Action

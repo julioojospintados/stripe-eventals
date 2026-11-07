@@ -35,6 +35,31 @@ it('firma il QR con ticket, versione, evento e chiave, senza il nome', function 
     [$prefix, $message, $signature] = explode('.', $payload);
     $forged = rtrim(strtr(base64_encode(json_encode(['t' => $ticket->id, 'v' => 2, 'e' => $ticket->event_id, 'k' => 'k1'])), '+/', '-_'), '=');
     expect($service->verify("$prefix.$forged.$signature"))->toBeNull();
+
+    // Stessa chiave k1 nota, firma alterata di un byte.
+    $bytes = base64_decode(strtr($signature, '-_', '+/'));
+    $bytes[0] = chr(ord($bytes[0]) ^ 1);
+    $altered = rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
+    expect($service->verify("$prefix.$message.$altered"))->toBeNull();
+});
+
+it('verifica i QR firmati con la chiave precedente dopo la rotazione e rifiuta le chiavi sconosciute', function () {
+    Mail::fake();
+    $ticket = ($this->paid)()->tickets()->first();
+    $service = app(TicketService::class);
+    $old = $service->qrPayload($ticket);
+    $oldPublic = base64_encode(sodium_crypto_sign_publickey_from_secretkey(base64_decode(config('tickets.qr.signing_private_key'))));
+
+    config([
+        'tickets.qr.signing_private_key' => base64_encode(sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair())),
+        'tickets.qr.signing_key_id' => 'k2',
+        'tickets.qr.previous_public_keys' => "k1:$oldPublic",
+    ]);
+    expect($service->verify($old)['k'])->toBe('k1')
+        ->and($service->verify($service->qrPayload($ticket))['k'])->toBe('k2');
+
+    config(['tickets.qr.previous_public_keys' => null]);
+    expect($service->verify($old))->toBeNull();
 });
 
 it('manda all\'acquirente tutti i biglietti e a ogni partecipante il suo, una volta sola', function () {

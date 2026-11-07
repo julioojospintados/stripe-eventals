@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Ordine. Ruolo, fascia, origine, persona, evento e importi si fissano alla riserva e non cambiano più (trigger
  * orders_guard); le transizioni di stato ammesse sono in OrderStatus::canTransitionTo().
  */
-#[Fillable(['event_id', 'user_id', 'buyer_email', 'status', 'origin', 'price_role', 'price_tier_id', 'currency',
+#[Fillable(['event_id', 'user_id', 'buyer_email', 'status', 'review_reason', 'origin', 'price_role', 'price_tier_id', 'currency',
     'subtotal_cents', 'discount_cents', 'total_cents', 'tax_cents', 'discount_code_id', 'issued_by', 'comp_reason',
     'stripe_checkout_session_id', 'stripe_payment_intent_id', 'checkout_expires_at', 'discount_reserved', 'paid_at',
     'livemode', 'stripe_amount_total_cents', 'locale', 'billing_details'])]
@@ -94,6 +94,11 @@ class Order extends Model
     public function refunds(): HasMany
     {
         return $this->hasMany(Refund::class);
+    }
+
+    public function disputes(): HasMany
+    {
+        return $this->hasMany(Dispute::class);
     }
 
     public function memberPriceClaims(): HasMany

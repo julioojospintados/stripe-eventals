@@ -5,6 +5,8 @@ namespace App\Jobs;
 use App\Enums\OrderStatus;
 use App\Mail\StaffAlert;
 use App\Models\Order;
+use App\Models\Refund;
+use App\Services\PaymentService;
 use App\Services\StripeGateway;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -41,9 +43,11 @@ class RefundOrderFully implements ShouldQueue
             return;
         }
 
-        $key = ($staff ? 'staff-refund-' : 'auto-refund-').$order->id;
+        // Dopo un rimborso rifiutato da Stripe serve una chiave nuova, altrimenti Stripe ripete la risposta vecchia.
+        $failed = $order->refunds()->whereIn('status', Refund::NOT_MONEY)->count();
+        $key = ($staff ? 'staff-refund-' : 'auto-refund-').$order->id.($failed ? "-retry-$failed" : '');
         $paid = $order->stripe_amount_total_cents ?: $order->total_cents;
-        $refunded = (int) $order->refunds()->where('status', '!=', 'failed')->where(fn ($q) => $q->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $key))->sum('amount_cents');
+        $refunded = (int) $order->refunds()->whereNotIn('status', Refund::NOT_MONEY)->where(fn ($q) => $q->whereNull('idempotency_key')->orWhere('idempotency_key', '!=', $key))->sum('amount_cents');
         if ($paid - $refunded <= 0) {
             return;
         }
@@ -63,7 +67,10 @@ class RefundOrderFully implements ShouldQueue
             'metadata' => ['order_id' => $order->id, 'cause' => $this->cause],
         ], $key);
 
-        $refund->update(['stripe_refund_id' => $result['id'], 'status' => $result['status']]);
+        $refund->update(['stripe_refund_id' => $result['id']]);
+        in_array($result['status'], Refund::NOT_MONEY, true)
+            ? app(PaymentService::class)->refundFailed($result + ['payment_intent' => $order->stripe_payment_intent_id, 'amount' => $refund->amount_cents])
+            : $refund->update(['status' => $result['status']]);
     }
 
     public function failed(Throwable $e): void

@@ -45,6 +45,19 @@ class TicketService
 
     public const MAX_CORRECTIONS = 3;
 
+    /** Rimanda per email un biglietto valido al suo intestatario o a un altro indirizzo (pannello e eas:resend-ticket). */
+    public function resend(Ticket $ticket, ?string $to = null, ?User $staff = null): string
+    {
+        if ($ticket->status !== TicketStatus::Valid) {
+            throw new ShopException('ticket_not_valid');
+        }
+        $to = $to ? mb_strtolower(trim($to)) : $ticket->attendee_email;
+        SendTicketsEmail::dispatch($to, [$ticket->id], 'resend-'.$ticket->id.'-'.now()->format('YmdHis'));
+        AuditLog::record('ticket.resent', $ticket, $staff, ['to' => $to]);
+
+        return $to;
+    }
+
     /**
      * Correzione di un refuso nel nominativo, solo admin (architettura §6.7): contatore, autore e data nella stessa
      * modifica (il trigger tickets_guard lo pretende), riga di audit nella stessa transazione. Se cambia l'email il
@@ -85,14 +98,17 @@ class TicketService
     public function qrPayload(Ticket $ticket): string
     {
         $message = json_encode([
-            't' => $ticket->id, 'v' => $ticket->qr_version, 'e' => $ticket->event_id, 'k' => $ticket->qr_key_id,
+            't' => $ticket->id, 'v' => $ticket->qr_version, 'e' => $ticket->event_id, 'k' => config('tickets.qr.signing_key_id'),
         ]);
         $signature = sodium_crypto_sign_detached($message, $this->secretKey());
 
         return self::PREFIX.'.'.$this->b64($message).'.'.$this->b64($signature);
     }
 
-    /** Dati del QR se la firma è valida, altrimenti null (usato dai test e dal check-in del partner). */
+    /**
+     * Dati del QR se la firma è valida con la chiave indicata in 'k' (attiva o precedente), altrimenti null.
+     * Il QR rigenerato è firmato sempre con la chiave attiva; qr_key_id sul biglietto resta quella dell'emissione.
+     */
     public function verify(string $payload): ?array
     {
         $parts = explode('.', $payload);
@@ -101,9 +117,9 @@ class TicketService
         }
         $message = base64_decode(strtr($parts[1], '-_', '+/'));
         $signature = base64_decode(strtr($parts[2], '-_', '+/'));
-        $publicKey = sodium_crypto_sign_publickey_from_secretkey($this->secretKey());
+        $publicKey = $this->publicKeys()[json_decode((string) $message, true)['k'] ?? null] ?? null;
 
-        return strlen($signature) === SODIUM_CRYPTO_SIGN_BYTES
+        return $publicKey !== null && strlen($signature) === SODIUM_CRYPTO_SIGN_BYTES
             && sodium_crypto_sign_verify_detached($signature, $message, $publicKey)
             ? json_decode($message, true) : null;
     }
@@ -121,6 +137,23 @@ class TicketService
         }
 
         return $key;
+    }
+
+    /** key_id => chiave pubblica: l'attiva (dalla privata) più le precedenti da QR_PREVIOUS_PUBLIC_KEYS. */
+    private function publicKeys(): array
+    {
+        $keys = [];
+        foreach (array_filter(explode(',', (string) config('tickets.qr.previous_public_keys'))) as $pair) {
+            [$id, $key] = array_map('trim', explode(':', $pair, 2)) + [1 => ''];
+            $key = base64_decode($key, true);
+            if ($key === false || strlen($key) !== SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES) {
+                throw new RuntimeException("QR_PREVIOUS_PUBLIC_KEYS: chiave '$id' non valida (vedi .env.example).");
+            }
+            $keys[$id] = $key;
+        }
+        $keys[config('tickets.qr.signing_key_id')] = sodium_crypto_sign_publickey_from_secretkey($this->secretKey());
+
+        return $keys;
     }
 
     private function b64(string $bytes): string

@@ -11,7 +11,7 @@ regole in [`../db/modello-dati.md`](../db/modello-dati.md).
 - PHP 8.3 o 8.4 con `pdo_mysql`, `mbstring`, `intl`, `sodium` (firma dei QR) e argon2
   (`php -r "var_dump(defined('PASSWORD_ARGON2ID'));"` deve dire `true`).
 - Composer 2.
-- **MySQL 8.0.16+ o MariaDB 10.7+** (in pratica 10.11 o 11.4). Niente SQLite: i vincoli del database fanno parte
+- **MySQL 8.0.19+ o MariaDB 10.7+** (in pratica 10.11 o 11.4). Niente SQLite: i vincoli del database fanno parte
   delle regole e i test girano sul database vero.
 - Sull'hosting, per i trigger: `log_bin_trust_function_creators = 1` oppure il log binario spento; altrimenti
   `DB_TRIGGERS_OPTIONAL=true` (vedi sotto).
@@ -95,7 +95,9 @@ ogni `migrate` in produzione.
 `php artisan db:seed` (o `migrate:fresh --seed`) lancia:
 
 - `RolesAndPermissionsSeeder`: ruoli `admin`, `commerciale`, `organizzatore` e permessi, presi da
-  `App\Enums\StaffRole` (la tabella dei permessi è lì, uguale a `docs/architettura.md` §5.3). Si può rilanciare.
+  `App\Enums\StaffRole` (vedi «Permessi» sotto). Si può rilanciare anche in produzione: crea i permessi nuovi e li dà
+  ai ruoli come da `StaffRole`, cancella quelli tolti dal codice, riallinea `admin`; le modifiche fatte dall'admin nel
+  pannello ai permessi di commerciale e organizzatore restano.
 - `Eas8Seeder`: l'EAS8 con i dati veri. 3 giorni da 6.000 posti; pass intero 695 € pubblico e 395 € membro
   (prezzi base), early bird solo membri 276,50 €; last minute presente ma spenta e senza prezzo; 10 workshop da 20
   posti a 100 € per tutti (massimo 2 per ordine); accompagnatore, espositore e omaggio presenti ma spenti e senza
@@ -124,6 +126,10 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 - `tests/Feature/Database/`: le prove di schema portate da `db/prove/prove_mysql.php` e quelle delle tabelle nuove.
 - `tests/Feature/Eas8SeederTest.php`: dati dell'EAS8.
 - `tests/Feature/StaffAccessTest.php`: accesso al pannello, permessi dei ruoli, comando `eas:create-admin`.
+- `tests/Feature/Panel/PermissionsTest.php`: matrice ruolo × azione scritta a mano da §5.3, seeder rilanciato, ruoli e
+  permessi nel pannello, «Resend ticket», prezzo della membership.
+- `tests/Feature/Shop/StripeClosuresTest.php`: rimborsi rifiutati, importo diverso dal totale, contestazioni,
+  riconciliazione, eventi ignorati con il motivo.
 - `tests/Feature/Shop/`: prezzi e codici sconto, riserva e checkout, pagamenti e conferma tardiva, webhook, membership.
 - `tests/Feature/Account/`: accesso con codice, area personale (IDOR), biglietti, QR ed email.
 - `tests/Feature/Panel/`: pagine e azioni per ruolo (403 fuori dal ruolo), omaggio, revoca, correzione del nome,
@@ -144,13 +150,13 @@ Stripe non viene mai chiamato nei test: `TestCase` mette nel container `Tests\Fa
 | `app/Models` | un model per tabella, con relazioni e `casts`; email salvate in minuscolo, codici sconto in maiuscolo |
 | `app/Enums` | stati e tipi (`OrderStatus` con le transizioni ammesse, `TicketKind`, `PriceRole`…) e `StaffRole` con i permessi |
 | `app/Database/CreatesTriggers.php` | creazione dei trigger nelle migrazioni, con `DB_TRIGGERS_OPTIONAL` |
-| `app/Services` | le regole di vendita: `PriceResolver`, `CapacityService`, `CheckoutService`, `PaymentService`, `TicketService`, `MembershipService`, `LoginCodeService`, `ComplimentaryService`, `Catalog` (prezzi da mostrare), `CsvExports`; `StripeGateway` (le sole chiamate a Stripe) |
+| `app/Services` | le regole di vendita: `PriceResolver`, `CapacityService`, `CheckoutService`, `PaymentService`, `TicketService`, `MembershipService`, `LoginCodeService`, `ComplimentaryService`, `DisputeService`, `Catalog` (prezzi da mostrare), `CsvExports`; `StripeGateway` (le sole chiamate a Stripe) |
 | `app/Jobs` | `ProcessStripeEvent`, `RefundOrderFully` (coda `critical`), `SendTicketsEmail` (coda `default`, con limite di invio), `GenerateCsvExport` |
 | `app/Http/Controllers` | pagina dell'evento, login con codice, carrello e checkout, area personale, membership, webhook Stripe, scaricamento degli export |
 | `app/Mail`, `resources/views` | email (codice, biglietti con QR, avvisi allo staff), pagine pubbliche e area personale |
 | `app/Filament`, `app/Policies` | risorse del pannello, pagina Export, widget del cruscotto; una Policy per model |
 | `public/css/site.css`, `public/fonts/inter`, `lang/` | stile delle pagine pubbliche (senza build), Inter servito in locale, testi `lang/it.json` e `lang/{en,it}/*.php` |
-| `app/Console/Commands` | `eas:create-admin`, `eas:expire-orders`, `eas:resend-ticket` |
+| `app/Console/Commands` | `eas:create-admin`, `eas:expire-orders`, `eas:resend-ticket`, `eas:reconcile` |
 | `app/Providers/Filament/AdminPanelProvider.php` | pannello `/admin`: login, MFA obbligatoria |
 | `config/tickets.php` | chiave di firma dei QR; Stripe è in `config/services.php` |
 | `database/migrations`, `database/factories`, `database/seeders` | schema, factory per i test, dati |
@@ -170,8 +176,12 @@ Il perché è in `docs/architettura.md` §5.1, §6, §7, §8, §9, §11; qui cos
 | Prezzo | `PriceResolver`, `CheckoutService` | fascia attiva fissata sull'ordine; membro se la membership copre tutta la sessione (31 minuti); prezzo membro solo sul biglietto intestato al membro che compra, una volta per evento e tipo (`member_price_claims`); codice sconto riga per riga, sulla riga del membro il migliore tra prezzo membro e pubblico scontato (mai entrambi, salvo `combinable_with_role_price`); utilizzo contato alla riserva e restituito se l'ordine non si paga; importi in centesimi |
 | Riserva | `CapacityService`, `CheckoutService::reserve()` | lock sull'ordine e sui pool in ordine di id, `UPDATE … WHERE held + confirmed + n <= capacity`; sessione 31 minuti, riserva 36 (sotto i 30 rifiutata); un ordine aperto per persona (il precedente si chiude dopo aver fatto scadere la sua sessione Stripe); limiti per tipo e per pool; workshop solo con un pass intero (nell'ordine o già comprato), al massimo 2 per ordine, mai due alla stessa ora |
 | Checkout | `CheckoutService::startCheckout()`, `POST /orders/{id}/checkout` | conferma dei nominativi obbligatoria (non si cambiano più); `price_data`, solo carta (Apple Pay e Google Pay compresi), `metadata.order_id`, `Idempotency-Key: checkout-<id>`; ordini a costo zero confermati senza Stripe |
-| Webhook | `StripeWebhookController`, `ProcessStripeEvent` | firma verificata, `livemode` controllato, `insertOrIgnore` in `stripe_events` e job nella stessa transazione, risposta subito; il job blocca l'evento e lo elabora una volta: `checkout.session.completed/expired`, `async_payment_*`, `charge.refunded`, `customer.subscription.*`, `invoice.*`; altri eventi `ignored`; errore → `failed` con l'errore, nuovi tentativi, avviso agli admin all'ultimo |
+| Webhook | `StripeWebhookController`, `ProcessStripeEvent` | firma verificata, `livemode` controllato, `insertOrIgnore` in `stripe_events` e job nella stessa transazione, risposta subito; il job blocca l'evento e lo elabora una volta: `checkout.session.completed/expired`, `async_payment_*`, `charge.refunded`, `refund.failed`/`refund.updated`, `charge.dispute.*`, `customer.subscription.*`, `invoice.*`; altri eventi e oggetti sconosciuti (ordine o pagamento non nostro) `ignored` con il motivo in `ignored_reason` (`unhandled_type`, `unknown_order`…); errore → `failed` con l'errore, nuovi tentativi, avviso agli admin all'ultimo |
 | Pagamento | `PaymentService` | lock sull'ordine, transizioni solo da `pending`/`processing` (o pagamento tardivo), stessa tabella del trigger anche senza trigger; conferma tardiva: riprenota se c'è posto (`paid_late`), altrimenti `needs_refund`, nessun biglietto, `RefundOrderFully` in coda nella stessa transazione (`Idempotency-Key: auto-refund-<id>`) e avviso agli admin. La pagina di successo rilegge la sessione da Stripe e chiama lo stesso codice |
+| Importo diverso | `PaymentService::markPaid()` | se `amount_total` di Stripe non è il totale dell'ordine: posti tenuti, nessun biglietto, ordine `needs_review` (`review_reason = amount_mismatch`), avviso agli admin. Nel pannello «Issue tickets» (`approveReview`) o «Refund instead» (`refundReview`: posti liberati, `needs_refund`, rimborso di quanto incassato su Stripe), con il motivo e l'audit |
+| Rimborso rifiutato | `PaymentService::refundFailed()` | `refund.failed` o `refund.updated` con stato `failed`/`canceled` (anche in risposta a `createRefund`): rimborso segnato così e `needs_review`, ordine con `review_reason = refund_failed`, avviso; ordine e biglietti non cambiano stato (niente riattivati in silenzio). Un nuovo rimborso usa una Idempotency-Key nuova (`…-retry-<n>`) |
+| Contestazioni | `DisputeService`, tabella `disputes` | `charge.dispute.created/updated`: biglietti dell'ordine `disputed` (fuori dall'export del check-in), avviso; `closed` vinta (`won`, `warning_closed`, `prevented`) → di nuovo `valid`; persa → `cancelled`, posti liberati, `review_reason = dispute_lost`. Chiusa una volta: eventi arrivati dopo non cambiano nulla. Le prove si mandano dalla Dashboard |
+| Riconciliazione | `eas:reconcile` (ogni notte alle 3:30, ora di Lisbona) | con `StripeGateway::listCheckoutSessions()`/`listRefunds()` confronta le ultime 48 ore: pagato su Stripe ma non qui → evento `evt_reconcile_<sessione>` in `stripe_events` e lo stesso job `ProcessStripeEvent` (una volta sola); pagato qui ma non su Stripe e rimborsi non registrati → solo segnalati. Rapporto `stripe.reconciled` nel registro audit, avviso agli admin se ci sono differenze |
 | Scadenze | `eas:expire-orders` (ogni minuto) | riserve scadute: prima legge la sessione su Stripe (aperta → `expire`; pagata → conferma), poi rilascia posti, prezzo membro e codice |
 | Membership | `MembershipService`, `/membership` | Checkout `mode=subscription` con `STRIPE_MEMBERSHIP_PRICE`; attiva subito (pagina di successo o webhook, idempotente); poi solo rileggendo la subscription, ignorando eventi più vecchi dell'ultimo; Customer Portal |
 | Biglietti | `TicketService`, `SendTicketsEmail`, `eas:resend-ticket` | un biglietto per nominativo (unique su riga e numero); QR `EAS1.<dati>.<firma>` con ticket, `qr_version`, evento e `qr_key_id`, firmato Ed25519 (chiave nel `.env`, niente nome nel QR); email con il QR in PNG all'acquirente (tutti) e a ogni partecipante (il suo), in coda con `MAIL_RATE_PER_MINUTE` e `sent_messages` contro i doppi invii |
@@ -187,9 +197,12 @@ Comandi:
 
 ```bash
 php artisan eas:expire-orders                     # lo lancia lo scheduler ogni minuto
+php artisan eas:reconcile                         # lo lancia lo scheduler ogni notte; --hours=72 per una finestra più lunga
 php artisan eas:resend-ticket ABCD2345            # codice breve o id del biglietto
-php artisan eas:resend-ticket ABCD2345 --to=altro@esempio.it
+php artisan eas:resend-ticket ABCD2345 --to=altro@esempio.it   # anche dal pannello: Tickets → Resend ticket
 ```
+
+Dal pannello si fa tutto tranne la creazione del primo admin (`eas:create-admin`).
 
 ### Provare in locale con Stripe in modalità test
 
@@ -219,7 +232,7 @@ Una sola riga di cron, ogni minuto (nessun processo sempre attivo):
 
 Lo scheduler (`routes/console.php`) lancia ogni minuto `queue:work --queue=critical,default --stop-when-empty
 --max-time=50` (vuota la coda e si ferma prima del giro successivo; `withoutOverlapping` evita due worker insieme) ed
-`eas:expire-orders`; ogni giorno pulisce i codici di accesso scaduti. Un job aspetta quindi al massimo circa un minuto:
+`eas:expire-orders`; ogni notte alle 3:30 (Lisbona) `eas:reconcile`; ogni giorno pulisce i codici di accesso scaduti. Un job aspetta quindi al massimo circa un minuto:
 per questo il codice di accesso parte fuori coda e la pagina di successo conferma il pagamento da sola. Al deploy:
 `php artisan queue:restart`. Se l'hosting vieta `proc_open`, righe di cron separate per `queue:work` ed
 `eas:expire-orders` (docs/architettura.md §8).
@@ -228,8 +241,8 @@ per questo il codice di accesso parte fuori coda e la pagina di successo conferm
 
 ### Pannello `/admin` e ruoli
 
-Le Policy (`app/Policies`) leggono i permessi di `App\Enums\StaffRole` (tabella di `docs/architettura.md` §5.3, con in
-più `consents.export`). Fuori dal ruolo la pagina risponde 403 e le azioni non compaiono.
+Le Policy (`app/Policies`) controllano solo permessi, mai nomi di ruolo (vedi «Permessi»). Fuori dal permesso la
+pagina risponde 403 e le azioni non compaiono.
 
 | Menu | Risorsa | admin | commerciale | organizzatore |
 |---|---|---|---|---|
@@ -240,9 +253,26 @@ più `consents.export`). Fuori dal ruolo la pagina risponde 403 e le azioni non 
 | Orders | Azione «Refund in full» (con `RefundOrderFully`, causa e motivo) | ✔ | ✔ | — |
 | Orders | «Issue complimentary ticket» e revoca dell'omaggio | ✔ | lettura | ✔ |
 | Orders | Biglietti; «Correct name» (refuso, massimo 3, motivo, audit; nuova email = nuovo QR e invio) | ✔ | lettura | lettura |
+| Orders | «Resend ticket» (all'intestatario o a un altro indirizzo, audit) | ✔ | ✔ | — |
+| Orders | Ordini `needs_review`: «Issue tickets» o «Refund instead»; «Reconcile with Stripe» (in coda) | ✔ | ✔ | — |
 | Orders | Membership in lettura (si cambiano in Stripe) | ✔ | ✔ | — |
+| Orders | Contestazioni in lettura | ✔ | ✔ | — |
+| Sales | Prezzo della membership e Price ID Stripe (senza Price ID vale `STRIPE_MEMBERSHIP_PRICE`) | modifica | lettura | — |
 | Exports | Export CSV (vedi sotto) | tutti | tutti | check-in |
 | System | Utenti dello staff (ruolo, password di almeno 12 caratteri), registro audit | ✔ | — | — |
+| System | Ruoli e permessi: lettura; permessi di commerciale e organizzatore modificabili, con audit (admin no) | ✔ | — | — |
+
+### Permessi
+
+In `App\Enums\StaffRole`: per ogni risorsa `<risorsa>.view|create|update|delete` (`event`, `ticket_types`,
+`price_tiers`, `ticket_prices`, `capacity_pools`, `discount_codes`, `staff`) e le azioni `orders.view`,
+`orders.view_amounts`, `orders.refund`, `orders.review`, `orders.export`, `complimentary.view`, `complimentary.issue`,
+`tickets.view`, `tickets.correct_attendee`, `tickets.resend`, `attendees.export`, `consents.export`, `memberships.view`,
+`membership_plans.view`, `membership_plans.update`, `disputes.view`, `reconciliation.run`, `roles.view`, `roles.update`,
+`audit_log.view` (più `invite_codes.*` e `videos.manage` per la fase 2). `admin` ha tutto tranne `*.delete`: nessun ruolo
+cancella (si spegne, non si cancella). Le Policy di vendita estendono `ResourcePolicy`; `RolePolicy` è registrata in
+`AppServiceProvider`. Per aggiungere un permesso: una riga in `StaffRole`, il controllo nella Policy, poi
+`php artisan db:seed --class=RolesAndPermissionsSeeder` e una riga nella matrice di `PermissionsTest`.
 
 Regole nel form, prima del database: fasce attive sovrapposte (messaggio con la fascia in conflitto; il trigger resta
 l'ultima difesa), capienza sotto i posti già presi, prezzo doppio per tipo × fascia × ruolo, forma del codice sconto.
@@ -251,7 +281,7 @@ lo stesso UPDATE condizionale (pool pieno = errore), manda il biglietto e scrive
 Il rimborso dal pannello usa lo stesso job del rimborso automatico (`Idempotency-Key: staff-refund-<id>`, una sola
 volta per ordine); ordine e biglietti diventano `refunded` quando arriva `charge.refunded`.
 
-Il cruscotto mostra ordini in `needs_refund` (con link al filtro), ordini pagati e biglietti validi, biglietti venduti
+Il cruscotto mostra ordini in `needs_refund` e `needs_review` (con link al filtro), ordini pagati e biglietti validi, biglietti venduti
 per tipo e fascia, posti rimasti per pool.
 
 ### Export CSV
@@ -263,8 +293,8 @@ da chi l'ha chiesto (`/admin/exports/{file}`); lo scheduler cancella i file dopo
 
 | Export | Permesso | Colonne |
 |---|---|---|
-| Check-in partner | `attendees.export` (tutti) | `ticket_id`, `qr_version`, `short_code`, `attendee_name`, `ticket_type`, `ticket_name`, `days`, `status`: solo biglietti `valid` |
-| Ordini | `accounting.manage` (admin, commerciale) | id, date, stato, origine, email, ruolo, fascia, importi in euro, rimborsato, codice sconto, payment intent |
+| Check-in partner | `attendees.export` (tutti) | `ticket_id`, `qr_version`, `short_code`, `attendee_name`, `ticket_type`, `ticket_name`, `days`, `status`: solo biglietti `valid` (non quelli contestati) |
+| Ordini | `orders.export` (admin, commerciale) | id, date, stato, origine, email, ruolo, fascia, importi in euro, rimborsato, codice sconto, payment intent |
 | Consensi newsletter | `consents.export` (admin, commerciale) | `email`, `granted_at`, `source`, `locale`, `text_version`: l'ultima riga per email, solo se è un consenso |
 
 ### Pagine pubbliche
@@ -297,8 +327,11 @@ permessi, pannello `/admin` con accesso solo allo staff e MFA, comando `eas:crea
 **Passo 3 (questo):** pannello con Policy per ruolo, omaggi, correzione del nominativo, rimborso dal pannello,
 cruscotto, export CSV, pagine pubbliche EN/IT.
 
-**Ancora aperto nella Fase 1:** riconciliazione notturna (`ReconcileStripe`), contestazioni (`charge.dispute.*`),
-eventi Stripe e job falliti nel pannello, sessione dello staff più breve e IP ammessi (dipendono dall'hosting), pulizia
+**Chiusure del backend:** rimborsi rifiutati, ordini `needs_review` per importo diverso, contestazioni, riconciliazione
+notturna `eas:reconcile`, eventi ignorati con il motivo, permessi granulari con ruoli e permessi nel pannello,
+«Resend ticket» e prezzo della membership dal pannello (migrazione `2026_11_08_090000`).
+
+**Ancora aperto nella Fase 1:** eventi Stripe e job falliti nel pannello, sessione dello staff più breve e IP ammessi (dipendono dall'hosting), pulizia
 dei payload Stripe dopo 90 giorni, raccolta del consenso newsletter nel checkout (la tabella e l'export ci sono),
 accompagnatori, pagine termini e privacy (dal cliente), messaggi di validazione in italiano (`lang/it/validation.php`).
 Scelte da confermare: URL senza prefisso `/en/` `/it/` (la lingua sta in sessione: niente `hreflang` per pagina, a

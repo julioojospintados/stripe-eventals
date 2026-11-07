@@ -12,6 +12,9 @@ Schedule::command('queue:work --queue=critical,default --stop-when-empty --max-t
 
 Schedule::command('eas:expire-orders')->everyMinute()->withoutOverlapping(5);
 
+// Riconciliazione con Stripe delle ultime 48 ore: rapporto nel registro audit, avviso se ci sono differenze.
+Schedule::command('eas:reconcile')->dailyAt('03:30')->timezone('Europe/Lisbon')->withoutOverlapping(30);
+
 Schedule::call(fn () => LoginCode::where('expires_at', '<', now()->subDay())->delete())->daily()->name('prune-login-codes');
 
 // Export CSV del pannello: file privati tenuti 7 giorni.

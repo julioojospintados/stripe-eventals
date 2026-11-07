@@ -23,6 +23,9 @@ class FakeStripe extends StripeGateway
     /** @var array<string, array> */
     public array $subscriptions = [];
 
+    /** @var array<string, array> rimborsi creati, per id */
+    public array $refunds = [];
+
     /** @var list<array{0: string, 1: mixed, 2?: string}> */
     public array $calls = [];
 
@@ -49,6 +52,7 @@ class FakeStripe extends StripeGateway
             'client_reference_id' => $params['client_reference_id'] ?? null, 'metadata' => $params['metadata'] ?? [],
             'amount_total' => collect($params['line_items'])->sum(fn ($l) => ($l['price_data']['unit_amount'] ?? 20000) * $l['quantity']),
             'payment_intent' => null, 'customer' => $params['customer'] ?? null, 'subscription' => null,
+            'created' => now()->timestamp,
         ];
     }
 
@@ -71,7 +75,24 @@ class FakeStripe extends StripeGateway
     {
         $this->calls[] = ['createRefund', $params, $idempotencyKey];
 
-        return $this->byKey[$idempotencyKey] ??= ['id' => 're_test_'.Str::random(16), 'status' => $this->refundStatus];
+        if (! isset($this->byKey[$idempotencyKey])) {
+            $id = 're_test_'.Str::random(16);
+            $this->byKey[$idempotencyKey] = $id;
+            $this->refunds[$id] = ['id' => $id, 'object' => 'refund', 'status' => $this->refundStatus, 'amount' => $params['amount'],
+                'payment_intent' => $params['payment_intent'], 'created' => now()->timestamp];
+        }
+
+        return $this->refunds[$this->byKey[$idempotencyKey]];
+    }
+
+    public function listCheckoutSessions(int $since): array
+    {
+        return array_values(array_filter($this->sessions, fn ($s) => $s['created'] >= $since));
+    }
+
+    public function listRefunds(int $since): array
+    {
+        return array_values(array_filter($this->refunds, fn ($r) => $r['created'] >= $since));
     }
 
     public function retrieveSubscription(string $id): array

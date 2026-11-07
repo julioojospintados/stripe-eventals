@@ -5,6 +5,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(fn () => $this->seed(RolesAndPermissionsSeeder::class));
 
@@ -26,11 +27,11 @@ it('dà i codici sconto a commerciale e organizzatore, i prezzi solo all\'organi
     $commerciale = User::factory()->staff(StaffRole::Commerciale)->create();
     $organizzatore = User::factory()->staff(StaffRole::Organizzatore)->create();
 
-    expect($commerciale->can('discount_codes.manage'))->toBeTrue()
-        ->and($organizzatore->can('discount_codes.manage'))->toBeTrue()
-        ->and($commerciale->can('sales.manage'))->toBeFalse()
-        ->and($organizzatore->can('sales.manage'))->toBeTrue()
-        ->and($organizzatore->can('refunds.manage'))->toBeFalse()
+    expect($commerciale->can('discount_codes.create'))->toBeTrue()
+        ->and($organizzatore->can('discount_codes.create'))->toBeTrue()
+        ->and($commerciale->can('ticket_prices.update'))->toBeFalse()
+        ->and($organizzatore->can('ticket_prices.update'))->toBeTrue()
+        ->and($organizzatore->can('orders.refund'))->toBeFalse()
         ->and($commerciale->can('tickets.correct_attendee'))->toBeFalse()
         ->and(User::factory()->staff()->create()->can('tickets.correct_attendee'))->toBeTrue();
 });
@@ -55,4 +56,16 @@ it('rifiuta una password corta o un ruolo sconosciuto', function () {
     $this->artisan('eas:create-admin', ['email' => 'a@example.test', '--role' => 'membro'])->assertFailed();
 
     expect(User::count())->toBe(0);
+});
+
+it('salva cifrati il segreto MFA e i codici di recupero', function () {
+    $user = User::factory()->create();
+    $user->saveAppAuthenticationSecret('JBSWY3DPEHPK3PXP');
+    $user->saveAppAuthenticationRecoveryCodes(['code-1', 'code-2']);
+
+    $row = DB::table('users')->find($user->id);
+    expect($row->app_authentication_secret)->not->toContain('JBSWY3DPEHPK3PXP')
+        ->and(decrypt($row->app_authentication_secret, false))->toBe('JBSWY3DPEHPK3PXP')
+        ->and($row->app_authentication_recovery_codes)->not->toContain('code-1')
+        ->and($user->fresh()->getAppAuthenticationRecoveryCodes())->toBe(['code-1', 'code-2']);
 });

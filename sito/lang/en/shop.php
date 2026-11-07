@@ -17,6 +17,8 @@ return [
     'discount_user_limit' => 'You have already used this discount code.',
     'order_not_pending' => 'This order can no longer be paid.',
     'session_mismatch' => 'The payment does not belong to this order.',
+    'order_not_in_review' => 'This order is no longer waiting for a decision.',
+    'ticket_not_valid' => 'This ticket is not valid.',
     'already_member' => 'You are already a member.',
     'too_many_corrections' => 'This ticket has already been corrected 3 times.',
     'order_not_revocable' => 'Only a complimentary order that is still valid can be revoked.',

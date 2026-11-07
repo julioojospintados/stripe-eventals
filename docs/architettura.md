@@ -237,29 +237,40 @@ Cookie di sessione: `httpOnly`, `Secure`, `SameSite=Lax`, firmato e cifrato con 
 
 ### 5.3 Ruoli e permessi
 
-`spatie/laravel-permission` con ruoli e permessi definiti nel codice (da far passare a `supply-chain-risk-auditor`).
-Membro **non è un ruolo dello staff**: si deriva da `memberships` a ogni acquisto e a ogni accesso ai video.
+Allineato al codice il 07/11/2026. `spatie/laravel-permission` con **permessi granulari** definiti in
+`sito/app/Enums/StaffRole.php` (risorse con `view`, `create`, `update`, `delete` e azioni come `orders.refund`) e
+creati dal seeder `RolesAndPermissionsSeeder`, rilanciabile in produzione. Le Policy controllano solo permessi, mai il
+nome del ruolo. L'admin può ritoccare i permessi di commerciale e organizzatore dal pannello (Roles, con audit); il
+ruolo admin non si modifica. Membro **non è un ruolo dello staff**: si deriva da `memberships` a ogni acquisto e a
+ogni accesso ai video. Matrice completa (51 permessi, generata dal database) e scelte da confermare in
+[`docs/tecnico/permessi.md`](tecnico/permessi.md).
 
-| Permesso | admin | commerciale | organizzatore |
+| Area (permessi) | admin | commerciale | organizzatore |
 |---|---|---|---|
-| Evento, date, giorni; in fase 2 sale, tracce, sessioni, speaker, import | ✔ | lettura | ✔ |
-| Tipi di biglietto, fasce e prezzi, capienze | ✔ | lettura | ✔ |
-| Codici sconto (decisione del cliente: li creano entrambi) | ✔ | ✔ | ✔ |
-| Codici d'invito per espositori (§7.4, fase 2) | ✔ | ✔ | lettura |
-| Ordini, pagamenti, biglietti | ✔ | ✔ | lettura senza importi |
-| Omaggi per speaker e staff | ✔ | lettura | ✔ |
-| Rimborsi (evento annullato, pagato senza posti) | ✔ | ✔ | — |
-| **Correzione di un refuso nel nominativo** (§6.7) | ✔ | — | — |
-| Fatture, export contabili, riconciliazione | ✔ | ✔ | — |
-| Membership (lettura; le modifiche si fanno in Stripe) | ✔ | ✔ | — |
-| Video e ruoli ammessi | ✔ | — | ✔ |
-| Export partecipanti per il check-in | ✔ | ✔ | ✔ |
-| Utenti dello staff, ruoli, chiavi del partner, registro audit, eventi Stripe | ✔ | — | — |
+| Evento, date, giorni (`event.*`); in fase 2 sale, tracce, sessioni, speaker, import | ✔ | lettura | ✔ |
+| Tipi di biglietto, fasce, prezzi, capienze (`ticket_types.*`, `price_tiers.*`, `ticket_prices.*`, `capacity_pools.*`) | ✔ | lettura | ✔ |
+| Codici sconto (`discount_codes.*`; decisione del cliente: li creano entrambi) | ✔ | ✔ | ✔ |
+| Codici d'invito per espositori (`invite_codes.*`, fase 2) | ✔ | ✔ | lettura |
+| Ordini e biglietti (`orders.view`, `tickets.view`) | ✔ | ✔ | ✔ |
+| Importi di ordini, pagamenti, rimborsi (`orders.view_amounts`) | ✔ | ✔ | — |
+| Omaggi per speaker e staff (`complimentary.view`, `complimentary.issue`) | ✔ | lettura | ✔ |
+| Rimborsi (`orders.refund`) e decisione sugli ordini con importo diverso (`orders.review`) | ✔ | ✔ | — |
+| Reinvio di un biglietto per email (`tickets.resend`) | ✔ | ✔ | — |
+| **Correzione di un refuso nel nominativo** (`tickets.correct_attendee`, §6.7) | ✔ | — | — |
+| Export contabile (`orders.export`) e riconciliazione (`reconciliation.run`); le fatture sono in Stripe e Xero | ✔ | ✔ | — |
+| Membership e contestazioni, in lettura (`memberships.view`, `disputes.view`) | ✔ | ✔ | — |
+| Prezzo della membership: vedi (`membership_plans.view`) / modifica Price ID (`membership_plans.update`) | ✔ / ✔ | ✔ / — | — |
+| Export iscritti alla newsletter con consenso (`consents.export`) | ✔ | ✔ | — |
+| Export partecipanti per il check-in (`attendees.export`) | ✔ | ✔ | ✔ |
+| Video e ruoli ammessi (`videos.manage`, fase 2) | ✔ | — | ✔ |
+| Utenti dello staff, ruoli, registro audit (`staff.*`, `roles.*`, `audit_log.view`) | ✔ | — | — |
+| Eliminare (`*.delete`) | — | — | — |
 
-Codici sconto: `DiscountCodePolicy` ammette commerciale e organizzatore; ogni creazione e modifica va nel registro
-audit con l'autore (`discount_codes.created_by`), così si vede chi ha creato cosa.
+Nessun ruolo elimina: nel pannello le cose si spengono. Chiavi del partner ed eventi Stripe non hanno ancora un
+permesso (non c'è una pagina nel pannello). Codici sconto: `DiscountCodePolicy` ammette commerciale e organizzatore;
+ogni creazione e modifica va nel registro audit con l'autore (`discount_codes.created_by`).
 
-Il primo admin si crea con un comando Artisan via SSH (`php artisan staff:create --role=admin`).
+Il primo admin si crea via SSH con `php artisan eas:create-admin <email> --name="…" --role=admin`.
 
 ### 5.4 Cosa sostituisce l'RLS di Supabase
 
