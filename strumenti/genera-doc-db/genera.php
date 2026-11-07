@@ -44,7 +44,7 @@ $schema = $config['DB_DATABASE'];
 $descriptions = require __DIR__.'/descrizioni.php';
 
 /** Tabelle tecniche di Laravel escluse dal diagramma ER (restano nel dizionario). */
-$frameworkTables = ['cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens', 'migrations'];
+$frameworkTables = ['cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens', 'migrations', 'imports', 'failed_import_rows', 'notifications'];
 
 $q = function (string $sql, array $params = []) use ($pdo): array {
     $st = $pdo->prepare($sql);

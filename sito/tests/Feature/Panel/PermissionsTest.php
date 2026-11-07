@@ -4,6 +4,7 @@
 // pannello, «Resend ticket» e prezzo della membership.
 
 use App\Enums\StaffRole;
+use App\Enums\TicketStatus;
 use App\Filament\Resources\MembershipPlans\Pages\ManageMembershipPlans;
 use App\Filament\Resources\Roles\Pages\ManageRoles;
 use App\Filament\Resources\Tickets\Pages\ManageTickets;
@@ -17,11 +18,17 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\Order;
 use App\Models\PriceTier;
+use App\Models\ProgramSession;
+use App\Models\Room;
+use App\Models\Speaker;
 use App\Models\Ticket;
 use App\Models\TicketPrice;
 use App\Models\TicketType;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\PaymentService;
+use App\Services\ShopException;
+use App\Services\TicketService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Actions\EditAction;
 use Filament\Actions\Testing\TestAction;
@@ -51,7 +58,19 @@ $crud = fn (string $model, bool $commercialeWrites, bool $organizzatoreWrites) =
     "update $model" => ['update', $model, true, $commercialeWrites, $organizzatoreWrites],
     "delete $model" => ['delete', $model, false, false, false],
 ];
+// Programma: organizzatore e admin, nessun accesso per il commerciale.
+$program = fn (string $model) => [
+    "viewAny $model" => ['viewAny', $model, true, false, true],
+    "create $model" => ['create', $model, true, false, true],
+    "update $model" => ['update', $model, true, false, true],
+    "delete $model" => ['delete', $model, false, false, false],
+];
 $matrix = [
+    ...$program(Room::class),
+    ...$program(Track::class),
+    ...$program(ProgramSession::class),
+    ...$program(Speaker::class),
+    'import ProgramSession' => ['import', ProgramSession::class, true, false, true],
     ...$crud(Event::class, false, true),
     ...$crud(TicketType::class, false, true),
     ...$crud(PriceTier::class, false, true),
@@ -202,12 +221,12 @@ it('l\'admin cambia prezzo e Price ID della membership: il Checkout usa il nuovo
 it('un biglietto non valido non si rimanda: azione nascosta nel pannello, servizio e comando rifiutano', function () {
     Queue::fake([SendTicketsEmail::class]);
     $ticket = paidTicket();
-    $ticket->update(['status' => \App\Enums\TicketStatus::Disputed]);
+    $ticket->update(['status' => TicketStatus::Disputed]);
     $sent = Queue::pushed(SendTicketsEmail::class)->count();   // le email dell'acquisto
 
     $this->actingAs(User::factory()->staff(StaffRole::Commerciale)->create());
     Livewire::test(ManageTickets::class)->assertActionHidden(TestAction::make('resend')->table($ticket));
-    expect(fn () => app(\App\Services\TicketService::class)->resend($ticket))->toThrow(\App\Services\ShopException::class, 'ticket_not_valid');
+    expect(fn () => app(TicketService::class)->resend($ticket))->toThrow(ShopException::class, 'ticket_not_valid');
     $this->artisan('eas:resend-ticket', ['ticket' => $ticket->short_code])->assertFailed();
 
     Queue::assertPushed(SendTicketsEmail::class, $sent);

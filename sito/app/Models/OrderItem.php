@@ -30,21 +30,25 @@ class OrderItem extends Model
         ];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
+    /** @return BelongsTo<TicketType, $this> */
     public function ticketType(): BelongsTo
     {
         return $this->belongsTo(TicketType::class);
     }
 
+    /** @return BelongsTo<TicketPrice, $this> */
     public function ticketPrice(): BelongsTo
     {
         return $this->belongsTo(TicketPrice::class);
     }
 
+    /** @return HasMany<Ticket, $this> */
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);

@@ -113,7 +113,7 @@ class PaymentService
     public function refundFailed(array $refund): string
     {
         $row = Refund::where('stripe_refund_id', $refund['id'])->first();
-        $order = $row?->order ?? Order::where('stripe_payment_intent_id', $refund['payment_intent'] ?? '')->first();
+        $order = $row->order ?? Order::where('stripe_payment_intent_id', $refund['payment_intent'] ?? '')->first();
         if (! $order) {
             return 'unknown_order';
         }

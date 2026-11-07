@@ -314,7 +314,8 @@ it('riconciliazione: ordine needs_review pagato su Stripe è già a posto, scadu
     $this->artisan('eas:reconcile')->assertSuccessful();
 
     $differences = AuditLog::where('action', 'stripe.reconciled')->sole()->data['differences'];
-    expect($differences)->toBe([['type' => 'paid_on_stripe_only', 'order' => $expired->id,
+    // toEqual: MySQL riordina le chiavi delle colonne JSON, MariaDB no.
+    expect($differences)->toEqual([['type' => 'paid_on_stripe_only', 'order' => $expired->id,
         'session' => $expired->stripe_checkout_session_id, 'status' => 'expired']])
         ->and(StripeEvent::sole()->status)->toBe(StripeEventStatus::Processed)
         ->and($expired->refresh()->status)->toBeIn(OrderStatus::moneyTaken())

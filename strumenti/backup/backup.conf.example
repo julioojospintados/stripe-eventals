@@ -1,0 +1,17 @@
+# Configurazione di backup.sh e restore-test.sh. Copiala in backup.conf (accanto agli script) e adattala.
+# Niente password qui: utente, password e host del database stanno in MYCNF, sezione [client], permessi 600.
+
+DB_NAME="eas8"
+MYCNF="$HOME/.my.cnf"
+# Passphrase di cifratura (una riga, permessi 600). Conservane una copia nel gestore di password, non nei backup.
+PASS_FILE="$HOME/.backup-pass"
+BACKUP_DIR="$HOME/backup/eas8"
+# File caricati: foto degli speaker (app/public) e file privati (app/private).
+FILES_DIR="$HOME/eas8/shared/storage/app"
+# Rotazione: ogni copia per KEEP_DAYS giorni, poi una per settimana per KEEP_WEEKS settimane.
+KEEP_DAYS=7
+KEEP_WEEKS=8
+# restore-test.sh: database di prova, VUOTO e diverso da DB_NAME (le sue tabelle vengono cancellate),
+# e tabelle che devono avere righe.
+RESTORE_DB="eas8_restore"
+CHECK_TABLES="migrations users roles events ticket_types"

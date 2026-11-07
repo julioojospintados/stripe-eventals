@@ -22,6 +22,10 @@ enum StaffRole: string
         'capacity_pools' => 'Capienze',
         'discount_codes' => 'Codici sconto',
         'staff' => 'Utenti dello staff',
+        'rooms' => 'Sale',
+        'tracks' => 'Tracce',
+        'program_sessions' => 'Sessioni del programma, interventi e speaker per sessione',
+        'speakers' => 'Speaker',
     ];
 
     public const VERBS = ['view' => 'vedi', 'create' => 'crea', 'update' => 'modifica', 'delete' => 'elimina'];
@@ -51,6 +55,7 @@ enum StaffRole: string
         'invite_codes.view' => 'Codici d\'invito per espositori (fase 2): vedi',
         'invite_codes.manage' => 'Codici d\'invito per espositori (fase 2): crea e modifica',
         'videos.manage' => 'Video e ruoli ammessi (fase 2)',
+        'program.import' => 'Programma: import da CSV di sale, speaker, sessioni e interventi',
     ];
 
     /** @return array<string, string> tutti i permessi, con il significato */
@@ -70,6 +75,7 @@ enum StaffRole: string
     public function permissions(): array
     {
         $sales = ['ticket_types', 'price_tiers', 'ticket_prices', 'capacity_pools'];
+        $program = ['rooms', 'tracks', 'program_sessions', 'speakers'];
         $read = fn (array $resources) => array_map(fn ($r) => "$r.view", $resources);
         $write = fn (array $resources) => array_merge(...array_map(fn ($r) => ["$r.view", "$r.create", "$r.update"], $resources));
 
@@ -83,7 +89,7 @@ enum StaffRole: string
                 'invite_codes.view', 'invite_codes.manage',
             ],
             self::Organizzatore => [
-                ...$write(['event', ...$sales, 'discount_codes']),
+                ...$write(['event', ...$sales, 'discount_codes', ...$program]), 'program.import',
                 'orders.view', 'complimentary.view', 'complimentary.issue', 'tickets.view', 'attendees.export',
                 'invite_codes.view', 'videos.manage',
             ],

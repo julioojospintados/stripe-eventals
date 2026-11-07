@@ -1,0 +1,63 @@
+# Ambiente locale: `docker compose up`, poi http://localhost:8000 (sito) e http://localhost:8025 (email in Mailpit).
+# Solo sviluppo: password finte, niente di questo va sull'hosting. Autore: Giulio Occhipinti.
+services:
+  app:
+    build:
+      dockerfile_inline: |
+        FROM php:8.3-cli
+        RUN apt-get update && apt-get install -y --no-install-recommends git unzip libicu-dev libzip-dev libpng-dev \
+            && docker-php-ext-install pdo_mysql intl zip gd bcmath && rm -rf /var/lib/apt/lists/*
+        COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+    working_dir: /app
+    volumes: ['.:/app']
+    ports: ['8000:8000']
+    # Le variabili vincono sul .env: database e SMTP puntano ai container.
+    environment:
+      DB_CONNECTION: mariadb
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_DATABASE: eas8
+      DB_USERNAME: eas8
+      DB_PASSWORD: eas8-local
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    depends_on:
+      mariadb: { condition: service_healthy }
+    # Primo avvio: .env, chiave, dipendenze, tabelle e dati dell'evento; poi scheduler (coda, email) e server.
+    command: >-
+      sh -c "[ -f .env ] || cp .env.example .env;
+      grep -q '^APP_KEY=base64' .env || php artisan key:generate;
+      composer install --no-interaction &&
+      php artisan migrate --seed --force &&
+      (php artisan schedule:work &) && exec php artisan serve --host=0.0.0.0 --port=8000"
+
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: root-local
+      MARIADB_DATABASE: eas8
+      MARIADB_USER: eas8
+      MARIADB_PASSWORD: eas8-local
+    volumes: ['mariadb:/var/lib/mysql']
+    # Database dei test (phpunit.xml usa eas8_test): `docker compose exec app php artisan test`.
+    configs:
+      - source: test-db
+        target: /docker-entrypoint-initdb.d/test-db.sql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ['8025:8025']
+
+configs:
+  test-db:
+    content: |
+      CREATE DATABASE IF NOT EXISTS eas8_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+      GRANT ALL PRIVILEGES ON eas8_test.* TO 'eas8'@'%';
+
+volumes:
+  mariadb:

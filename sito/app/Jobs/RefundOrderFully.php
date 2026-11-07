@@ -38,7 +38,7 @@ class RefundOrderFully implements ShouldQueue
     {
         $order = Order::findOrFail($this->orderId);
         $staff = $this->requestedBy !== null;
-        $refundable = $staff ? [OrderStatus::NeedsRefund, OrderStatus::Paid, OrderStatus::PartiallyRefunded] : [OrderStatus::NeedsRefund];
+        $refundable = [OrderStatus::NeedsRefund, ...($staff ? [OrderStatus::Paid, OrderStatus::PartiallyRefunded] : [])];
         if (! in_array($order->status, $refundable, true) || ! $order->stripe_payment_intent_id) {
             return;
         }

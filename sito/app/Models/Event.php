@@ -35,36 +35,55 @@ class Event extends Model
         $query->where('status', EventStatus::Published);
     }
 
+    /** @return HasMany<EventDay, $this> */
     public function days(): HasMany
     {
         return $this->hasMany(EventDay::class)->orderBy('day');
     }
 
+    /** @return HasMany<ProgramSession, $this> */
     public function programSessions(): HasMany
     {
         return $this->hasMany(ProgramSession::class);
     }
 
+    /** @return HasMany<Room, $this> */
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class)->orderBy('position');
+    }
+
+    /** @return HasMany<Track, $this> */
+    public function tracks(): HasMany
+    {
+        return $this->hasMany(Track::class)->orderBy('position');
+    }
+
+    /** @return HasMany<TicketType, $this> */
     public function ticketTypes(): HasMany
     {
         return $this->hasMany(TicketType::class)->orderBy('position');
     }
 
+    /** @return HasMany<PriceTier, $this> */
     public function priceTiers(): HasMany
     {
         return $this->hasMany(PriceTier::class)->orderBy('starts_at');
     }
 
+    /** @return HasMany<CapacityPool, $this> */
     public function capacityPools(): HasMany
     {
         return $this->hasMany(CapacityPool::class);
     }
 
+    /** @return HasMany<Order, $this> */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
+    /** @return HasMany<DiscountCode, $this> */
     public function discountCodes(): HasMany
     {
         return $this->hasMany(DiscountCode::class);

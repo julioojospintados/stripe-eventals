@@ -33,27 +33,35 @@ class TicketType extends Model
         ];
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsTo<EventDay, $this> */
     public function eventDay(): BelongsTo
     {
         return $this->belongsTo(EventDay::class);
     }
 
+    /** @return BelongsTo<ProgramSession, $this> */
     public function programSession(): BelongsTo
     {
         return $this->belongsTo(ProgramSession::class);
     }
 
+    /** @return HasMany<TicketPrice, $this> */
     public function prices(): HasMany
     {
         return $this->hasMany(TicketPrice::class);
     }
 
-    /** Pool di posti consumati da un biglietto di questo tipo. */
+    /**
+     * Pool di posti consumati da un biglietto di questo tipo.
+     *
+     * @return BelongsToMany<CapacityPool, $this>
+     */
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(CapacityPool::class, 'ticket_type_pools', 'ticket_type_id', 'pool_id');
@@ -65,6 +73,7 @@ class TicketType extends Model
         return $this->pools->min(fn (CapacityPool $pool) => $pool->capacity - $pool->held - $pool->confirmed);
     }
 
+    /** @return HasMany<Ticket, $this> */
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);

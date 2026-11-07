@@ -21,6 +21,8 @@
             <span>EAS8 Lisbon</span>
         </a>
         <nav class="nav" aria-label="{{ __('Main') }}">
+            <a href="{{ route('program.index') }}" @if (request()->routeIs('program.*')) aria-current="page" @endif>{{ __('Programme') }}</a>
+            <a href="{{ route('speakers.index') }}" @if (request()->routeIs('speakers.*')) aria-current="page" @endif>{{ __('Speakers') }}</a>
             <a href="{{ route('shop.index') }}" @if (request()->routeIs('shop.*')) aria-current="page" @endif>{{ __('Tickets') }}</a>
             <a href="{{ route('membership.show') }}" @if (request()->routeIs('membership.*')) aria-current="page" @endif>{{ __('Membership') }}</a>
             @auth

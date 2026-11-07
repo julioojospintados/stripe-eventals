@@ -11,7 +11,8 @@ domande: sono dati che si inseriscono e si cambiano dal pannello.
 | Parte | Stato |
 |---|---|
 | Applicazione Laravel 13 + Filament 5 in `sito/` | 🟢 Fase 1 sviluppata: vendita, pagamenti Stripe, membership, biglietti con QR, pannello a tre ruoli, export |
-| Test | 🟢 270 test Pest su MariaDB 10.11, compresi test in parallelo su posti, prezzo membro e webhook |
+| Fase 2 | 🟡 Iniziata: programma (12 sale, tracce, sessioni, interventi) e speaker, con import CSV e pagine pubbliche |
+| Test | 🟢 304 test Pest su MariaDB 10.11, compresi test in parallelo su posti, prezzo membro e webhook |
 | Documentazione tecnica | 🟢 `docs/tecnico/`: database, stati, flussi, regole, permessi, ADR, esercizio |
 | Prova con Stripe vero (modalità test) | 🔴 Da fare |
 | Installazione sul vostro hosting | 🔴 Da fare |
@@ -120,11 +121,21 @@ Solo quello che cambia codice, database o installazione. Se non rispondi, vale l
 
 ## Fase 2
 
-Programma completo con import CSV, speaker, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
+Iniziata il 07/11/2026 con programma e speaker: tabelle `rooms`, `tracks`, `session_parts`, `speakers`,
+`session_speaker`, `session_part_speaker` e colonne nuove di `program_sessions`; sala occupata bloccata da trigger e
+da `ProgramService`; import CSV dal pannello nel formato di `contenuti/modelli/`; pagine `/programme` e `/speakers`.
+Dettagli in `sito/README.md` (Fase 2) e `docs/tecnico/regole.md` (Programma e speaker).
+
+Restano: prenotazione delle sessioni gratuite a posti limitati, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
 espositori, API per il partner del check-in, abstract, attestati e crediti formativi.
 
 ## Come contribuire
 
 - Branch `feat/<descrizione>` o `fix/<descrizione>`, pull request su `main`.
-- Test su MySQL/MariaDB verdi prima del merge; `composer audit` dopo ogni dipendenza nuova.
+- La CI (`.github/workflows/ci.yml`) gira su ogni pull request e su `main`: `composer audit`, Pint (`vendor/bin/pint
+  --test`; `vendor/bin/pint` corregge), PHPStan con Larastan livello 5 (`vendor/bin/phpstan analyse`, zero errori) e i
+  test su MariaDB 10.11 e MySQL 8.0. Deve essere verde prima del merge; `composer audit` dopo ogni dipendenza nuova.
+- Ambiente locale anche con `docker compose up` in `sito/` (PHP 8.3, MariaDB, Mailpit per le email).
+- Deploy e ritorno indietro: `strumenti/deploy/` (`releases/`, `shared/`, link `current`, 5 rilasci). Backup cifrati con
+  rotazione e prova di ripristino: `strumenti/backup/`. Passi in `docs/tecnico/esercizio.md` §4 e §8.
 - Regole del repository in `CLAUDE.md`, utili anche se lavori con un assistente AI.

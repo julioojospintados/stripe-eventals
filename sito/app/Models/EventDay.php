@@ -18,6 +18,7 @@ class EventDay extends Model
         return ['day' => 'date', 'label' => 'array'];
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);

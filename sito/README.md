@@ -57,6 +57,10 @@ php artisan serve
 Pannello su `http://localhost:8000/admin`. Al primo accesso Filament chiede di attivare la MFA con un'app TOTP
 (obbligatoria per tutto lo staff) e mostra i codici di recupero.
 
+**Con Docker** (`compose.yaml`: PHP 8.3, MariaDB 10.11, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
+dati di prova e avvia sito (`:8000`, con lo scheduler per coda ed email) e Mailpit (`:8025`, tutte le email).
+Admin: `docker compose exec app php artisan eas:create-admin <email>`; test: `docker compose exec app php artisan test`.
+
 ## Il file `.env`
 
 Mai nel repository (è in `.gitignore`). `.env.example` elenca tutte le variabili con un commento; le principali:
@@ -138,6 +142,14 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 - `tests/Concurrency/`: ultimo posto, prezzo membro e pagamento confermato tre volte **in parallelo**, con processi
   separati (`tests/Concurrency/worker.php`) e transazioni vere che si aspettano sui lock. Usano `DatabaseTruncation`
   (dati confermati, tabelle svuotate prima di ogni test) e girano dopo `Feature`.
+
+Prima di una pull request, gli stessi controlli della CI (`.github/workflows/ci.yml`, test anche su MySQL 8.0):
+
+```bash
+composer audit && vendor/bin/pint --test && vendor/bin/phpstan analyse --memory-limit=1G && php artisan test
+```
+
+PHPStan con Larastan, livello 5 (`phpstan.neon`, zero errori, nessuna baseline); `vendor/bin/pint` corregge lo stile.
 
 Stripe non viene mai chiamato nei test: `TestCase` mette nel container `Tests\Fakes\FakeStripe` al posto di
 `App\Services\StripeGateway` (sessioni in memoria, chiamate registrate con la loro Idempotency-Key).
@@ -309,6 +321,9 @@ bersagli di almeno 44px, fuoco visibile, WCAG 2.2 AA.
 | `/tickets` | fasce con prezzi pubblico e membro, nominativi del pass, workshop con posti liberi, codice sconto |
 | `/account/orders/{id}` | conferma dei nomi e pagamento, poi esito (pagato, in corso, scaduto, in rimborso) con i QR |
 | `/membership` | prezzo, cosa comprende, attivazione o portale Stripe |
+| `/programme` | programma per giorno, filtro per sala e traccia: elenco per orario su telefono, griglia per sala da 64rem (scorre di lato dentro la sua cornice; `?view=list` per l'elenco) |
+| `/programme/{slug}` | sessione con orari di Lisbona, sala, speaker, interventi, accesso (compresa o workshop) |
+| `/speakers`, `/speakers/{slug}` | speaker in ordine alfabetico e scheda con bio, link e sessioni |
 | `/login`, `/login/code` | accesso con codice via email |
 | `/account` | biglietti con QR, membership e portale, ordini |
 | `/language/{en,it}` | selettore della lingua (sessione e `users.locale`; senza scelta vale la lingua del browser) |
@@ -337,5 +352,18 @@ accompagnatori, pagine termini e privacy (dal cliente), messaggi di validazione 
 Scelte da confermare: URL senza prefisso `/en/` `/it/` (la lingua sta in sessione: niente `hreflang` per pagina, a
 differenza di §10 dell'architettura); il commerciale vede evento e vendita in sola lettura come in §5.3.
 
-**Fase 2** (fuori da questi passi): programma completo con sale, tracce e speaker (le colonne mancanti di
-`program_sessions` arrivano con lui), video, Mailchimp, codici d'invito per gli espositori, API del partner.
+**Fase 2, primo blocco (programma e speaker):** migrazioni `2026_11_09_080000` (tabelle degli import di Filament e
+notifiche) e `2026_11_09_090000` (sale, tracce, colonne nuove di `program_sessions`, interventi, speaker); risorse
+Programme nel pannello con import CSV dei modelli di `contenuti/modelli/`; pagine pubbliche sopra. Regole:
+- sala occupata: trigger `program_sessions_no_room_overlap_*` + `ProgramService::save()` (lock sulla sala, messaggio
+  leggibile nel form e nell'import);
+- import (`app/Filament/Imports/`): ordine `rooms` → `speakers` → `sessions` → `session_parts`; il codice è la chiave,
+  righe `EXAMPLE-` saltate, righe sbagliate nel file degli errori scaricabile; gira nella coda (cron), la notifica di
+  fine arriva nella campanella del pannello. Sessioni nuove **non pubblicate** (azione di massa «Publish»);
+- `paid=yes` crea al primo import tipo di biglietto spento, pool e prezzo base; dopo si cambiano in Sales;
+- foto: si copiano in `storage/app/private/speaker-photos/` prima dell'import di `speakers.csv` (o si caricano nel
+  form); il sito pubblica una copia quadrata 800 px senza EXIF sul disco `public` (serve `storage:link`, già nel
+  deploy). Manca la prova a vuoto prima dell'import descritta in `contenuti/modelli/README.md`.
+
+**Fase 2, ancora da fare:** prenotazione delle sessioni `included_booking` (i posti di `seats` con `paid=no` non si
+salvano ancora), prezzi per ruolo nel programma, video, Mailchimp, codici d'invito per gli espositori, API del partner.

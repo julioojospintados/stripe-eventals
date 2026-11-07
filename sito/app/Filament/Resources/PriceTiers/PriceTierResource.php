@@ -60,10 +60,11 @@ class PriceTierResource extends Resource
                 return;
             }
             $tz = 'Europe/Lisbon';
+            // $value è l'ora di Lisbona scritta nel campo; $get dà lo stato già convertito in UTC dal DateTimePicker.
             $other = PriceTier::where('event_id', $get('event_id'))->where('active', true)
                 ->when($record, fn ($q) => $q->whereKeyNot($record->getKey()))
                 ->where('starts_at', '<', Carbon::parse($value, $tz)->utc())
-                ->where('ends_at', '>', Carbon::parse($get('starts_at'), $tz)->utc())
+                ->where('ends_at', '>', Carbon::parse($get('starts_at'), 'UTC'))
                 ->first();
             if ($other) {
                 $fail(__('This tier overlaps the active tier ":name" (:from – :to). Change the dates or turn one of them off.', [

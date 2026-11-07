@@ -20,11 +20,13 @@ class TicketPrice extends Model
         return ['price_role' => PriceRole::class, 'amount_cents' => 'integer'];
     }
 
+    /** @return BelongsTo<TicketType, $this> */
     public function ticketType(): BelongsTo
     {
         return $this->belongsTo(TicketType::class);
     }
 
+    /** @return BelongsTo<PriceTier, $this> */
     public function priceTier(): BelongsTo
     {
         return $this->belongsTo(PriceTier::class);

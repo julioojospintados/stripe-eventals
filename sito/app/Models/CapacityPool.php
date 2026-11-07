@@ -29,16 +29,19 @@ class CapacityPool extends Model
         ];
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsToMany<TicketType, $this> */
     public function ticketTypes(): BelongsToMany
     {
         return $this->belongsToMany(TicketType::class, 'ticket_type_pools', 'pool_id', 'ticket_type_id');
     }
 
+    /** @return HasMany<CapacityHold, $this> */
     public function holds(): HasMany
     {
         return $this->hasMany(CapacityHold::class, 'pool_id');
