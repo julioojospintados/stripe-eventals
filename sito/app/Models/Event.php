@@ -47,6 +47,18 @@ class Event extends Model
         return $this->hasMany(ProgramSession::class);
     }
 
+    /** @return HasMany<Room, $this> */
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class)->orderBy('position');
+    }
+
+    /** @return HasMany<Track, $this> */
+    public function tracks(): HasMany
+    {
+        return $this->hasMany(Track::class)->orderBy('position');
+    }
+
     /** @return HasMany<TicketType, $this> */
     public function ticketTypes(): HasMany
     {

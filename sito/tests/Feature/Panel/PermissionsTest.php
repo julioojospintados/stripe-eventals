@@ -18,9 +18,13 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\Order;
 use App\Models\PriceTier;
+use App\Models\ProgramSession;
+use App\Models\Room;
+use App\Models\Speaker;
 use App\Models\Ticket;
 use App\Models\TicketPrice;
 use App\Models\TicketType;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\PaymentService;
 use App\Services\ShopException;
@@ -54,7 +58,19 @@ $crud = fn (string $model, bool $commercialeWrites, bool $organizzatoreWrites) =
     "update $model" => ['update', $model, true, $commercialeWrites, $organizzatoreWrites],
     "delete $model" => ['delete', $model, false, false, false],
 ];
+// Programma: organizzatore e admin, nessun accesso per il commerciale.
+$program = fn (string $model) => [
+    "viewAny $model" => ['viewAny', $model, true, false, true],
+    "create $model" => ['create', $model, true, false, true],
+    "update $model" => ['update', $model, true, false, true],
+    "delete $model" => ['delete', $model, false, false, false],
+];
 $matrix = [
+    ...$program(Room::class),
+    ...$program(Track::class),
+    ...$program(ProgramSession::class),
+    ...$program(Speaker::class),
+    'import ProgramSession' => ['import', ProgramSession::class, true, false, true],
     ...$crud(Event::class, false, true),
     ...$crud(TicketType::class, false, true),
     ...$crud(PriceTier::class, false, true),

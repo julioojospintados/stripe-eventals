@@ -11,7 +11,8 @@ domande: sono dati che si inseriscono e si cambiano dal pannello.
 | Parte | Stato |
 |---|---|
 | Applicazione Laravel 13 + Filament 5 in `sito/` | 🟢 Fase 1 sviluppata: vendita, pagamenti Stripe, membership, biglietti con QR, pannello a tre ruoli, export |
-| Test | 🟢 270 test Pest su MariaDB 10.11, compresi test in parallelo su posti, prezzo membro e webhook |
+| Fase 2 | 🟡 Iniziata: programma (12 sale, tracce, sessioni, interventi) e speaker, con import CSV e pagine pubbliche |
+| Test | 🟢 304 test Pest su MariaDB 10.11, compresi test in parallelo su posti, prezzo membro e webhook |
 | Documentazione tecnica | 🟢 `docs/tecnico/`: database, stati, flussi, regole, permessi, ADR, esercizio |
 | Prova con Stripe vero (modalità test) | 🔴 Da fare |
 | Installazione sul vostro hosting | 🔴 Da fare |
@@ -120,7 +121,12 @@ Solo quello che cambia codice, database o installazione. Se non rispondi, vale l
 
 ## Fase 2
 
-Programma completo con import CSV, speaker, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
+Iniziata il 07/11/2026 con programma e speaker: tabelle `rooms`, `tracks`, `session_parts`, `speakers`,
+`session_speaker`, `session_part_speaker` e colonne nuove di `program_sessions`; sala occupata bloccata da trigger e
+da `ProgramService`; import CSV dal pannello nel formato di `contenuti/modelli/`; pagine `/programme` e `/speakers`.
+Dettagli in `sito/README.md` (Fase 2) e `docs/tecnico/regole.md` (Programma e speaker).
+
+Restano: prenotazione delle sessioni gratuite a posti limitati, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
 espositori, API per il partner del check-in, abstract, attestati e crediti formativi.
 
 ## Come contribuire

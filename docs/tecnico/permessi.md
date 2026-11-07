@@ -12,7 +12,9 @@ Autore: Giulio Occhipinti. Aggiornato al 07/11/2026.
   e lascia le modifiche fatte dall'admin nel pannello (Roles).
 - **Controllo:** le Policy in `sito/app/Policies/` chiedono sempre un permesso (`$user->can('orders.refund')`), mai
   il nome del ruolo. `ResourcePolicy` copre le risorse standard; `OrderPolicy`, `TicketPolicy`, `RolePolicy`,
-  `MembershipPlanPolicy`, `MembershipPolicy`, `DisputePolicy`, `AuditLogPolicy` le azioni.
+  `MembershipPlanPolicy`, `MembershipPolicy`, `DisputePolicy`, `AuditLogPolicy` le azioni; `ProgramSessionPolicy::import`
+  l'import CSV del programma (le azioni di import sono visibili solo con `program.import`, perché gli Importer di
+  Filament non passano dalle Policy).
 - **Fuori dal pannello:** l'accesso a `/admin` passa da `User::canAccessPanel` (solo chi ha un ruolo dello staff);
   il download degli export (`ExportDownloadController`) ricontrolla ruolo e permesso del tipo di export.
 - **Membro** non è un ruolo: si deriva da `memberships` (`User::isMemberUntil`).
@@ -57,6 +59,22 @@ Generata dal database dopo `php artisan migrate:fresh --seed`, quindi dal seeder
 | `staff.create` | Utenti dello staff: crea | ✔ | — | — |
 | `staff.update` | Utenti dello staff: modifica | ✔ | — | — |
 | `staff.delete` | Utenti dello staff: elimina | — | — | — |
+| `rooms.view` | Sale: vedi | ✔ | — | ✔ |
+| `rooms.create` | Sale: crea | ✔ | — | ✔ |
+| `rooms.update` | Sale: modifica | ✔ | — | ✔ |
+| `rooms.delete` | Sale: elimina | — | — | — |
+| `tracks.view` | Tracce: vedi | ✔ | — | ✔ |
+| `tracks.create` | Tracce: crea | ✔ | — | ✔ |
+| `tracks.update` | Tracce: modifica | ✔ | — | ✔ |
+| `tracks.delete` | Tracce: elimina | — | — | — |
+| `program_sessions.view` | Sessioni del programma, interventi e speaker per sessione: vedi | ✔ | — | ✔ |
+| `program_sessions.create` | Sessioni del programma, interventi e speaker per sessione: crea | ✔ | — | ✔ |
+| `program_sessions.update` | Sessioni del programma, interventi e speaker per sessione: modifica | ✔ | — | ✔ |
+| `program_sessions.delete` | Sessioni del programma, interventi e speaker per sessione: elimina | — | — | — |
+| `speakers.view` | Speaker: vedi | ✔ | — | ✔ |
+| `speakers.create` | Speaker: crea | ✔ | — | ✔ |
+| `speakers.update` | Speaker: modifica | ✔ | — | ✔ |
+| `speakers.delete` | Speaker: elimina | — | — | — |
 | `orders.view` | Ordini: vedi (senza importi) | ✔ | ✔ | ✔ |
 | `orders.view_amounts` | Ordini, pagamenti, rimborsi: vedi gli importi | ✔ | ✔ | — |
 | `orders.refund` | Ordini: rimborsa | ✔ | ✔ | — |
@@ -80,8 +98,9 @@ Generata dal database dopo `php artisan migrate:fresh --seed`, quindi dal seeder
 | `invite_codes.view` | Codici d'invito per espositori (fase 2): vedi | ✔ | ✔ | ✔ |
 | `invite_codes.manage` | Codici d'invito per espositori (fase 2): crea e modifica | ✔ | ✔ | — |
 | `videos.manage` | Video e ruoli ammessi (fase 2) | ✔ | — | ✔ |
+| `program.import` | Programma: import da CSV di sale, speaker, sessioni e interventi | ✔ | — | ✔ |
 
-Generata il 07/11/2026 da `strumenti/genera-doc-db/genera.php` sul database `eas8` (51 permessi).
+Generata il 07/11/2026 da `strumenti/genera-doc-db/genera.php` sul database `eas8` (68 permessi).
 
 <!-- matrice-permessi:fine -->
 
@@ -101,3 +120,4 @@ Generata il 07/11/2026 da `strumenti/genera-doc-db/genera.php` sul database `eas
 | 10 | Permessi di fase 2 già presenti senza funzione: `invite_codes.*` (commerciale gestisce, organizzatore vede), `videos.manage` (organizzatore e admin) | Nessun effetto oggi; da rivedere quando arrivano le funzioni |
 | 11 | Le modifiche dell'admin ai ruoli commerciale e organizzatore sopravvivono al seeder, ma un permesso **nuovo** nel codice arriva comunque al ruolo predefinito | Se l'admin ha tolto un'area a un ruolo, un permesso nuovo di quell'area torna: da sapere prima di un rilascio |
 | 12 | La riga «Fatture, export contabili» di §5.3 copre solo `orders.export`: le fatture si fanno in Stripe e Xero, non nel pannello | Nessun permesso «fatture» nel codice |
+| 13 | Programma (`rooms.*`, `tracks.*`, `program_sessions.*`, `speakers.*` senza `delete`) e `program.import` a organizzatore e admin; il commerciale non vede il programma nel pannello (lo vede sul sito) | Richiesta della Fase 2; se il commerciale deve controllare le sessioni basta dargli i `.view` |

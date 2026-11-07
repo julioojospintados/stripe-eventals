@@ -10,9 +10,9 @@ Autore: Giulio Occhipinti.
 |---|---|
 | Server | 10.11.14-MariaDB-0ubuntu0.24.04.1 |
 | Database | `eas8` |
-| Ultima migrazione | `2026_11_08_090000_add_review_disputes_and_ignored_reason` |
-| Tabelle | 40 |
-| Trigger | 9 |
+| Ultima migrazione | `2026_11_09_090000_create_program_tables` |
+| Tabelle | 49 |
+| Trigger | 11 |
 
 Nota per MySQL: le colonne JSON qui risultano `longtext` con un `CHECK json_valid()` perché il documento è
 generato su MariaDB; su MySQL 8 sono di tipo `json`. Le colonne generate `*_key` o `active_*`
@@ -36,9 +36,11 @@ in un indice unico.
 | [`disputes`](#disputes) | Contestazioni dei pagamenti (chargeback) lette dai webhook `charge.dispute.*`. |
 | [`events`](#events) | Evento (EAS8): nome tradotto, date, valuta, stato, finestra di vendita. |
 | [`event_days`](#event_days) | Giorni dell'evento; servono ai pass giornalieri e al programma. |
+| [`failed_import_rows`](#failed_import_rows) | Righe di un import con il motivo dell'errore, scaricabili dal pannello. |
 | [`failed_jobs`](#failed_jobs) | Job falliti dopo tutti i tentativi: da controllare (`php artisan queue:failed`). |
+| [`imports`](#imports) | Import CSV avviati dal pannello (Filament): file, righe totali, riuscite, chi l'ha avviato. |
 | [`jobs`](#jobs) | Coda dei job (driver database), vuotata dal cron ogni minuto. |
-| [`job_batches`](#job_batches) | Batch di job di Laravel (non usati per ora). |
+| [`job_batches`](#job_batches) | Batch di job di Laravel: li usano gli import CSV di Filament. |
 | [`login_codes`](#login_codes) | Codici di accesso dei clienti: HMAC del codice, scadenza 10 minuti, tentativi. |
 | [`memberships`](#memberships) | Copia locale della subscription Stripe del membro (stato, periodo, annullamento). |
 | [`membership_plans`](#membership_plans) | Piano della membership: prezzo mostrato e Price ID Stripe ricorrente. |
@@ -46,28 +48,35 @@ in un indice unico.
 | [`migrations`](#migrations) | Migrazioni già eseguite (Laravel). |
 | [`model_has_permissions`](#model_has_permissions) | Permessi diretti a un utente (non usati: si passa dai ruoli). |
 | [`model_has_roles`](#model_has_roles) | Ruoli assegnati agli utenti dello staff. |
+| [`notifications`](#notifications) | Notifiche del pannello salvate nel database (es. fine di un import). |
 | [`orders`](#orders) | Ordini: stato, ruolo e fascia fissati alla riserva, importi in centesimi, sessione e PaymentIntent Stripe. |
 | [`order_items`](#order_items) | Righe d'ordine con prezzo di listino, sconto unitario, totale e nominativi (JSON). |
 | [`password_reset_tokens`](#password_reset_tokens) | Token di reimpostazione della password dello staff (Laravel). |
 | [`permissions`](#permissions) | Permessi dello staff (spatie/laravel-permission), creati dal seeder da `App\Enums\StaffRole`. |
 | [`price_tiers`](#price_tiers) | Fasce di prezzo dell'evento (early bird, regular, last minute), mai sovrapposte (trigger). |
-| [`program_sessions`](#program_sessions) | Sessioni del programma (workshop compresi); il nome evita lo scontro con `sessions` di Laravel. |
+| [`program_sessions`](#program_sessions) | Sessioni del programma (workshop compresi) con sala, traccia, formato e orari UTC; mai due sovrapposte nella stessa sala (trigger + servizio). Il nome evita lo scontro con `sessions` di Laravel. |
 | [`refunds`](#refunds) | Rimborsi Stripe per ordine: importo, causa, origine (auto, staff, dashboard), stato, chiave di idempotenza. |
 | [`roles`](#roles) | Ruoli dello staff: admin, commerciale, organizzatore. |
 | [`role_has_permissions`](#role_has_permissions) | Permessi di ogni ruolo. |
+| [`rooms`](#rooms) | Sale dell'evento (12 per l'EAS8): codice d'import, capienza, piano, ordine nella griglia. |
 | [`sent_messages`](#sent_messages) | Email transazionali inviate, con chiave unica per non mandare due volte la stessa. |
 | [`sessions`](#sessions) | Sessioni HTTP di Laravel (driver database). |
+| [`session_parts`](#session_parts) | Interventi dentro una sessione, in ordine di position. |
+| [`session_part_speaker`](#session_part_speaker) | Relatori di un intervento, in ordine. |
+| [`session_speaker`](#session_speaker) | Chi parla o modera in una sessione, con ruolo e ordine. |
+| [`speakers`](#speakers) | Speaker e moderatori: codice d'import, nome, bio tradotta, foto pubblica senza EXIF, email privata. |
 | [`stripe_events`](#stripe_events) | Eventi Stripe ricevuti (id evento = chiave): idempotenza dei webhook e stato dell'elaborazione. |
 | [`tickets`](#tickets) | Biglietti nominativi: uno per partecipante, stato, versione del QR, correzioni del nome (trigger). |
 | [`ticket_prices`](#ticket_prices) | Prezzo in centesimi per tipo × fascia × ruolo di prezzo (pubblico, membro); fascia nulla = prezzo base. |
 | [`ticket_types`](#ticket_types) | Tipi di biglietto (pass intero, giornaliero, workshop, accompagnatore, espositore, staff) con canale e limiti per ordine. |
 | [`ticket_type_pools`](#ticket_type_pools) | Quali pool di capienza consuma ogni tipo di biglietto (molti a molti). |
+| [`tracks`](#tracks) | Tracce tematiche dell'evento; lo slug dal nome inglese è la chiave della colonna track dell'import. |
 | [`users`](#users) | Clienti e staff; lo staff ha password argon2id e MFA, i clienti entrano con il codice via email. |
 
 ## Diagramma ER
 
 Solo le colonne chiave (PK, FK, UK) e gli stati; tutte le colonne sono nel dizionario. Escluse le tabelle
-tecniche di Laravel: `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`, `migrations`.
+tecniche di Laravel: `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `sessions`, `password_reset_tokens`, `migrations`, `imports`, `failed_import_rows`, `notifications`.
 
 ```mermaid
 erDiagram
@@ -196,6 +205,8 @@ erDiagram
         uuid event_id FK,UK
         varchar code UK
         uuid event_day_id FK
+        uuid room_id FK
+        uuid track_id FK
         varchar slug UK
     }
     refunds {
@@ -216,9 +227,32 @@ erDiagram
         bigint permission_id PK,FK
         bigint role_id PK,FK
     }
+    rooms {
+        uuid id PK
+        uuid event_id FK,UK
+        varchar code UK
+    }
     sent_messages {
         bigint id PK
         varchar dedupe_key UK
+    }
+    session_parts {
+        uuid id PK
+        uuid program_session_id FK
+    }
+    session_part_speaker {
+        uuid session_part_id PK,FK
+        uuid speaker_id PK,FK
+    }
+    session_speaker {
+        uuid id PK
+        uuid program_session_id FK,UK
+        uuid speaker_id FK,UK
+    }
+    speakers {
+        uuid id PK
+        varchar code UK
+        varchar slug UK
     }
     stripe_events {
         varchar id PK
@@ -253,6 +287,11 @@ erDiagram
     ticket_type_pools {
         uuid ticket_type_id PK,FK
         uuid pool_id PK,FK
+    }
+    tracks {
+        uuid id PK
+        uuid event_id FK,UK
+        varchar slug UK
     }
     users {
         bigint id PK
@@ -297,11 +336,19 @@ erDiagram
     events ||--o{ price_tiers : "event_id"
     event_days |o--o{ program_sessions : "event_day_id"
     events ||--o{ program_sessions : "event_id"
+    rooms |o--o{ program_sessions : "room_id"
+    tracks |o--o{ program_sessions : "track_id"
     orders ||--o{ refunds : "order_id"
     users |o--o{ refunds : "requested_by"
     tickets |o--o{ refunds : "ticket_id"
     permissions ||--o{ role_has_permissions : "permission_id"
     roles ||--o{ role_has_permissions : "role_id"
+    events ||--o{ rooms : "event_id"
+    program_sessions ||--o{ session_parts : "program_session_id"
+    session_parts ||--o{ session_part_speaker : "session_part_id"
+    speakers ||--o{ session_part_speaker : "speaker_id"
+    program_sessions ||--o{ session_speaker : "program_session_id"
+    speakers ||--o{ session_speaker : "speaker_id"
     users |o--o{ tickets : "attendee_corrected_by"
     users |o--o{ tickets : "attendee_user_id"
     events ||--o{ tickets : "event_id"
@@ -316,6 +363,7 @@ erDiagram
     program_sessions |o--o{ ticket_types : "program_session_id"
     capacity_pools ||--o{ ticket_type_pools : "pool_id"
     ticket_types ||--o{ ticket_type_pools : "ticket_type_id"
+    events ||--o{ tracks : "event_id"
 ```
 
 ## Dizionario dati
@@ -654,6 +702,23 @@ Giorni dell'evento; servono ai pass giornalieri e al programma.
 - **Unico** `event_days_event_id_day_unique`: `event_id`, `day`
 - **FK** `event_id` → `events.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`event_days_event_id_foreign`)
 
+### `failed_import_rows`
+
+Righe di un import con il motivo dell'errore, scaricabili dal pannello.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | bigint(20) unsigned | no |  | PK; auto_increment |
+| `data` | json (longtext) | no |  |  |
+| `import_id` | bigint(20) unsigned | no |  |  |
+| `validation_error` | text | sì |  |  |
+| `created_at` | timestamp | sì |  |  |
+| `updated_at` | timestamp | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Indici:** `failed_import_rows_import_id_foreign` (import_id)
+- **FK** `import_id` → `imports.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`failed_import_rows_import_id_foreign`)
+
 ### `failed_jobs`
 
 Job falliti dopo tutti i tentativi: da controllare (`php artisan queue:failed`).
@@ -671,6 +736,28 @@ Job falliti dopo tutti i tentativi: da controllare (`php artisan queue:failed`).
 - **Chiave primaria:** `id`
 - **Unico** `failed_jobs_uuid_unique`: `uuid`
 - **Indici:** `failed_jobs_connection_queue_failed_at_index` (connection, queue, failed_at)
+
+### `imports`
+
+Import CSV avviati dal pannello (Filament): file, righe totali, riuscite, chi l'ha avviato.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | bigint(20) unsigned | no |  | PK; auto_increment |
+| `completed_at` | timestamp | sì |  |  |
+| `file_name` | varchar(255) | no |  |  |
+| `file_path` | varchar(255) | no |  |  |
+| `importer` | varchar(255) | no |  |  |
+| `processed_rows` | int(10) unsigned | no | `0` |  |
+| `total_rows` | int(10) unsigned | no |  |  |
+| `successful_rows` | int(10) unsigned | no | `0` |  |
+| `user_id` | bigint(20) unsigned | no |  |  |
+| `created_at` | timestamp | sì |  |  |
+| `updated_at` | timestamp | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Indici:** `imports_user_id_foreign` (user_id)
+- **FK** `user_id` → `users.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`imports_user_id_foreign`)
 
 ### `jobs`
 
@@ -691,7 +778,7 @@ Coda dei job (driver database), vuotata dal cron ogni minuto.
 
 ### `job_batches`
 
-Batch di job di Laravel (non usati per ora).
+Batch di job di Laravel: li usano gli import CSV di Filament.
 
 | Colonna | Tipo | Null | Default | Note |
 |---|---|---|---|---|
@@ -845,6 +932,24 @@ Ruoli assegnati agli utenti dello staff.
 - **Chiave primaria:** `role_id`, `model_id`, `model_type`
 - **Indici:** `model_has_roles_model_id_model_type_index` (model_id, model_type)
 - **FK** `role_id` → `roles.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`model_has_roles_role_id_foreign`)
+
+### `notifications`
+
+Notifiche del pannello salvate nel database (es. fine di un import).
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `type` | varchar(255) | no |  |  |
+| `notifiable_type` | varchar(255) | no |  |  |
+| `notifiable_id` | bigint(20) unsigned | no |  |  |
+| `data` | text | no |  |  |
+| `read_at` | timestamp | sì |  |  |
+| `created_at` | timestamp | sì |  |  |
+| `updated_at` | timestamp | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Indici:** `notifications_notifiable_type_notifiable_id_index` (notifiable_type, notifiable_id)
 
 ### `orders`
 
@@ -1035,7 +1140,7 @@ end
 
 ### `program_sessions`
 
-Sessioni del programma (workshop compresi); il nome evita lo scontro con `sessions` di Laravel.
+Sessioni del programma (workshop compresi) con sala, traccia, formato e orari UTC; mai due sovrapposte nella stessa sala (trigger + servizio). Il nome evita lo scontro con `sessions` di Laravel.
 
 | Colonna | Tipo | Null | Default | Note |
 |---|---|---|---|---|
@@ -1043,9 +1148,12 @@ Sessioni del programma (workshop compresi); il nome evita lo scontro con `sessio
 | `event_id` | uuid | no |  |  |
 | `code` | varchar(30) | no |  |  |
 | `event_day_id` | uuid | sì |  |  |
+| `room_id` | uuid | sì |  |  |
+| `track_id` | uuid | sì |  |  |
 | `slug` | varchar(150) | no |  |  |
 | `title` | json (longtext) | no |  |  |
 | `abstract` | json (longtext) | sì |  |  |
+| `format` | varchar(20) | no | `'lecture'` |  |
 | `access` | varchar(20) | no | `'included'` |  |
 | `starts_at` | datetime | sì |  |  |
 | `ends_at` | datetime | sì |  |  |
@@ -1056,11 +1164,46 @@ Sessioni del programma (workshop compresi); il nome evita lo scontro con `sessio
 - **Chiave primaria:** `id`
 - **Unico** `program_sessions_event_id_code_unique`: `event_id`, `code`
 - **Unico** `program_sessions_event_id_slug_unique`: `event_id`, `slug`
-- **Indici:** `program_sessions_event_day_id_foreign` (event_day_id)
+- **Indici:** `program_sessions_event_day_id_foreign` (event_day_id); `program_sessions_room_id_starts_at_index` (room_id, starts_at); `program_sessions_track_id_foreign` (track_id)
 - **FK** `event_day_id` → `event_days.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`program_sessions_event_day_id_foreign`)
 - **FK** `event_id` → `events.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`program_sessions_event_id_foreign`)
+- **FK** `room_id` → `rooms.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`program_sessions_room_id_foreign`)
+- **FK** `track_id` → `tracks.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`program_sessions_track_id_foreign`)
 - **CHECK** `program_sessions_access_valid`: `access in ('included','included_booking','paid')`
+- **CHECK** `program_sessions_code_format`: `code regexp '^[A-Za-z0-9-]{1,30}$'`
+- **CHECK** `program_sessions_format_valid`: `format in ('plenary','keynote','lecture','panel','workshop','symposium','course','break','social')`
+- **CHECK** `program_sessions_room_has_times`: `room_id is null or starts_at is not null and ends_at is not null`
 - **CHECK** `program_sessions_times_valid`: `starts_at is null or ends_at is null or ends_at > starts_at`
+- **Trigger** `program_sessions_no_room_overlap_insert` (BEFORE INSERT)
+- **Trigger** `program_sessions_no_room_overlap_update` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>program_sessions_no_room_overlap_insert</code></summary>
+
+```sql
+begin
+  if new.room_id is not null and exists (select 1 from program_sessions s
+             where s.room_id = new.room_id and s.id <> new.id
+               and s.starts_at < new.ends_at and new.starts_at < s.ends_at) then
+    signal sqlstate '45000' set message_text = 'program_session_room_overlap';
+  end if;
+end
+```
+
+</details>
+
+<details><summary>Corpo di <code>program_sessions_no_room_overlap_update</code></summary>
+
+```sql
+begin
+  if new.room_id is not null and exists (select 1 from program_sessions s
+             where s.room_id = new.room_id and s.id <> new.id
+               and s.starts_at < new.ends_at and new.starts_at < s.ends_at) then
+    signal sqlstate '45000' set message_text = 'program_session_room_overlap';
+  end if;
+end
+```
+
+</details>
 
 ### `refunds`
 
@@ -1124,6 +1267,28 @@ Permessi di ogni ruolo.
 - **FK** `permission_id` → `permissions.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`role_has_permissions_permission_id_foreign`)
 - **FK** `role_id` → `roles.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`role_has_permissions_role_id_foreign`)
 
+### `rooms`
+
+Sale dell'evento (12 per l'EAS8): codice d'import, capienza, piano, ordine nella griglia.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `event_id` | uuid | no |  |  |
+| `code` | varchar(30) | no |  |  |
+| `name` | json (longtext) | no |  |  |
+| `capacity` | int(10) unsigned | no |  |  |
+| `floor` | smallint(6) | sì |  |  |
+| `position` | smallint(5) unsigned | no | `0` |  |
+| `created_at` | datetime | sì |  |  |
+| `updated_at` | datetime | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Unico** `rooms_event_id_code_unique`: `event_id`, `code`
+- **FK** `event_id` → `events.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`rooms_event_id_foreign`)
+- **CHECK** `rooms_capacity_positive`: `capacity > 0`
+- **CHECK** `rooms_code_format`: `code regexp '^[A-Za-z0-9-]{1,30}$'`
+
 ### `sent_messages`
 
 Email transazionali inviate, con chiave unica per non mandare due volte la stessa.
@@ -1154,6 +1319,92 @@ Sessioni HTTP di Laravel (driver database).
 
 - **Chiave primaria:** `id`
 - **Indici:** `sessions_last_activity_index` (last_activity); `sessions_user_id_index` (user_id)
+
+### `session_parts`
+
+Interventi dentro una sessione, in ordine di position.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `program_session_id` | uuid | no |  |  |
+| `position` | smallint(5) unsigned | no |  |  |
+| `title` | json (longtext) | no |  |  |
+| `abstract` | json (longtext) | sì |  |  |
+| `starts_at` | datetime | sì |  |  |
+| `ends_at` | datetime | sì |  |  |
+| `created_at` | datetime | sì |  |  |
+| `updated_at` | datetime | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Indici:** `session_parts_program_session_id_position_index` (program_session_id, position)
+- **FK** `program_session_id` → `program_sessions.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`session_parts_program_session_id_foreign`)
+- **CHECK** `session_parts_times_valid`: `starts_at is null or ends_at is null or ends_at > starts_at`
+
+### `session_part_speaker`
+
+Relatori di un intervento, in ordine.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `session_part_id` | uuid | no |  | PK |
+| `speaker_id` | uuid | no |  | PK |
+| `position` | smallint(5) unsigned | no | `0` |  |
+
+- **Chiave primaria:** `session_part_id`, `speaker_id`
+- **Indici:** `session_part_speaker_speaker_id_index` (speaker_id)
+- **FK** `session_part_id` → `session_parts.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`session_part_speaker_session_part_id_foreign`)
+- **FK** `speaker_id` → `speakers.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`session_part_speaker_speaker_id_foreign`)
+
+### `session_speaker`
+
+Chi parla o modera in una sessione, con ruolo e ordine.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `program_session_id` | uuid | no |  |  |
+| `speaker_id` | uuid | no |  |  |
+| `role` | varchar(20) | no | `'speaker'` |  |
+| `position` | smallint(5) unsigned | no | `0` |  |
+| `created_at` | datetime | sì |  |  |
+| `updated_at` | datetime | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Unico** `session_speaker_program_session_id_speaker_id_unique`: `program_session_id`, `speaker_id`
+- **Indici:** `session_speaker_speaker_id_index` (speaker_id)
+- **FK** `program_session_id` → `program_sessions.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`session_speaker_program_session_id_foreign`)
+- **FK** `speaker_id` → `speakers.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`session_speaker_speaker_id_foreign`)
+- **CHECK** `session_speaker_role_valid`: `role in ('speaker','moderator')`
+
+### `speakers`
+
+Speaker e moderatori: codice d'import, nome, bio tradotta, foto pubblica senza EXIF, email privata.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `code` | varchar(30) | no |  |  |
+| `slug` | varchar(150) | no |  |  |
+| `honorific` | varchar(20) | sì |  |  |
+| `first_name` | varchar(100) | no |  |  |
+| `last_name` | varchar(100) | no |  |  |
+| `affiliation` | varchar(200) | sì |  |  |
+| `country` | char(2) | sì |  |  |
+| `bio` | json (longtext) | sì |  |  |
+| `photo_path` | varchar(255) | sì |  |  |
+| `website` | varchar(500) | sì |  |  |
+| `links` | json (longtext) | sì |  |  |
+| `email` | varchar(255) | sì |  |  |
+| `created_at` | datetime | sì |  |  |
+| `updated_at` | datetime | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Unico** `speakers_code_unique`: `code`
+- **Unico** `speakers_slug_unique`: `slug`
+- **Indici:** `speakers_last_name_first_name_index` (last_name, first_name)
+- **CHECK** `speakers_code_format`: `code regexp '^[A-Za-z0-9-]{1,30}$'`
+- **CHECK** `speakers_country_format`: `country is null or country regexp '^[A-Za-z]{2}$'`
 
 ### `stripe_events`
 
@@ -1336,6 +1587,26 @@ Quali pool di capienza consuma ogni tipo di biglietto (molti a molti).
 - **Indici:** `ticket_type_pools_pool_id_index` (pool_id)
 - **FK** `pool_id` → `capacity_pools.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`ticket_type_pools_pool_id_foreign`)
 - **FK** `ticket_type_id` → `ticket_types.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`ticket_type_pools_ticket_type_id_foreign`)
+
+### `tracks`
+
+Tracce tematiche dell'evento; lo slug dal nome inglese è la chiave della colonna track dell'import.
+
+| Colonna | Tipo | Null | Default | Note |
+|---|---|---|---|---|
+| `id` | uuid | no |  | PK |
+| `event_id` | uuid | no |  |  |
+| `slug` | varchar(100) | no |  |  |
+| `name` | json (longtext) | no |  |  |
+| `color` | char(7) | sì |  |  |
+| `position` | smallint(5) unsigned | no | `0` |  |
+| `created_at` | datetime | sì |  |  |
+| `updated_at` | datetime | sì |  |  |
+
+- **Chiave primaria:** `id`
+- **Unico** `tracks_event_id_slug_unique`: `event_id`, `slug`
+- **FK** `event_id` → `events.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`tracks_event_id_foreign`)
+- **CHECK** `tracks_color_hex`: `color is null or color regexp '^#[0-9A-Fa-f]{6}$'`
 
 ### `users`
 
