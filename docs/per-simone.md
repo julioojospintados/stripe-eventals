@@ -1,6 +1,6 @@
 # EAS8 Lisbona: a che punto siamo
 
-Autore: Giulio Occhipinti. Aggiornato al 06/11/2026 (Fase 1 sviluppata).
+Autore: Giulio Occhipinti. Aggiornato al 07/11/2026 (Fase 1 sviluppata, backend completato e documentato).
 
 Ciao Simone, qui trovi in un solo posto cosa è pronto, cosa ti chiediamo adesso e le poche decisioni che restano.
 Grazie per le risposte ai due moduli: le abbiamo usate tutte.
@@ -8,7 +8,7 @@ Grazie per le risposte ai due moduli: le abbiamo usate tutte.
 ## In breve
 
 - **La Fase 1 è sviluppata:** applicazione Laravel 13 + Filament 5 in `sito/`, con vendita dei biglietti su Stripe,
-  membership, biglietti con QR via email, pannello `/admin` a tre ruoli ed export CSV. 189 test automatici verdi su
+  membership, biglietti con QR via email, pannello `/admin` a tre ruoli ed export CSV. 270 test automatici verdi su
   MariaDB.
 - **Non è ancora online:** mancano la prova con le vostre chiavi Stripe in modalità test, l'installazione sul vostro
   hosting, il dominio e i contenuti definitivi (date delle fasce, testi).
@@ -26,6 +26,7 @@ Grazie per le risposte ai due moduli: le abbiamo usate tutte.
 | Script di verifica dell'hosting | `strumenti/verifica-hosting/` | Ci dice da solo se il vostro hosting ha tutto quello che serve |
 | Modelli per i contenuti | `contenuti/modelli/` | File da compilare in Excel o Google Sheets con sale, speaker, sessioni, biglietti e prezzi |
 | Tre proposte di layout alternative (home e biglietti) | `proposte/` (leggi `proposte/README.md`) | Da mostrare al tuo capo: tre direzioni visive diverse dallo stile attuale |
+| **Documentazione tecnica del backend** | `docs/tecnico/` | Diagramma del database e dizionario dati generati dallo schema, stati, flussi, regole → dove sono garantite → test, matrice dei permessi, ADR, installazione e manutenzione |
 | Architettura e modello dei dati | `docs/architettura.md`, `db/modello-dati.md` | Per chi svilupperà: componenti, regole, piano di lavoro |
 
 Per aprire il prototipo sul tuo computer: `cd prototipo && python3 -m http.server 8000`, poi
@@ -41,7 +42,7 @@ composer install
 cp .env.example .env && php artisan key:generate   # poi DB MySQL/MariaDB, Stripe test, SMTP, chiavi QR
 php artisan migrate:fresh --seed                    # dati EAS8 di esempio
 php artisan eas:create-admin                        # primo utente del pannello, con MFA
-php artisan test                                    # 189 test, su MySQL/MariaDB (non SQLite)
+php artisan test                                    # 270 test, su MySQL/MariaDB (non SQLite)
 php artisan serve                                   # sito su http://localhost:8000, pannello su /admin
 stripe listen --forward-to localhost:8000/stripe/webhook
 ```
@@ -90,6 +91,14 @@ Se una risposta manca, vale la proposta della terza colonna e si può cambiare d
 | 11 | Partner del check-in: chi è, contatto tecnico, legge il nostro QR o vuole un formato suo? | QR firmato nostro più un file CSV dei biglietti validi |
 | 12 | Video: chi vede cosa? Wistia e Vimeo permettono di limitarli al vostro dominio? | Archivio dei congressi passati ai membri, video dell'EAS8 ai partecipanti |
 | 13 | Testi della pagina di preregistrazione (inglese, ed eventualmente italiano), email di contatto pubblica, link alla vostra privacy, logo ad alta risoluzione | Usiamo la bozza già pronta con i testi di eas-aligners.com, da approvare |
+| 14 | Prezzo della membership: lo cambia solo l'admin? | Sì, solo admin |
+| 15 | Ordini da rivedere (importo pagato diverso dal totale): chi decide se emettere i biglietti o rimborsare? | Admin e commerciale |
+| 16 | Eliminare dati dal pannello (ordini, biglietti, prezzi): qualcuno deve poterlo fare? | Nessuno: si annulla o si disattiva, non si cancella |
+| 17 | Contestazioni di pagamento: va bene sospendere i biglietti finché la contestazione è aperta? | Sì: sospesi, riattivati se vinta, revocati se persa |
+| 18 | Versione del database sull'hosting: è almeno MySQL 8.0.19 o MariaDB 10.7? (lo dice anche lo script di verifica) | Se è più vecchia, va chiesto un aggiornamento all'hosting |
+| 19 | Staff: va bene l'accesso al pannello con password e app di autenticazione (Google Authenticator o simili) obbligatoria? | Sì, obbligatoria per tutti |
+| 20 | Riconciliazione con Stripe ogni notte alle 3:30 (ora di Lisbona) e chiavi del QR: chi le custodisce e le cambia? | 3:30 va bene; chiavi custodite da chi gestisce il server (tu) |
+| 21 | Il partner del check-in può verificare il QR con la nostra chiave pubblica (firma Ed25519)? | Sì; altrimenti gli diamo l'elenco CSV dei biglietti validi |
 
 Le domande sono spiegate una per una, con il motivo, in `docs/domande-simone-terzo-giro.md`.
 
