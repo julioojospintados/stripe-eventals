@@ -18,7 +18,7 @@ class SeatsLeft extends TableWidget
 
     public static function canView(): bool
     {
-        return (bool) auth()->user()?->can('sales.view');
+        return (bool) auth()->user()?->can('capacity_pools.view');
     }
 
     public function table(Table $table): Table

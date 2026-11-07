@@ -12,6 +12,7 @@ use App\Jobs\RefundOrderFully;
 use App\Mail\StaffAlert;
 use App\Models\DiscountCode;
 use App\Models\Order;
+use App\Models\Refund;
 use App\Models\StripeEvent;
 use App\Models\User;
 use App\Services\PaymentService;
@@ -85,36 +86,40 @@ it('pagamento tardivo con codice intanto esaurito: il biglietto vale, il contato
     Mail::assertQueued(StaffAlert::class, fn ($m) => str_contains($m->title, 'discount'));
 });
 
-it('importo Stripe diverso dal totale: ordine pagato ma avviso allo staff', function () {
+it('importo Stripe diverso dal totale: ordine da rivedere, niente biglietti, avviso allo staff', function () {
     Mail::fake();
     $buyer = User::factory()->create();
     $order = reserveAndCheckout($buyer, [line(passType(), $buyer)]);
     $session = $this->stripe->pay($order->stripe_checkout_session_id);
     $session['amount_total'] = $order->total_cents - 100;
 
-    expect($this->payments->markPaid($order, $session))->toBe('paid')
-        ->and($order->refresh()->stripe_amount_total_cents)->toBe($order->total_cents - 100);
+    expect($this->payments->markPaid($order, $session))->toBe('needs_review')
+        ->and($order->refresh()->stripe_amount_total_cents)->toBe($order->total_cents - 100)
+        ->and($order->status)->toBe(OrderStatus::NeedsReview)
+        ->and($order->review_reason)->toBe('amount_mismatch')
+        ->and($order->tickets()->count())->toBe(0);
     Mail::assertQueued(StaffAlert::class, fn ($m) => str_contains($m->title, 'Importo'));
 });
 
-it('webhook di un ordine sconosciuto: evento failed, nessun ordine toccato', function () {
+it('webhook di un ordine sconosciuto: evento ignorato con il motivo, nessun ordine toccato', function () {
     $session = ['id' => 'cs_unknown', 'object' => 'checkout.session', 'mode' => 'payment', 'status' => 'complete',
         'payment_status' => 'paid', 'client_reference_id' => (string) Str::uuid(), 'metadata' => ['order_id' => (string) Str::uuid()]];
 
     Queue::fake([ProcessStripeEvent::class]);   // in produzione la coda è database: il job gira dopo il salvataggio
     $id = qaWebhook('checkout.session.completed', $session);
-    expect(fn () => app()->call([new ProcessStripeEvent($id), 'handle']))->toThrow(Exception::class);
+    app()->call([new ProcessStripeEvent($id), 'handle']);
 
     $event = StripeEvent::sole();
-    expect($event->status)->toBe(StripeEventStatus::Failed)
+    expect($event->status)->toBe(StripeEventStatus::Ignored)
+        ->and($event->ignored_reason)->toBe('unknown_order')
         ->and(Order::where('status', OrderStatus::Paid)->count())->toBe(0);
 });
 
 it('charge.refunded di un pagamento sconosciuto non crea rimborsi', function () {
     $id = qaWebhook('charge.refunded', ['id' => 'ch_x', 'object' => 'charge', 'payment_intent' => 'pi_nobody', 'amount_refunded' => 5000, 'refunded' => true]);
 
-    expect(StripeEvent::find($id)->status)->toBe(StripeEventStatus::Processed)
-        ->and(\App\Models\Refund::count())->toBe(0);
+    expect(StripeEvent::find($id)->only('status', 'ignored_reason'))->toEqual(['status' => StripeEventStatus::Ignored, 'ignored_reason' => 'unknown_order'])
+        ->and(Refund::count())->toBe(0);
 });
 
 it('rimborso doppio: staff, webhook ripetuto due volte, nuovo clic → una sola chiamata e un solo rimborso', function () {

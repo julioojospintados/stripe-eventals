@@ -13,6 +13,9 @@ class Refund extends Model
 {
     use HasUuids;
 
+    /** Stati di un rimborso che non ha restituito soldi. */
+    public const NOT_MONEY = ['failed', 'canceled'];
+
     protected function casts(): array
     {
         return ['amount_cents' => 'integer', 'needs_review' => 'boolean'];

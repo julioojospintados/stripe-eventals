@@ -2,8 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\SendTicketsEmail;
+use App\Enums\TicketStatus;
 use App\Models\Ticket;
+use App\Services\TicketService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -14,18 +15,17 @@ class ResendTicket extends Command
 
     protected $description = 'Rimanda l\'email con il biglietto e il QR';
 
-    public function handle(): int
+    public function handle(TicketService $tickets): int
     {
         $key = (string) $this->argument('ticket');
         $ticket = Str::isUuid($key) ? Ticket::find($key) : Ticket::where('short_code', strtoupper($key))->first();
-        if (! $ticket || $ticket->status->value !== 'valid') {
+        if (! $ticket || $ticket->status !== TicketStatus::Valid) {
             $this->error('Biglietto non trovato o non valido.');
 
             return self::FAILURE;
         }
 
-        $to = $this->option('to') ?: $ticket->attendee_email;
-        SendTicketsEmail::dispatch($to, [$ticket->id], 'resend-'.$ticket->id.'-'.now()->format('YmdHis'));
+        $to = $tickets->resend($ticket, $this->option('to'));
         $this->info("Biglietto {$ticket->short_code} in coda per $to.");
 
         return self::SUCCESS;

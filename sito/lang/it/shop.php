@@ -17,6 +17,8 @@ return [
     'discount_user_limit' => 'Hai già usato questo codice sconto.',
     'order_not_pending' => 'Questo ordine non si può più pagare.',
     'session_mismatch' => 'Il pagamento non appartiene a questo ordine.',
+    'order_not_in_review' => 'Questo ordine non aspetta più una decisione.',
+    'ticket_not_valid' => 'Questo biglietto non è valido.',
     'already_member' => 'Sei già membro.',
     'too_many_corrections' => 'Questo biglietto è già stato corretto 3 volte.',
     'order_not_revocable' => 'Si revoca solo un omaggio ancora valido.',

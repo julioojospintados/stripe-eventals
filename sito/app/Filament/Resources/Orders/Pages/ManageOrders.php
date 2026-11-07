@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders\Pages;
 use App\Enums\CompReason;
 use App\Enums\TicketKind;
 use App\Filament\Resources\Orders\OrderResource;
+use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\TicketType;
 use App\Services\ComplimentaryService;
@@ -16,6 +17,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Artisan;
 
 class ManageOrders extends ManageRecords
 {
@@ -24,6 +26,19 @@ class ManageOrders extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            // Riconciliazione con Stripe fuori dalla richiesta: il comando va in coda, il rapporto nel registro audit.
+            Action::make('reconcile')
+                ->label('Reconcile with Stripe')
+                ->icon(Heroicon::OutlinedArrowPath)
+                ->color('gray')
+                ->authorize(fn () => auth()->user()->can('reconcile', Order::class))
+                ->requiresConfirmation()
+                ->modalDescription('Compares the last 48 hours with Stripe in the background. The report goes to the audit log; admins get an email if something differs.')
+                ->action(function () {
+                    Artisan::queue('eas:reconcile');
+                    AuditLog::record('stripe.reconcile_requested', null, auth()->user());
+                    Notification::make()->success()->title('Reconciliation queued')->send();
+                }),
             // Omaggio per speaker, staff o sponsor: ordine a 0 €, conta nella capienza, biglietto per email, audit.
             Action::make('issueComplimentary')
                 ->label('Issue complimentary ticket')

@@ -11,6 +11,7 @@ return [
     'cancelled' => 'Annullato',
     'partially_refunded' => 'Rimborsato in parte',
     'refunded' => 'Rimborsato',
+    'needs_review' => 'In verifica',
     'ticket' => [
         'valid' => 'Valido',
         'cancelled' => 'Annullato',

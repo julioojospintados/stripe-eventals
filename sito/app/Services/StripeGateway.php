@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Stripe\Collection;
 use Stripe\Exception\InvalidRequestException;
 use Stripe\StripeClient;
 use Stripe\Util\ApiVersion;
@@ -56,6 +57,28 @@ class StripeGateway
             'customer' => $customerId,
             'return_url' => $returnUrl,
         ])->toArray();
+    }
+
+    /** @return list<array> Checkout Session create da $since (timestamp), tutte le pagine. */
+    public function listCheckoutSessions(int $since): array
+    {
+        return $this->all($this->client()->checkout->sessions->all(['created' => ['gte' => $since], 'limit' => 100]));
+    }
+
+    /** @return list<array> rimborsi creati da $since (timestamp), tutte le pagine. */
+    public function listRefunds(int $since): array
+    {
+        return $this->all($this->client()->refunds->all(['created' => ['gte' => $since], 'limit' => 100]));
+    }
+
+    private function all(Collection $page): array
+    {
+        $rows = [];
+        foreach ($page->autoPagingIterator() as $object) {
+            $rows[] = $object->toArray();
+        }
+
+        return $rows;
     }
 
     private function client(): StripeClient

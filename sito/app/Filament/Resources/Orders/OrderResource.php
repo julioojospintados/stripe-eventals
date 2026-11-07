@@ -9,6 +9,7 @@ use App\Jobs\RefundOrderFully;
 use App\Models\AuditLog;
 use App\Models\Order;
 use App\Services\ComplimentaryService;
+use App\Services\PaymentService;
 use App\Services\ShopException;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -29,7 +30,8 @@ use UnitEnum;
 
 /**
  * Ordini in sola lettura, con righe e biglietti. Azioni: rimborso completo (commerciale e admin, con il job
- * RefundOrderFully del passo 2) e revoca di un omaggio (organizzatore e admin). L'organizzatore non vede gli importi.
+ * RefundOrderFully del passo 2), revoca di un omaggio, decisione sugli ordini needs_review (emetti o rimborsa). Ogni
+ * azione ha il suo permesso; senza orders.view_amounts non si vedono gli importi.
  */
 class OrderResource extends Resource
 {
@@ -53,6 +55,7 @@ class OrderResource extends Resource
         return $schema->columns(3)->components([
             TextEntry::make('id')->label('Order')->copyable(),
             TextEntry::make('status')->badge(),
+            TextEntry::make('review_reason')->label('To review')->placeholder('—'),
             TextEntry::make('origin'),
             TextEntry::make('buyer_email'),
             TextEntry::make('price_role'),
@@ -64,6 +67,7 @@ class OrderResource extends Resource
             TextEntry::make('discount_cents')->label('Discount')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
             TextEntry::make('total_cents')->label('Total')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
             TextEntry::make('discountCode.code')->label('Discount code')->placeholder('—'),
+            TextEntry::make('stripe_amount_total_cents')->label('Paid on Stripe')->money('EUR', divideBy: 100)->placeholder('—')->visible(self::canSeeAmounts(...)),
             TextEntry::make('stripe_payment_intent_id')->label('Stripe payment')->placeholder('—')->visible(self::canSeeAmounts(...)),
             Section::make('Items')->columnSpanFull()->schema([
                 RepeatableEntry::make('items')->hiddenLabel()->columns(3)->schema([
@@ -100,10 +104,11 @@ class OrderResource extends Resource
                 TextColumn::make('buyer_email')->searchable(),
                 TextColumn::make('status')->badge()->color(fn (OrderStatus $state) => match ($state) {
                     OrderStatus::Paid => 'success',
-                    OrderStatus::NeedsRefund => 'danger',
+                    OrderStatus::NeedsRefund, OrderStatus::NeedsReview => 'danger',
                     OrderStatus::Pending, OrderStatus::Processing => 'warning',
                     default => 'gray',
                 }),
+                TextColumn::make('review_reason')->label('To review')->badge()->color('danger')->placeholder('—'),
                 TextColumn::make('origin'),
                 TextColumn::make('items_count')->counts('items')->label('Lines'),
                 TextColumn::make('total_cents')->label('Total')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
@@ -116,6 +121,8 @@ class OrderResource extends Resource
                 ViewAction::make(),
                 self::refundAction(),
                 self::revokeAction(),
+                self::approveReviewAction(),
+                self::refundReviewAction(),
             ]);
     }
 
@@ -144,6 +151,39 @@ class OrderResource extends Resource
                 RefundOrderFully::dispatch($record->id, $data['cause'], auth()->id(), $data['reason']);
                 Notification::make()->success()->title('Refund requested')
                     ->body('Stripe confirms it in a few minutes; the order then becomes refunded.')->send();
+            });
+    }
+
+    /** needs_review (importo diverso dal totale): i posti sono presi, lo staff decide di emettere i biglietti. */
+    public static function approveReviewAction(): Action
+    {
+        return self::reviewAction('approveReview', 'Issue tickets', 'The amount paid on Stripe differs from the order total. The tickets are issued and sent by email.')
+            ->icon(Heroicon::OutlinedCheckCircle)->color('success');
+    }
+
+    /** needs_review: lo staff decide di rimborsare; i posti tornano liberi, il rimborso va in coda. */
+    public static function refundReviewAction(): Action
+    {
+        return self::reviewAction('refundReview', 'Refund instead', 'No tickets are issued, the seats are released and the full amount paid goes back through Stripe.')
+            ->icon(Heroicon::OutlinedArrowUturnLeft)->color('danger');
+    }
+
+    private static function reviewAction(string $method, string $label, string $description): Action
+    {
+        return Action::make($method)
+            ->label($label)
+            ->authorize('review')
+            ->visible(fn (Order $record) => $record->status === OrderStatus::NeedsReview)
+            ->requiresConfirmation()
+            ->modalDescription($description)
+            ->schema([Textarea::make('note')->label('Why')->required()->maxLength(500)])
+            ->action(function (Order $record, array $data) use ($method) {
+                try {
+                    app(PaymentService::class)->{$method}($record, auth()->user(), $data['note']);
+                    Notification::make()->success()->title('Decision saved')->send();
+                } catch (ShopException $e) {
+                    Notification::make()->danger()->title(__('shop.'.$e->getMessage()))->send();
+                }
             });
     }
 

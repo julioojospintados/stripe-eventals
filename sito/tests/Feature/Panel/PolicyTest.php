@@ -41,12 +41,12 @@ function staffUser(StaffRole $role): User
 }
 
 $pages = ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes', 'orders',
-    'tickets', 'memberships', 'staff-users', 'audit-logs', 'exports'];
+    'tickets', 'memberships', 'disputes', 'membership-plans', 'staff-users', 'roles', 'audit-logs', 'exports'];
 
 $allowed = [
     'admin' => $pages,
     'commerciale' => ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes',
-        'orders', 'tickets', 'memberships', 'exports'],
+        'orders', 'tickets', 'memberships', 'disputes', 'membership-plans', 'exports'],
     'organizzatore' => ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes',
         'orders', 'tickets', 'exports'],
 ];

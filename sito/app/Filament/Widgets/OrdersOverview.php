@@ -10,7 +10,7 @@ use App\Models\Ticket;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
-/** Cruscotto: ordini da rimborsare (pagati senza posti), ordini pagati, biglietti validi. */
+/** Cruscotto: ordini da rimborsare (pagati senza posti), da rivedere (importo diverso), pagati, biglietti validi. */
 class OrdersOverview extends StatsOverviewWidget
 {
     protected static ?int $sort = 1;
@@ -29,6 +29,10 @@ class OrdersOverview extends StatsOverviewWidget
                 ->description($needsRefund ? 'Paid without seats: the automatic refund is running' : 'Nothing to refund')
                 ->color($needsRefund ? 'danger' : 'success')
                 ->url(OrderResource::getUrl('index', ['filters' => ['status' => ['value' => OrderStatus::NeedsRefund->value]]])),
+            Stat::make('Orders to review', $needsReview = Order::where('status', OrderStatus::NeedsReview)->count())
+                ->description($needsReview ? 'Amount paid differs from the total: decide to issue or refund' : 'Nothing to review')
+                ->color($needsReview ? 'danger' : 'success')
+                ->url(OrderResource::getUrl('index', ['filters' => ['status' => ['value' => OrderStatus::NeedsReview->value]]])),
             Stat::make('Paid orders', Order::where('status', OrderStatus::Paid)->count()),
             Stat::make('Valid tickets', Ticket::where('status', TicketStatus::Valid)->count()),
         ];

@@ -6,7 +6,9 @@ use App\Enums\OrderStatus;
 use App\Enums\StripeEventStatus;
 use App\Mail\StaffAlert;
 use App\Models\Order;
+use App\Models\Refund;
 use App\Models\StripeEvent;
+use App\Services\DisputeService;
 use App\Services\MembershipService;
 use App\Services\PaymentService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,20 +34,20 @@ class ProcessStripeEvent implements ShouldQueue
         $this->onQueue('critical');
     }
 
-    public function handle(PaymentService $payments, MembershipService $memberships): void
+    public function handle(PaymentService $payments, MembershipService $memberships, DisputeService $disputes): void
     {
         try {
-            DB::transaction(function () use ($payments, $memberships) {
+            DB::transaction(function () use ($payments, $memberships, $disputes) {
                 $event = StripeEvent::lockForUpdate()->findOrFail($this->eventId);
                 if (in_array($event->status, [StripeEventStatus::Processed, StripeEventStatus::Ignored], true)) {
                     return;
                 }
 
-                $handled = $this->apply($event->type, $event->payload['data']['object'], $event->stripe_created_at, $payments, $memberships);
+                $ignored = $this->apply($event->type, $event->payload['data']['object'], $event->stripe_created_at, $payments, $memberships, $disputes);
 
                 $event->update([
-                    'status' => $handled ? StripeEventStatus::Processed : StripeEventStatus::Ignored,
-                    'processed_at' => now(), 'attempts' => $event->attempts + 1, 'last_error' => null,
+                    'status' => $ignored ? StripeEventStatus::Ignored : StripeEventStatus::Processed,
+                    'ignored_reason' => $ignored, 'processed_at' => now(), 'attempts' => $event->attempts + 1, 'last_error' => null,
                 ]);
             });
         } catch (Throwable $e) {
@@ -65,16 +67,17 @@ class ProcessStripeEvent implements ShouldQueue
     private const HANDLED = [
         'checkout.session.completed', 'checkout.session.expired',
         'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed',
-        'charge.refunded',
+        'charge.refunded', 'refund.failed', 'refund.updated', 'charge.refund.updated',
+        'charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed',
         'customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted',
         'invoice.paid', 'invoice.payment_failed', 'invoice.payment_action_required',
     ];
 
-    /** false = evento che non ci riguarda (segnato ignored). */
-    private function apply(string $type, array $object, Carbon $at, PaymentService $payments, MembershipService $memberships): bool
+    /** Elabora l'evento; restituisce null se fatto, altrimenti il motivo per cui è ignorato (salvato in ignored_reason). */
+    private function apply(string $type, array $object, Carbon $at, PaymentService $payments, MembershipService $memberships, DisputeService $disputes): ?string
     {
         if (! in_array($type, self::HANDLED, true)) {
-            return false;
+            return 'unhandled_type';
         }
 
         if (str_starts_with($type, 'checkout.session.') && $object['mode'] === 'subscription') {
@@ -82,24 +85,37 @@ class ProcessStripeEvent implements ShouldQueue
                 $memberships->activateFromCheckout($object);
             }
 
-            return true;
+            return null;
         }
 
         if (str_starts_with($type, 'checkout.session.')) {
-            $order = Order::findOrFail($object['metadata']['order_id'] ?? $object['client_reference_id']);
+            // Ordine sconosciuto: un altro ambiente sullo stesso account Stripe, o una sessione creata a mano.
+            $order = Order::find($object['metadata']['order_id'] ?? $object['client_reference_id'] ?? null);
+            if (! $order) {
+                return 'unknown_order';
+            }
             match ($type) {
                 'checkout.session.async_payment_succeeded' => $payments->markPaid($order, $object),
                 'checkout.session.async_payment_failed' => $payments->close($order, OrderStatus::Failed, 'payment_failed', $object),
                 default => $payments->applySession($order, $object),  // completed, expired
             };
         } elseif ($type === 'charge.refunded') {
-            $payments->recordRefund($object);
+            $result = $payments->recordRefund($object);
+        } elseif (in_array($type, ['refund.failed', 'refund.updated', 'charge.refund.updated'], true)) {
+            if (! in_array($object['status'], Refund::NOT_MONEY, true)) {
+                return null;   // pending o succeeded: lo stato dell'ordine lo porta charge.refunded
+            }
+            $result = $payments->refundFailed($object);
+        } elseif (str_starts_with($type, 'charge.dispute.')) {
+            $result = $disputes->apply($object);
         } elseif (str_starts_with($type, 'customer.subscription.')) {
             $memberships->sync($object['id'], $at);
         } elseif ($sub = $object['parent']['subscription_details']['subscription'] ?? $object['subscription'] ?? null) {
             $memberships->sync($sub, $at);  // invoice.*: la subscription sta in parent nelle versioni recenti dell'API
+        } else {
+            return 'no_subscription';
         }
 
-        return true;
+        return ($result ?? null) === 'unknown_order' ? 'unknown_order' : null;
     }
 }

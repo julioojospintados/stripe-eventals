@@ -28,7 +28,7 @@ class CsvExports
     /** Tipo di export => permesso che serve. */
     public const PERMISSIONS = [
         'tickets' => 'attendees.export',
-        'orders' => 'accounting.manage',
+        'orders' => 'orders.export',
         'consents' => 'consents.export',
     ];
 

@@ -26,11 +26,11 @@ it('dà i codici sconto a commerciale e organizzatore, i prezzi solo all\'organi
     $commerciale = User::factory()->staff(StaffRole::Commerciale)->create();
     $organizzatore = User::factory()->staff(StaffRole::Organizzatore)->create();
 
-    expect($commerciale->can('discount_codes.manage'))->toBeTrue()
-        ->and($organizzatore->can('discount_codes.manage'))->toBeTrue()
-        ->and($commerciale->can('sales.manage'))->toBeFalse()
-        ->and($organizzatore->can('sales.manage'))->toBeTrue()
-        ->and($organizzatore->can('refunds.manage'))->toBeFalse()
+    expect($commerciale->can('discount_codes.create'))->toBeTrue()
+        ->and($organizzatore->can('discount_codes.create'))->toBeTrue()
+        ->and($commerciale->can('ticket_prices.update'))->toBeFalse()
+        ->and($organizzatore->can('ticket_prices.update'))->toBeTrue()
+        ->and($organizzatore->can('orders.refund'))->toBeFalse()
         ->and($commerciale->can('tickets.correct_attendee'))->toBeFalse()
         ->and(User::factory()->staff()->create()->can('tickets.correct_attendee'))->toBeTrue();
 });

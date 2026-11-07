@@ -2,28 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
-
-/** Codici sconto: admin, commerciale e organizzatore (decisione del cliente). Si disattivano, non si cancellano. */
-class DiscountCodePolicy
+/** Codici sconto (ogni modifica nel registro audit): permessi discount_codes.*. */
+class DiscountCodePolicy extends ResourcePolicy
 {
-    public function viewAny(User $user): bool
-    {
-        return $user->can('discount_codes.manage');
-    }
-
-    public function view(User $user): bool
-    {
-        return $user->can('discount_codes.manage');
-    }
-
-    public function create(User $user): bool
-    {
-        return $user->can('discount_codes.manage');
-    }
-
-    public function update(User $user): bool
-    {
-        return $user->can('discount_codes.manage');
-    }
+    protected string $resource = 'discount_codes';
 }

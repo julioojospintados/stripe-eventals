@@ -24,7 +24,8 @@ class MembershipService
 
         $session = $this->stripe->createCheckoutSession([
             'mode' => 'subscription',
-            'line_items' => [['price' => config('services.stripe.membership_price'), 'quantity' => 1]],
+            // Price ID dal pannello (Membership price); senza, quello del .env.
+            'line_items' => [['price' => MembershipPlan::where('active', true)->value('stripe_price_id') ?: config('services.stripe.membership_price'), 'quantity' => 1]],
             'client_reference_id' => (string) $user->id,
             ...($user->stripe_customer_id ? ['customer' => $user->stripe_customer_id] : ['customer_email' => $user->email]),
             'payment_method_types' => ['card'],

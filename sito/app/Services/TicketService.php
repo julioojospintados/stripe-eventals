@@ -45,6 +45,19 @@ class TicketService
 
     public const MAX_CORRECTIONS = 3;
 
+    /** Rimanda per email un biglietto valido al suo intestatario o a un altro indirizzo (pannello e eas:resend-ticket). */
+    public function resend(Ticket $ticket, ?string $to = null, ?User $staff = null): string
+    {
+        if ($ticket->status !== TicketStatus::Valid) {
+            throw new ShopException('ticket_not_valid');
+        }
+        $to = $to ? mb_strtolower(trim($to)) : $ticket->attendee_email;
+        SendTicketsEmail::dispatch($to, [$ticket->id], 'resend-'.$ticket->id.'-'.now()->format('YmdHis'));
+        AuditLog::record('ticket.resent', $ticket, $staff, ['to' => $to]);
+
+        return $to;
+    }
+
     /**
      * Correzione di un refuso nel nominativo, solo admin (architettura §6.7): contatore, autore e data nella stessa
      * modifica (il trigger tickets_guard lo pretende), riga di audit nella stessa transazione. Se cambia l'email il

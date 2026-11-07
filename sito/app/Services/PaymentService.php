@@ -7,8 +7,11 @@ use App\Enums\TicketStatus;
 use App\Jobs\RefundOrderFully;
 use App\Jobs\SendTicketsEmail;
 use App\Mail\StaffAlert;
+use App\Models\AuditLog;
 use App\Models\DiscountCode;
 use App\Models\Order;
+use App\Models\Refund;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -60,16 +63,80 @@ class PaymentService
             }
 
             $late ? $this->retakeClaims($order) : $this->capacity->convert($order);
-            $order->paid_at = now();
-            $this->transition($order, OrderStatus::Paid);
-            $this->tickets->issue($order);
-            SendTicketsEmail::dispatchForOrder($order);
 
+            // Importo diverso dal totale: posti tenuti, nessun biglietto finché lo staff non decide (approveReview / refundReview).
             if ($session && $order->stripe_amount_total_cents !== $order->total_cents) {
-                StaffAlert::raise('Importo pagato diverso dall\'ordine', ["Ordine {$order->id}: Stripe {$order->stripe_amount_total_cents}, ordine {$order->total_cents}."]);
+                $order->review_reason = 'amount_mismatch';
+                $this->transition($order, OrderStatus::NeedsReview);
+                StaffAlert::raise('Importo pagato diverso dall\'ordine: biglietti non emessi', [
+                    "Ordine {$order->id}: Stripe {$order->stripe_amount_total_cents}, ordine {$order->total_cents} centesimi.",
+                    'Decidi dal pannello (Orders, stato needs_review): emetti i biglietti o rimborsa.',
+                ]);
+
+                return 'needs_review';
             }
 
+            $this->confirm($order);
+
             return $late ? 'paid_late' : 'paid';
+        }, 3);
+    }
+
+    /** Ordine da rivedere: lo staff decide di emettere i biglietti (i posti sono già presi). */
+    public function approveReview(Order $order, User $staff, string $note): void
+    {
+        DB::transaction(function () use ($order, $staff, $note) {
+            $order = $this->lockForReview($order);
+            $order->review_reason = null;
+            $this->confirm($order);
+            AuditLog::record('order.review_approved', $order, $staff, ['note' => $note]);
+        }, 3);
+    }
+
+    /** Ordine da rivedere: lo staff decide di rimborsare; i posti tornano liberi e il rimborso va in coda. */
+    public function refundReview(Order $order, User $staff, string $note): void
+    {
+        DB::transaction(function () use ($order, $staff, $note) {
+            $order = $this->lockForReview($order);
+            $this->capacity->releaseConfirmed($order, 'review_refund');
+            $this->releaseClaims($order, 'review_refund');
+            $this->transition($order, OrderStatus::NeedsRefund);
+            RefundOrderFully::dispatch($order->id, 'other', $staff->id, $note);
+            AuditLog::record('order.review_refunded', $order, $staff, ['note' => $note]);
+        }, 3);
+    }
+
+    /**
+     * Stripe ha rifiutato o annullato un rimborso (refund.failed, refund.updated): rimborso failed/canceled, ordine da
+     * rivedere, avviso allo staff. Ordine e biglietti non cambiano stato: niente biglietti riattivati in silenzio.
+     */
+    public function refundFailed(array $refund): string
+    {
+        $row = Refund::where('stripe_refund_id', $refund['id'])->first();
+        $order = $row?->order ?? Order::where('stripe_payment_intent_id', $refund['payment_intent'] ?? '')->first();
+        if (! $order) {
+            return 'unknown_order';
+        }
+
+        return DB::transaction(function () use ($order, $refund) {
+            $order = Order::lockForUpdate()->findOrFail($order->id);
+            $row = $order->refunds()->where('stripe_refund_id', $refund['id'])->first();
+            if ($row && $row->status === $refund['status']) {
+                return 'already_done';
+            }
+            $row
+                ? $row->update(['status' => $refund['status'], 'needs_review' => true])
+                : $order->refunds()->create([
+                    'amount_cents' => $refund['amount'], 'currency' => $order->currency, 'status' => $refund['status'],
+                    'source' => 'dashboard', 'stripe_refund_id' => $refund['id'], 'needs_review' => true,
+                ]);
+            $order->update(['review_reason' => 'refund_failed']);
+            StaffAlert::raise('Rimborso rifiutato da Stripe', [
+                "Ordine {$order->id} ({$order->status->value}): rimborso {$refund['id']} {$refund['status']}, motivo ".($refund['failure_reason'] ?? '—').'.',
+                'Ordine e biglietti non sono cambiati: rifai il rimborso dal pannello o dalla Dashboard Stripe.',
+            ]);
+
+            return 'refund_failed';
         }, 3);
     }
 
@@ -120,7 +187,7 @@ class PaymentService
         return DB::transaction(function () use ($order, $charge) {
             $order = Order::lockForUpdate()->findOrFail($order->id);
 
-            $known = (int) $order->refunds()->where('status', '!=', 'failed')->sum('amount_cents');
+            $known = (int) $order->refunds()->whereNotIn('status', Refund::NOT_MONEY)->sum('amount_cents');
             if ($charge['amount_refunded'] > $known) {
                 $order->refunds()->create([
                     'amount_cents' => $charge['amount_refunded'] - $known, 'currency' => $order->currency,
@@ -140,7 +207,7 @@ class PaymentService
             if ($order->status === OrderStatus::Refunded) {
                 return 'already_done';
             }
-            if (in_array($order->status, [OrderStatus::Paid, OrderStatus::PartiallyRefunded], true)) {
+            if (in_array($order->status, [OrderStatus::Paid, OrderStatus::PartiallyRefunded, OrderStatus::NeedsReview], true)) {
                 $this->capacity->releaseConfirmed($order, 'refunded');
                 $this->releaseClaims($order, 'refunded');
                 $order->tickets()->where('status', TicketStatus::Valid)
@@ -150,6 +217,25 @@ class PaymentService
 
             return 'refunded';
         }, 3);
+    }
+
+    /** Pagato: biglietti emessi e inviati. */
+    private function confirm(Order $order): void
+    {
+        $order->paid_at = now();
+        $this->transition($order, OrderStatus::Paid);
+        $this->tickets->issue($order);
+        SendTicketsEmail::dispatchForOrder($order);
+    }
+
+    private function lockForReview(Order $order): Order
+    {
+        $order = Order::lockForUpdate()->findOrFail($order->id);
+        if ($order->status !== OrderStatus::NeedsReview) {
+            throw new ShopException('order_not_in_review');
+        }
+
+        return $order;
     }
 
     private function checkSession(Order $order, ?array $session): void
