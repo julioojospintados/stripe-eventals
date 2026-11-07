@@ -1,5 +1,8 @@
 # Domande per Simone, terzo giro
 
+> **Superato il 07/11/2026** da [`per-simone.md`](per-simone.md): le domande su date, prezzi e quantità non sono più
+> domande per lo sviluppatore (sono dati del pannello). Resta come storico.
+
 Autore: Giulio Occhipinti. 06/11/2026.
 
 Solo domande tecniche e di prodotto (legale e fisco restano al cliente a lavoro ultimato, `docs/architettura.md`

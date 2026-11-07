@@ -1,132 +1,130 @@
-# EAS8 Lisbona: a che punto siamo
+# EAS8 · guida per lo sviluppatore
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026 (Fase 1 sviluppata, backend completato e documentato).
+Autore: Giulio Occhipinti. Aggiornato al 07/11/2026.
 
-Ciao Simone, qui trovi in un solo posto cosa è pronto, cosa ti chiediamo adesso e le poche decisioni che restano.
-Grazie per le risposte ai due moduli: le abbiamo usate tutte.
+Ciao Simone, questo documento è per te come sviluppatore backend: architettura, codice, database, integrazioni,
+come provarlo e le poche domande di **struttura** che ci servono. Date, prezzi, testi e quantità **non** sono
+domande: sono dati che si inseriscono e si cambiano dal pannello.
 
-## In breve
+## Stato
 
-- **La Fase 1 è sviluppata:** applicazione Laravel 13 + Filament 5 in `sito/`, con vendita dei biglietti su Stripe,
-  membership, biglietti con QR via email, pannello `/admin` a tre ruoli ed export CSV. 270 test automatici verdi su
-  MariaDB.
-- **Non è ancora online:** mancano la prova con le vostre chiavi Stripe in modalità test, l'installazione sul vostro
-  hosting, il dominio e i contenuti definitivi (date delle fasce, testi).
-- Il prototipo e le proposte di layout restano pagine HTML statiche: servono a scegliere l'aspetto, non sono il
-  sito.
-- **Nel frattempo** può andare online la **pagina di preregistrazione** collegata al vostro Mailchimp.
+| Parte | Stato |
+|---|---|
+| Applicazione Laravel 13 + Filament 5 in `sito/` | 🟢 Fase 1 sviluppata: vendita, pagamenti Stripe, membership, biglietti con QR, pannello a tre ruoli, export |
+| Test | 🟢 270 test Pest su MariaDB 10.11, compresi test in parallelo su posti, prezzo membro e webhook |
+| Documentazione tecnica | 🟢 `docs/tecnico/`: database, stati, flussi, regole, permessi, ADR, esercizio |
+| Prova con Stripe vero (modalità test) | 🔴 Da fare |
+| Installazione sul vostro hosting | 🔴 Da fare |
 
-## Cosa è pronto
+## Architettura in breve
 
-| Cosa | Dove | A cosa serve |
+```mermaid
+flowchart LR
+  U[Browser] --> W[Laravel: pagine pubbliche e area personale]
+  S[Staff] --> F[Filament /admin + MFA]
+  W --> DB[(MySQL / MariaDB)]
+  F --> DB
+  W -->|Checkout Session price_data| ST[Stripe]
+  ST -->|webhook firmato| WH[/stripe/webhook/]
+  WH -->|stripe_events + job| Q[Coda database]
+  Q --> DB
+  C[cron ogni minuto] --> SCH[schedule:run]
+  SCH --> Q
+  SCH -->|eas:expire-orders, eas:reconcile| ST
+  Q -->|SMTP| M[Email con QR firmato Ed25519]
+```
+
+| Scelta | Dove è spiegata |
+|---|---|
+| Laravel + Filament su hosting condiviso, code con cron senza processo sempre attivo | `docs/tecnico/adr/0001`, `0008` |
+| Regole nel database (CHECK, unici, colonne generate, trigger opzionali) | `adr/0002`, `docs/tecnico/database.md` |
+| Prezzi calcolati dal server con `price_data`, sconti senza Coupon Stripe | `adr/0003` |
+| Riserve di posti con scadenza, conferma tardiva con riprenotazione o rimborso | `adr/0004`, `docs/tecnico/flussi.md` |
+| Webhook in coda con tabella `stripe_events` e lock sull'ordine | `adr/0005` |
+| QR firmato Ed25519 con rotazione delle chiavi | `adr/0006` |
+| Clienti con codice via email, staff con password + MFA | `adr/0007` |
+| 51 permessi granulari, Policy sui permessi | `adr/0010`, `docs/tecnico/permessi.md` |
+
+## Codice
+
+| Dove | Cosa c'è |
+|---|---|
+| `sito/app/Services/` | Prezzi e fasce, riserve, pagamenti, rimborsi, contestazioni, biglietti e QR, omaggi |
+| `sito/app/Services/StripeGateway.php` | L'unico punto che chiama Stripe; nei test `tests/Fakes/FakeStripe.php` |
+| `sito/app/Jobs/`, `sito/routes/console.php` | Elaborazione dei webhook, scadenze, rimborsi, riconciliazione notturna |
+| `sito/app/Filament/`, `sito/app/Policies/` | Pannello e permessi |
+| `sito/database/migrations/` | Schema con i vincoli che proteggono posti e prezzo membro |
+| `sito/tests/` | Test Pest; `tests/Concurrency/` lancia processi separati con transazioni vere |
+| `docs/tecnico/regole.md` | Ogni regola → dove è garantita (vincolo, trigger, servizio, policy) → test che la prova |
+
+## Database
+
+- **MySQL 8.0.19+ o MariaDB 10.7+.** Niente SQLite, nemmeno nei test.
+- Diagramma ER e dizionario dati: `docs/tecnico/database.md`, rigenerabile dopo ogni migrazione con
+  `php strumenti/genera-doc-db/genera.php`.
+- Macchine a stati di ordini, biglietti, riserve, rimborsi, membership, contestazioni: `docs/tecnico/stati.md`.
+- I trigger aggiungono controlli in più; se l'hosting non li permette, `DB_TRIGGERS_OPTIONAL=true` e le regole
+  restano nei servizi e nei vincoli.
+
+## Integrazioni
+
+| Integrazione | Come è fatta | Stato |
 |---|---|---|
-| **Applicazione Laravel della Fase 1** | `sito/` (leggi `sito/README.md`) | Il sito vero: vendita, pagamenti, biglietti, pannello, export |
-| Prototipo cliccabile del sito, in inglese | `prototipo/` (apri `index.html`) | Vedere pagine, prezzi per ruolo e fasce, area personale e pannello admin prima di sviluppare |
-| Pagina di preregistrazione | `preregistrazione/` | Da mettere online subito, collegata a Mailchimp, senza server nostro |
-| Script di verifica dell'hosting | `strumenti/verifica-hosting/` | Ci dice da solo se il vostro hosting ha tutto quello che serve |
-| Modelli per i contenuti | `contenuti/modelli/` | File da compilare in Excel o Google Sheets con sale, speaker, sessioni, biglietti e prezzi |
-| Tre proposte di layout alternative (home e biglietti) | `proposte/` (leggi `proposte/README.md`) | Da mostrare al tuo capo: tre direzioni visive diverse dallo stile attuale |
-| **Documentazione tecnica del backend** | `docs/tecnico/` | Diagramma del database e dizionario dati generati dallo schema, stati, flussi, regole → dove sono garantite → test, matrice dei permessi, ADR, installazione e manutenzione |
-| Architettura e modello dei dati | `docs/architettura.md`, `db/modello-dati.md` | Per chi svilupperà: componenti, regole, piano di lavoro |
+| Stripe Checkout (biglietti) | `price_data`, solo carta (wallet inclusi), Idempotency-Key, metadata con l'id ordine | 🟢 Codice e test con Stripe finto |
+| Stripe Billing (membership) | Checkout in modalità subscription, Customer Portal, Price ID modificabile dal pannello | 🟢 Codice e test |
+| Webhook Stripe | Firma verificata, `stripe_events`, job in coda; checkout, async payment, refund, refund.failed, dispute, subscription, invoice | 🟢 Codice e test |
+| SMTP | Email in coda con limite di invio | 🟢 |
+| Check-in del partner | QR firmato verificabile con la chiave pubblica; export CSV dei biglietti validi | 🟢 Export; 🟡 API in Fase 2 |
+| Mailchimp | Oggi export CSV dei consensi; sincronizzazione in Fase 2 | 🟡 |
+| Xero | Collegato a Stripe dal lato Xero, nessun codice nostro | 🟡 Da verificare |
+| Video (Wistia, Vimeo) | Fase 2 | 🔴 |
 
-Per aprire il prototipo sul tuo computer: `cd prototipo && python3 -m http.server 8000`, poi
-`http://localhost:8000`. In alto c'è il selettore «View as» per vedere i prezzi da visitatore, utente o membro.
-
-## Per te come sviluppatore
-
-Istruzioni complete in `sito/README.md`. In breve:
+## Provarlo in locale
 
 ```sh
 cd sito
 composer install
-cp .env.example .env && php artisan key:generate   # poi DB MySQL/MariaDB, Stripe test, SMTP, chiavi QR
-php artisan migrate:fresh --seed                    # dati EAS8 di esempio
-php artisan eas:create-admin                        # primo utente del pannello, con MFA
-php artisan test                                    # 270 test, su MySQL/MariaDB (non SQLite)
-php artisan serve                                   # sito su http://localhost:8000, pannello su /admin
+cp .env.example .env && php artisan key:generate   # DB, chiavi Stripe di test, SMTP, chiavi QR
+php artisan migrate:fresh --seed                    # dati di prova EAS8
+php artisan eas:create-admin                        # primo admin, poi MFA al primo accesso
+php artisan test
+php artisan serve                                   # sito su :8000, pannello su /admin
 stripe listen --forward-to localhost:8000/stripe/webhook
 ```
 
-| Dove guardare | Cosa c'è |
-|---|---|
-| `app/Services/` | Prezzi e fasce, riserve di posti, pagamenti, rimborsi, biglietti e QR, omaggi |
-| `app/Services/StripeGateway.php` | L'unico punto che parla con Stripe (nei test lo sostituisce `tests/Fakes/FakeStripe.php`) |
-| `app/Jobs/`, `routes/console.php` | Webhook elaborati in coda, scadenza degli ordini, rimborsi; pensati per cron ogni minuto su hosting condiviso |
-| `app/Filament/`, `app/Policies/` | Pannello e permessi per ruolo |
-| `database/migrations/` | Tabelle con i vincoli che proteggono posti e prezzo membro |
-| `tests/` | Test Pest, compresi quelli in parallelo in `tests/Concurrency/` |
+Il seeder mette **dati di prova** (date, prezzi, fasce, workshop): servono per far girare il sistema e si cambiano
+tutti dal pannello. Dettagli in `sito/README.md`; installazione e manutenzione sull'hosting in
+`docs/tecnico/esercizio.md`.
 
-Scelte da confermare: QR firmato con Ed25519 (il partner verifica con la chiave pubblica, senza segreto); date delle
-fasce di esempio (early bird fino al 31/01/2027, regular fino al 31/03/2027); lo staff entra solo dal pannello con
-password e MFA, non con il codice via email dei clienti.
+## Domande di struttura
 
-Prima del lancio mancano: prova completa con Stripe in modalità test (anche Apple Pay e Google Pay), gestione del
-rimborso rifiutato da Stripe, riconciliazione notturna, contestazioni, lingua nell'indirizzo (`/en/`, `/it/`).
+Solo quello che cambia codice, database o installazione. Se non rispondi, vale la proposta.
 
-## Cosa ti chiediamo adesso (5 azioni)
-
-| # | Azione | Istruzioni | Tempo stimato |
+| # | Domanda | Perché conta | Proposta |
 |---|---|---|---|
-| 1 | Lanciare lo script di verifica sull'hosting via SSH e mandarci il riepilogo che stampa | `strumenti/verifica-hosting/README.md` | 10 minuti |
-| 2 | Mandarci l'indirizzo del modulo Mailchimp per la preregistrazione (*Audience → Signup forms → Embedded forms*, l'indirizzo dopo `action=`) e dirci se la doppia conferma è attiva. **Non mandare la chiave API** | `preregistrazione/README.md` | 10 minuti |
-| 3 | Comprare `orthocongress.org` e dirci chi gestisce i DNS | — | Quando potete: senza dominio niente pagina online né email affidabili |
-| 4 | Iniziare a raccogliere i contenuti nei modelli: prima tipi di biglietto, fasce e prezzi, poi sale, speaker e sessioni | `contenuti/modelli/README.md` | Il programma serve più avanti, i prezzi subito |
-| 5 | Provare l'applicazione in locale con le chiavi Stripe **di test** del vostro account e dirci cosa non va | `sito/README.md` | Mezza giornata |
+| 1 | Puoi lanciare `strumenti/verifica-hosting/verifica-hosting.php` via SSH e mandarci il riepilogo? | Versione PHP ed estensioni, MySQL/MariaDB, permesso per i trigger, cron, limiti | Senza riepilogo prepariamo l'installazione sul caso peggiore (trigger spenti) |
+| 2 | Come pubblichi oggi le applicazioni Laravel: git via SSH, CI, upload? C'è un ambiente di prova separato? | Script di deploy e migrazioni in produzione | Deploy via SSH con `git pull` e uno script, più un sottodominio di prova |
+| 3 | Convenzioni del tuo codice: Pint, PHPStan (livello), CI su GitHub Actions, struttura delle cartelle? | Allineare il codice al tuo modo di lavorare prima che cresca | Pint di default, PHPStan livello 6, CI che lancia i test su MariaDB |
+| 4 | Account Stripe: ci dai accesso in modalità test (o le chiavi di test) e chi configura il webhook in produzione? | Prova completa dei pagamenti prima del lancio | Le chiavi stanno solo nel `.env` del server; il webhook lo registri tu |
+| 5 | Xero e Stripe sono già collegati? Le fatture oggi partono da Stripe o da Xero? | Decide se serve codice nostro per le fatture | Nessun codice nostro, collegamento dal lato Xero |
+| 6 | Il partner del check-in può verificare un QR firmato Ed25519 con una chiave pubblica, o vuole un elenco/API? | Formato del QR inviato per email, da fissare prima di vendere | QR firmato più export CSV |
+| 7 | Email: la casella SMTP ha SPF e DKIM sul dominio e quanti invii all'ora regge? | Consegna dei biglietti | Limite di invio in coda già configurabile |
+| 8 | Ruoli e permessi: vanno bene admin, commerciale, organizzatore come in `docs/tecnico/permessi.md`, con MFA obbligatoria e nessuno che può eliminare dati? | Modello dei permessi | Sì, come oggi |
 
-Se lo script segnala un problema con i **trigger** del database, stampa anche un breve testo in inglese da girare
-all'assistenza dell'hosting: di solito lo risolvono in poco tempo.
+## Prima del lancio (lato tecnico)
 
-## Decisioni che restano
+- Prova completa con Stripe in modalità test (anche Apple Pay e Google Pay) e `stripe listen`.
+- Installazione sull'hosting con cron, HTTPS, backup e prova di ripristino (`docs/tecnico/esercizio.md`).
+- Lingua nell'indirizzo (`/en/`, `/it/`) e messaggi di validazione in italiano.
+- 11 regole senza test, elencate in fondo a `docs/tecnico/regole.md`.
 
-Se una risposta manca, vale la proposta della terza colonna e si può cambiare dopo.
+## Fase 2
 
-| # | Domanda | Proposta se non rispondi |
-|---|---|---|
-| 5 | Data di apertura delle vendite e quanti sviluppatori lavorano | Uno sviluppatore, apertura tra metà febbraio e marzo 2027, preregistrazione online prima |
-| 6 | Date di early bird e regular (dopo aver scelto la data di apertura) | Prezzi base 695 € pubblico e 395 € membro finché non ci sono date; early bird −30% solo membri (276,50 €) |
-| 7 | Prezzo e date del last minute | Nessun last minute: dopo il regular valgono i prezzi base |
-| 8 | Workshop: solo con il pass intero? Quanti per ordine? Due alla stessa ora? | Solo con il pass intero, massimo 2 per ordine, mai due alla stessa ora |
-| 9 | Accompagnatori ed espositori: prezzo, cosa comprendono, quanti per pass, codice d'invito per le aziende | Fuori dall'apertura delle vendite, arrivano nella seconda fase |
-| 10 | Biglietti omaggio per speaker e staff servono già all'apertura? Circa quanti? | Seconda fase, comunque prima dell'evento |
-| 11 | Partner del check-in: chi è, contatto tecnico, legge il nostro QR o vuole un formato suo? | QR firmato nostro più un file CSV dei biglietti validi |
-| 12 | Video: chi vede cosa? Wistia e Vimeo permettono di limitarli al vostro dominio? | Archivio dei congressi passati ai membri, video dell'EAS8 ai partecipanti |
-| 13 | Testi della pagina di preregistrazione (inglese, ed eventualmente italiano), email di contatto pubblica, link alla vostra privacy, logo ad alta risoluzione | Usiamo la bozza già pronta con i testi di eas-aligners.com, da approvare |
-| 14 | Prezzo della membership: lo cambia solo l'admin? | Sì, solo admin |
-| 15 | Ordini da rivedere (importo pagato diverso dal totale): chi decide se emettere i biglietti o rimborsare? | Admin e commerciale |
-| 16 | Eliminare dati dal pannello (ordini, biglietti, prezzi): qualcuno deve poterlo fare? | Nessuno: si annulla o si disattiva, non si cancella |
-| 17 | Contestazioni di pagamento: va bene sospendere i biglietti finché la contestazione è aperta? | Sì: sospesi, riattivati se vinta, revocati se persa |
-| 18 | Versione del database sull'hosting: è almeno MySQL 8.0.19 o MariaDB 10.7? (lo dice anche lo script di verifica) | Se è più vecchia, va chiesto un aggiornamento all'hosting |
-| 19 | Staff: va bene l'accesso al pannello con password e app di autenticazione (Google Authenticator o simili) obbligatoria? | Sì, obbligatoria per tutti |
-| 20 | Riconciliazione con Stripe ogni notte alle 3:30 (ora di Lisbona) e chiavi del QR: chi le custodisce e le cambia? | 3:30 va bene; chiavi custodite da chi gestisce il server (tu) |
-| 21 | Il partner del check-in può verificare il QR con la nostra chiave pubblica (firma Ed25519)? | Sì; altrimenti gli diamo l'elenco CSV dei biglietti validi |
+Programma completo con import CSV, speaker, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
+espositori, API per il partner del check-in, abstract, attestati e crediti formativi.
 
-Le domande sono spiegate una per una, con il motivo, in `docs/domande-simone-terzo-giro.md`.
+## Come contribuire
 
-## Già deciso
-
-| Tema | Decisione |
-|---|---|
-| Sito | Nuovo, su orthocongress.org, separato da eas-aligners.com; si parte senza account esistenti |
-| Tecnica | Laravel + Filament sul vostro hosting condiviso con SSH, MySQL 8 o MariaDB 10.7 e successive, dati in UE |
-| Pannello | Tre ruoli: admin; commerciale (pagamenti, ordini, codici sconto); organizzatore (evento, date, programma, biglietti, fasce, prezzi, codici sconto) |
-| Evento | EAS8, Lisbona, 8–10 aprile 2027, 6.000 posti; date modificabili dal pannello |
-| Prezzi | Pass 695 € pubblico, 395 € membro; early bird −30% solo per i membri; workshop 100 € per tutti (10 da 20 posti); membership 200 € l'anno, attiva subito |
-| Pagamenti | Solo carta tramite Stripe (Apple Pay e Google Pay inclusi), account in Francia, in euro |
-| Biglietti | Nominativi; il nome non si cambia, l'admin può solo correggere un refuso |
-| Email e newsletter | Casella SMTP esistente; Mailchimp con consenso esplicito |
-| Lingua | Inglese principale, italiano come seconda lingua |
-| Aspetto | Coerente con eas-aligners.com (logo, colori, font Inter) |
-
-## Cosa non è compreso adesso
-
-- **Aspetti legali e fiscali** (IVA, fatture, condizioni di vendita, privacy): restano a voi e al vostro
-  commercialista. I segnaposto nei testi sono marcati.
-- **Seconda fase:** programma completo con 12 sale, speaker, video per i membri, sincronizzazione con Mailchimp,
-  accompagnatori ed espositori, invio di abstract e poster, attestati e crediti formativi.
-
-## Prossimi passi
-
-1. Tu: le 5 azioni sopra, appena puoi.
-2. Noi: con il riepilogo dello script prepariamo l'installazione sul vostro hosting; con l'indirizzo di Mailchimp
-   mettiamo online la preregistrazione.
-3. Insieme: data di apertura e date delle fasce, prova con Stripe in test, poi apertura delle vendite e Fase 2.
+- Branch `feat/<descrizione>` o `fix/<descrizione>`, pull request su `main`.
+- Test su MySQL/MariaDB verdi prima del merge; `composer audit` dopo ogni dipendenza nuova.
+- Regole del repository in `CLAUDE.md`, utili anche se lavori con un assistente AI.
