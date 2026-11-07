@@ -50,3 +50,11 @@ it('mostra i testi in italiano, con l\'inglese dove manca', function () {
     $this->withSession(['locale' => 'it'])->get('/programme')->assertOk()
         ->assertSee('Lezione di apertura')->assertSee('Sala plenaria')->assertSee('Small room talk')->assertSee('Programma');
 });
+
+it('mette sotto il 9 aprile una sessione che inizia alle 00:30 a Lisbona (23:30 UTC dell\'8)', function () {
+    $late = scheduledSession($this->main, '00:30', '01:30', ['title' => ['en' => 'Night owl session']], day: '2027-04-09');
+
+    expect($late->eventDay->day->toDateString())->toBe('2027-04-09');
+    $this->get('/programme?day=2027-04-09')->assertOk()->assertSee('Night owl session')->assertSee('00:30');
+    $this->get('/programme?day=2027-04-08')->assertOk()->assertDontSee('Night owl session');
+});

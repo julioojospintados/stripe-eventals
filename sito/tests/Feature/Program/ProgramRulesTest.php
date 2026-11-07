@@ -7,6 +7,7 @@ use App\Filament\Resources\ProgramSessions\Pages\CreateProgramSession;
 use App\Filament\Resources\ProgramSessions\Pages\EditProgramSession;
 use App\Models\ProgramSession;
 use App\Models\Speaker;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\ProgramException;
 use App\Services\ProgramService;
@@ -51,6 +52,31 @@ describe('database', function () {
             'event_id' => $room->event_id, 'code' => 'raw', 'slug' => 'raw', 'title' => ['en' => 'Raw'], 'room_id' => $room->id,
             'starts_at' => Carbon::parse('2027-04-08 10:00', 'Europe/Lisbon')->utc(), 'ends_at' => Carbon::parse('2027-04-08 11:00', 'Europe/Lisbon')->utc(),
         ]))->toThrow(QueryException::class, 'program_session_room_overlap');
+    });
+
+    it('il trigger rifiuta anche un update diretto che sposta una sessione sopra un\'altra nella stessa sala', function () {
+        requireTrigger('program_sessions_no_room_overlap_update');
+        $room = room();
+        scheduledSession($room, '09:00', '10:30');
+        $later = scheduledSession($room, '11:00', '12:00');
+
+        expect(fn () => ProgramSession::whereKey($later->id)->update([
+            'starts_at' => Carbon::parse('2027-04-08 10:00', 'Europe/Lisbon')->utc(), 'ends_at' => Carbon::parse('2027-04-08 11:00', 'Europe/Lisbon')->utc(),
+        ]))->toThrow(QueryException::class, 'program_session_room_overlap');
+    });
+
+    it('rifiuta un intervento che finisce prima di iniziare, lo stesso speaker due volte e un colore non esadecimale', function () {
+        $session = scheduledSession(room(), '09:00', '10:30');
+        $speaker = Speaker::factory()->create();
+        $session->sessionSpeakers()->create(['speaker_id' => $speaker->id, 'role' => 'speaker', 'position' => 1]);
+
+        expect(fn () => $session->parts()->create([
+            'position' => 1, 'title' => ['en' => 'Talk'], 'starts_at' => '2027-04-08 09:00', 'ends_at' => '2027-04-08 08:30',
+        ]))->toThrow(QueryException::class, 'session_parts_times_valid')
+            ->and(fn () => $session->sessionSpeakers()->create(['speaker_id' => $speaker->id, 'role' => 'moderator', 'position' => 2]))
+            ->toThrow(UniqueConstraintViolationException::class)
+            ->and(fn () => Track::create(['event_id' => $session->event_id, 'name' => ['en' => 'Bad'], 'color' => '#12345g']))
+            ->toThrow(QueryException::class, 'tracks_color_hex');
     });
 });
 
