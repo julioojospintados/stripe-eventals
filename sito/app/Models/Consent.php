@@ -20,6 +20,7 @@ class Consent extends Model
         return ['granted' => 'boolean', 'occurred_at' => 'datetime'];
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

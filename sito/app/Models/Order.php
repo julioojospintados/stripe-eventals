@@ -13,10 +13,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Ordine. Ruolo, fascia, origine, persona, evento e importi si fissano alla riserva e non cambiano più (trigger
  * orders_guard); le transizioni di stato ammesse sono in OrderStatus::canTransitionTo().
+ *
+ * @property string $buyer_email
+ * @property Carbon $created_at
+ * @property-read int|string|null $refunds_sum_amount_cents
  */
 #[Fillable(['event_id', 'user_id', 'buyer_email', 'status', 'review_reason', 'origin', 'price_role', 'price_tier_id', 'currency',
     'subtotal_cents', 'discount_cents', 'total_cents', 'tax_cents', 'discount_code_id', 'issued_by', 'comp_reason',
@@ -50,57 +55,71 @@ class Order extends Model
         return Attribute::set(fn (string $value) => mb_strtolower(trim($value)));
     }
 
+    /** @return BelongsTo<Event, $this> */
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<PriceTier, $this> */
     public function priceTier(): BelongsTo
     {
         return $this->belongsTo(PriceTier::class);
     }
 
+    /** @return BelongsTo<DiscountCode, $this> */
     public function discountCode(): BelongsTo
     {
         return $this->belongsTo(DiscountCode::class);
     }
 
-    /** Chi ha emesso l'omaggio. */
+    /**
+     * Chi ha emesso l'omaggio.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function issuer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'issued_by');
     }
 
+    /** @return HasMany<OrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return HasMany<Ticket, $this> */
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
     }
 
+    /** @return HasMany<CapacityHold, $this> */
     public function holds(): HasMany
     {
         return $this->hasMany(CapacityHold::class);
     }
 
+    /** @return HasMany<Refund, $this> */
     public function refunds(): HasMany
     {
         return $this->hasMany(Refund::class);
     }
 
+    /** @return HasMany<Dispute, $this> */
     public function disputes(): HasMany
     {
         return $this->hasMany(Dispute::class);
     }
 
+    /** @return HasMany<MemberPriceClaim, $this> */
     public function memberPriceClaims(): HasMany
     {
         return $this->hasMany(MemberPriceClaim::class);

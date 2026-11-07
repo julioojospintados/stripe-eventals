@@ -18,6 +18,7 @@ class MembershipPlan extends Model
         return ['name' => 'array', 'amount_cents' => 'integer', 'active' => 'boolean'];
     }
 
+    /** @return HasMany<Membership, $this> */
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class, 'plan_id');

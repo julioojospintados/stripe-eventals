@@ -126,5 +126,10 @@ espositori, API per il partner del check-in, abstract, attestati e crediti forma
 ## Come contribuire
 
 - Branch `feat/<descrizione>` o `fix/<descrizione>`, pull request su `main`.
-- Test su MySQL/MariaDB verdi prima del merge; `composer audit` dopo ogni dipendenza nuova.
+- La CI (`.github/workflows/ci.yml`) gira su ogni pull request e su `main`: `composer audit`, Pint (`vendor/bin/pint
+  --test`; `vendor/bin/pint` corregge), PHPStan con Larastan livello 5 (`vendor/bin/phpstan analyse`, zero errori) e i
+  test su MariaDB 10.11 e MySQL 8.0. Deve essere verde prima del merge; `composer audit` dopo ogni dipendenza nuova.
+- Ambiente locale anche con `docker compose up` in `sito/` (PHP 8.3, MariaDB, Mailpit per le email).
+- Deploy e ritorno indietro: `strumenti/deploy/` (`releases/`, `shared/`, link `current`, 5 rilasci). Backup cifrati con
+  rotazione e prova di ripristino: `strumenti/backup/`. Passi in `docs/tecnico/esercizio.md` §4 e §8.
 - Regole del repository in `CLAUDE.md`, utili anche se lavori con un assistente AI.

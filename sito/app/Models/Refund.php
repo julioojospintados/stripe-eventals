@@ -21,6 +21,7 @@ class Refund extends Model
         return ['amount_cents' => 'integer', 'needs_review' => 'boolean'];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

@@ -57,6 +57,10 @@ php artisan serve
 Pannello su `http://localhost:8000/admin`. Al primo accesso Filament chiede di attivare la MFA con un'app TOTP
 (obbligatoria per tutto lo staff) e mostra i codici di recupero.
 
+**Con Docker** (`compose.yaml`: PHP 8.3, MariaDB 10.11, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
+dati di prova e avvia sito (`:8000`, con lo scheduler per coda ed email) e Mailpit (`:8025`, tutte le email).
+Admin: `docker compose exec app php artisan eas:create-admin <email>`; test: `docker compose exec app php artisan test`.
+
 ## Il file `.env`
 
 Mai nel repository (è in `.gitignore`). `.env.example` elenca tutte le variabili con un commento; le principali:
@@ -138,6 +142,14 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 - `tests/Concurrency/`: ultimo posto, prezzo membro e pagamento confermato tre volte **in parallelo**, con processi
   separati (`tests/Concurrency/worker.php`) e transazioni vere che si aspettano sui lock. Usano `DatabaseTruncation`
   (dati confermati, tabelle svuotate prima di ogni test) e girano dopo `Feature`.
+
+Prima di una pull request, gli stessi controlli della CI (`.github/workflows/ci.yml`, test anche su MySQL 8.0):
+
+```bash
+composer audit && vendor/bin/pint --test && vendor/bin/phpstan analyse --memory-limit=1G && php artisan test
+```
+
+PHPStan con Larastan, livello 5 (`phpstan.neon`, zero errori, nessuna baseline); `vendor/bin/pint` corregge lo stile.
 
 Stripe non viene mai chiamato nei test: `TestCase` mette nel container `Tests\Fakes\FakeStripe` al posto di
 `App\Services\StripeGateway` (sessioni in memoria, chiamate registrate con la loro Idempotency-Key).
