@@ -14,6 +14,8 @@ EN/IT. Da fare prima dell'apertura: contenuti e date definitive dal cliente, hos
 | File | Cosa contiene |
 |---|---|
 | [`sito/`](sito/README.md) | applicazione Laravel 13 + Filament 5: schema della Fase 1 con i vincoli del database, vendita con Stripe, biglietti con QR, pannello `/admin` con le Policy per ruolo, export CSV, pagine pubbliche EN/IT, test Pest su MariaDB/MySQL; installazione e stato dei passi nel suo README |
+| [`docs/tecnico/`](docs/tecnico/README.md) | documentazione tecnica per lo sviluppatore: database generato (ER e dizionario), macchine a stati, flussi, regole di business con i test, matrice dei permessi, ADR, installazione e manutenzione sull'hosting |
+| [`strumenti/genera-doc-db/`](strumenti/genera-doc-db/README.md) | script PHP che rigenera `docs/tecnico/database.md` e la matrice dei permessi dal database dopo le migrazioni |
 | [`docs/per-simone.md`](docs/per-simone.md) | riepilogo per il cliente: cosa è pronto, cosa serve da lui, decisioni |
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |
 | [`docs/cliente/`](docs/cliente/) | risposte del cliente (primo e secondo giro del 06/11/2026) |
