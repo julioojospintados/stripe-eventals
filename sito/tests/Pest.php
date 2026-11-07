@@ -4,12 +4,16 @@ use App\Enums\TicketKind;
 use App\Models\Event;
 use App\Models\Membership;
 use App\Models\Order;
+use App\Models\ProgramSession;
+use App\Models\Room;
 use App\Models\TicketType;
 use App\Models\User;
 use App\Services\CheckoutService;
+use App\Services\ProgramService;
 use Database\Seeders\Eas8Seeder;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -104,4 +108,21 @@ function postWebhook(array $event, string $secret = 'whsec_test_secret'): TestRe
     return test()->call('POST', '/stripe/webhook', [], [], [], [
         'HTTP_STRIPE_SIGNATURE' => "t=$ts,v1=$signature", 'CONTENT_TYPE' => 'application/json',
     ], $payload);
+}
+
+function room(array $attributes = []): Room
+{
+    return Room::factory()->create(['event_id' => eas8()->id, ...$attributes]);
+}
+
+/** Sessione pubblicata salvata con ProgramService; orari di Lisbona, giorno 1 dell'EAS8 se non indicato. */
+function scheduledSession(Room $room, string $from, string $to, array $attributes = [], string $day = '2027-04-08'): ProgramSession
+{
+    return app(ProgramService::class)->save(new ProgramSession([
+        'event_id' => $room->event_id, 'code' => 'ses-'.Str::lower(Str::random(8)), 'title' => ['en' => 'Session'],
+        'room_id' => $room->id, 'published' => true,
+        'starts_at' => Carbon::parse("$day $from", 'Europe/Lisbon')->utc(),
+        'ends_at' => Carbon::parse("$day $to", 'Europe/Lisbon')->utc(),
+        ...$attributes,
+    ]));
 }

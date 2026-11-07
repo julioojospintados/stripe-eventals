@@ -9,9 +9,13 @@ use App\Filament\Resources\DiscountCodes\Pages\ManageDiscountCodes;
 use App\Filament\Resources\Events\Pages\ManageEvents;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Filament\Resources\PriceTiers\Pages\ManagePriceTiers;
+use App\Filament\Resources\ProgramSessions\Pages\ListProgramSessions;
+use App\Filament\Resources\Rooms\Pages\ManageRooms;
+use App\Filament\Resources\Speakers\Pages\ManageSpeakers;
 use App\Filament\Resources\TicketPrices\Pages\ManageTicketPrices;
 use App\Filament\Resources\Tickets\Pages\ManageTickets;
 use App\Filament\Resources\TicketTypes\Pages\ManageTicketTypes;
+use App\Filament\Resources\Tracks\Pages\ManageTracks;
 use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Models\AuditLog;
 use App\Models\CapacityPool;
@@ -20,8 +24,10 @@ use App\Models\Event;
 use App\Models\Membership;
 use App\Models\Order;
 use App\Models\PriceTier;
+use App\Models\Speaker;
 use App\Models\Ticket;
 use App\Models\TicketPrice;
+use App\Models\Track;
 use App\Models\User;
 use App\Services\PaymentService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -29,6 +35,8 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -40,14 +48,14 @@ function staffUser(StaffRole $role): User
     return User::factory()->staff($role)->create();
 }
 
-$pages = ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes', 'orders',
+$pages = ['', 'events', 'rooms', 'tracks', 'program-sessions', 'program-sessions/create', 'speakers', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes', 'orders',
     'tickets', 'memberships', 'disputes', 'membership-plans', 'staff-users', 'roles', 'audit-logs', 'exports'];
 
 $allowed = [
     'admin' => $pages,
     'commerciale' => ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes',
         'orders', 'tickets', 'memberships', 'disputes', 'membership-plans', 'exports'],
-    'organizzatore' => ['', 'events', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes',
+    'organizzatore' => ['', 'events', 'rooms', 'tracks', 'program-sessions', 'program-sessions/create', 'speakers', 'ticket-types', 'price-tiers', 'ticket-prices', 'capacity-pools', 'discount-codes',
         'orders', 'tickets', 'exports'],
 ];
 
@@ -133,6 +141,9 @@ it('apre i form e le schede di ogni risorsa', function () {
         ManageCapacityPools::class => CapacityPool::first(),
         ManageDiscountCodes::class => DiscountCode::factory()->create(),
         ManageUsers::class => auth()->user(),
+        ManageRooms::class => room(),
+        ManageTracks::class => Track::create(['event_id' => Event::first()->id, 'name' => ['en' => 'Clinical']]),
+        ManageSpeakers::class => Speaker::factory()->create(),
     ] as $page => $record) {
         Livewire::test($page)->mountAction(CreateAction::class)->assertHasNoErrors()
             ->mountAction(TestAction::make(EditAction::class)->table($record))->assertHasNoErrors();
@@ -141,4 +152,16 @@ it('apre i form e le schede di ogni risorsa', function () {
         ->mountAction('issueComplimentary')->assertHasNoErrors();
     Livewire::test(ManageAuditLogs::class)
         ->mountAction(TestAction::make('view')->table(AuditLog::first()))->assertSee('test.smoke');
+});
+
+it('mostra l\'import del programma solo a chi ha program.import', function () {
+    $this->actingAs(staffUser(StaffRole::Organizzatore));
+    Livewire::test(ListProgramSessions::class)->assertActionVisible('importSessions')->assertActionVisible('importParts');
+    Livewire::test(ManageRooms::class)->assertActionVisible('import');
+
+    Role::findByName('organizzatore')->revokePermissionTo('program.import');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $this->actingAs(staffUser(StaffRole::Organizzatore));
+    Livewire::test(ListProgramSessions::class)->assertActionHidden('importSessions');
+    Livewire::test(ManageSpeakers::class)->assertActionHidden('import')->assertActionVisible(CreateAction::class);
 });

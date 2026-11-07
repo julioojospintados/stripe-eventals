@@ -8,7 +8,13 @@ return [
     // Dominio
     'events' => 'Evento (EAS8): nome tradotto, date, valuta, stato, finestra di vendita.',
     'event_days' => 'Giorni dell\'evento; servono ai pass giornalieri e al programma.',
-    'program_sessions' => 'Sessioni del programma (workshop compresi); il nome evita lo scontro con `sessions` di Laravel.',
+    'program_sessions' => 'Sessioni del programma (workshop compresi) con sala, traccia, formato e orari UTC; mai due sovrapposte nella stessa sala (trigger + servizio). Il nome evita lo scontro con `sessions` di Laravel.',
+    'rooms' => 'Sale dell\'evento (12 per l\'EAS8): codice d\'import, capienza, piano, ordine nella griglia.',
+    'tracks' => 'Tracce tematiche dell\'evento; lo slug dal nome inglese è la chiave della colonna track dell\'import.',
+    'session_parts' => 'Interventi dentro una sessione, in ordine di position.',
+    'speakers' => 'Speaker e moderatori: codice d\'import, nome, bio tradotta, foto pubblica senza EXIF, email privata.',
+    'session_speaker' => 'Chi parla o modera in una sessione, con ruolo e ordine.',
+    'session_part_speaker' => 'Relatori di un intervento, in ordine.',
     'ticket_types' => 'Tipi di biglietto (pass intero, giornaliero, workshop, accompagnatore, espositore, staff) con canale e limiti per ordine.',
     'price_tiers' => 'Fasce di prezzo dell\'evento (early bird, regular, last minute), mai sovrapposte (trigger).',
     'ticket_prices' => 'Prezzo in centesimi per tipo × fascia × ruolo di prezzo (pubblico, membro); fascia nulla = prezzo base.',
@@ -45,7 +51,11 @@ return [
     'cache' => 'Cache di Laravel (driver database), anche per il RateLimiter.',
     'cache_locks' => 'Lock della cache (`withoutOverlapping` dello scheduler).',
     'jobs' => 'Coda dei job (driver database), vuotata dal cron ogni minuto.',
-    'job_batches' => 'Batch di job di Laravel (non usati per ora).',
+    'job_batches' => 'Batch di job di Laravel: li usano gli import CSV di Filament.',
+    // Filament
+    'imports' => 'Import CSV avviati dal pannello (Filament): file, righe totali, riuscite, chi l\'ha avviato.',
+    'failed_import_rows' => 'Righe di un import con il motivo dell\'errore, scaricabili dal pannello.',
+    'notifications' => 'Notifiche del pannello salvate nel database (es. fine di un import).',
     'failed_jobs' => 'Job falliti dopo tutti i tentativi: da controllare (`php artisan queue:failed`).',
     'migrations' => 'Migrazioni già eseguite (Laravel).',
 ];

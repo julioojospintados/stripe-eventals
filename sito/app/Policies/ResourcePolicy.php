@@ -32,6 +32,12 @@ abstract class ResourcePolicy
         return $user->can("{$this->resource}.update");
     }
 
+    /** Riordino delle righe nelle tabelle del pannello (sale, tracce). */
+    public function reorder(User $user): bool
+    {
+        return $user->can("{$this->resource}.update");
+    }
+
     public function delete(User $user): bool
     {
         return $user->can("{$this->resource}.delete");
