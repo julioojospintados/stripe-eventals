@@ -10,7 +10,7 @@ Autore: Giulio Occhipinti.
 |---|---|
 | Server | 10.11.14-MariaDB-0ubuntu0.24.04.1 |
 | Database | `eas8` |
-| Ultima migrazione | `2026_11_09_090000_create_program_tables` |
+| Ultima migrazione | `2026_11_11_090000_add_stripe_invoice_links` |
 | Tabelle | 49 |
 | Trigger | 11 |
 
@@ -833,6 +833,7 @@ Copia locale della subscription Stripe del membro (stato, periodo, annullamento)
 | `last_stripe_event_at` | datetime | sì |  |  |
 | `created_at` | datetime | sì |  |  |
 | `updated_at` | datetime | sì |  |  |
+| `latest_invoice_url` | varchar(1000) | sì |  |  |
 
 - **Chiave primaria:** `id`
 - **Unico** `memberships_stripe_subscription_id_unique`: `stripe_subscription_id`
@@ -985,6 +986,8 @@ Ordini: stato, ruolo e fascia fissati alla riserva, importi in centesimi, sessio
 | `created_at` | datetime | sì |  |  |
 | `updated_at` | datetime | sì |  |  |
 | `pending_user_id` | bigint(20) unsigned | sì |  | generata (stored): `case when status = 'pending' then user_id end` |
+| `stripe_invoice_id` | varchar(255) | sì |  |  |
+| `stripe_invoice_url` | varchar(1000) | sì |  |  |
 
 - **Chiave primaria:** `id`
 - **Unico** `orders_one_pending_per_user`: `pending_user_id`

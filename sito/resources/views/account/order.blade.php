@@ -47,6 +47,9 @@
             @endif
 
             <p class="t-small t-muted">{{ __('Order status') }}: <b>{{ __('status.'.$status) }}</b> · {{ $order->created_at->timezone('Europe/Lisbon')->translatedFormat('j M Y, H:i') }}</p>
+            @if ($order->stripe_invoice_url)
+                <p><a href="{{ $order->stripe_invoice_url }}" rel="noopener">{{ __('Invoice') }}</a></p>
+            @endif
 
             <div class="scorri-x">
                 <table class="tabella">

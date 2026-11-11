@@ -90,3 +90,7 @@ dell'architettura (`docs/architettura.md`) in attesa del suo via libera. Le righ
 | 06/11/2026 | QR dei biglietti firmato con **Ed25519** (non HMAC): il partner del check-in verifica con la chiave pubblica (proposta, da confermare) | Nessun segreto condiviso con il partner |
 | 06/11/2026 | Colonna `price_tiers.active`: le fasce spente (last minute senza prezzo) non occupano le loro date | Emersa nello sviluppo |
 | 06/11/2026 | Lo staff entra solo dal pannello con password e MFA, mai con il codice via email dei clienti | Il pannello usa la stessa sessione: il codice aggirerebbe la MFA |
+| 11/11/2026 | Server del cliente con nginx, PHP e MariaDB alla versione scelta e SSH: non più vincoli da hosting condiviso | Risposta di Simone |
+| 11/11/2026 | Fatture generate da Stripe (Xero non collegato) | Risposta di Simone |
+| 11/11/2026 | Deploy con `git pull` via SSH, ambiente di prova separato | Risposta di Simone |
+| 11/11/2026 | L'admin modifica dal pannello i permessi dei ruoli (già presente, escluso il ruolo admin) | Risposta di Simone |

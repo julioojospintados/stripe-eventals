@@ -1,0 +1,15 @@
+# Scheduler di EAS8 (schedule:run), avviato ogni minuto da eas8-scheduler.timer. Alternativa alla riga di cron.
+# Autore: Giulio Occhipinti. Adatta utente e percorsi come in eas8-queue.service.
+[Unit]
+Description=EAS8 scheduler (schedule:run)
+After=network.target mariadb.service
+
+[Service]
+Type=oneshot
+User=eas8
+Group=eas8
+WorkingDirectory=/home/eas8/eas8/current
+ExecStart=/usr/bin/php /home/eas8/eas8/current/artisan schedule:run
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full

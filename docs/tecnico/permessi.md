@@ -100,7 +100,7 @@ Generata dal database dopo `php artisan migrate:fresh --seed`, quindi dal seeder
 | `videos.manage` | Video e ruoli ammessi (fase 2) | ✔ | — | ✔ |
 | `program.import` | Programma: import da CSV di sale, speaker, sessioni e interventi | ✔ | — | ✔ |
 
-Generata il 07/11/2026 da `strumenti/genera-doc-db/genera.php` sul database `eas8` (68 permessi).
+Generata il 11/11/2026 da `strumenti/genera-doc-db/genera.php` sul database `eas8` (68 permessi).
 
 <!-- matrice-permessi:fine -->
 

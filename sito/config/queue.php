@@ -16,6 +16,13 @@ return [
     'default' => env('QUEUE_CONNECTION', 'database'),
 
     /*
+    | Chi lavora la coda: "daemon" se un processo stabile (systemd o supervisor) tiene acceso queue:work,
+    | "cron" (predefinito, hosting condiviso) se lo lancia lo scheduler ogni minuto (routes/console.php).
+    */
+
+    'worker_mode' => env('QUEUE_WORKER_MODE', 'cron'),
+
+    /*
     |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------

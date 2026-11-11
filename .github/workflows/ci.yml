@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: pdo_mysql, mbstring, intl, sodium, gd, zip, bcmath
           coverage: none
           tools: composer:v2
@@ -46,6 +46,8 @@ jobs:
       fail-fast: false
       matrix:
         db:
+          # MariaDB 11.4 LTS è il riferimento (server del cliente); 10.11 e MySQL 8.0 restano compatibili.
+          - { name: 'MariaDB 11.4', image: 'mariadb:11.4', connection: mariadb, health: 'healthcheck.sh --connect --innodb_initialized' }
           - { name: 'MariaDB 10.11', image: 'mariadb:10.11', connection: mariadb, health: 'healthcheck.sh --connect --innodb_initialized' }
           - { name: 'MySQL 8.0', image: 'mysql:8.0', connection: mysql, health: 'mysqladmin ping -h 127.0.0.1 -proot' }
     services:
@@ -72,7 +74,7 @@ jobs:
           persist-credentials: false
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: pdo_mysql, mbstring, intl, sodium, gd, zip, bcmath
           coverage: none
           tools: composer:v2

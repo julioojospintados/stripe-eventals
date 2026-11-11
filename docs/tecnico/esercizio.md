@@ -1,23 +1,26 @@
-# Installazione e manutenzione su hosting condiviso
+# Installazione e manutenzione sul server
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026. Per Simone.
+Autore: Giulio Occhipinti. Aggiornato all'11/11/2026. Per Simone.
 
-Comandi pensati per un hosting con SSH, PHP da riga di comando e MySQL o MariaDB. `<utente>`, `<dominio>`, `<db>`
+Il server del cliente è pieno (nginx, PHP 8.4, MariaDB 11.4, SSH, root): file d'esempio e passi per nginx, worker
+della coda e scheduler in [`strumenti/server/`](../../strumenti/server/README.md), con un ambiente di staging separato
+(`sito/.env.staging.example`). Le note per hosting condiviso restano valide come variante. Comandi pensati per SSH,
+PHP da riga di comando e MariaDB o MySQL. `<utente>`, `<dominio>`, `<db>`
 sono segnaposto. Le motivazioni sono negli [ADR](adr/README.md); i flussi in [flussi.md](flussi.md).
 
 ## 1. Requisiti
 
-Prima di tutto lancia [`strumenti/verifica-hosting/`](../../strumenti/verifica-hosting/README.md): controlla da solo
-PHP, estensioni, funzioni, limiti, Composer, cron e il database con prove reali (vincoli, lock, trigger). In breve:
+Su un hosting condiviso lancia prima [`strumenti/verifica-hosting/`](../../strumenti/verifica-hosting/README.md)
+(sul server del cliente non serve). In breve:
 
 | Cosa | Minimo |
 |---|---|
-| PHP web e riga di comando | 8.4 consigliato, minimo 8.3; `pdo_mysql`, `mbstring`, `intl`, `sodium`, `gd`, `zip`, argon2 (`PASSWORD_ARGON2ID`) |
+| PHP web e riga di comando | 8.4 (8.4.1+), stessa versione per PHP-FPM e CLI; `pdo_mysql`, `mbstring`, `intl`, `sodium`, `gd`, `zip`, argon2 (`PASSWORD_ARGON2ID`) |
 | Funzioni | `proc_open`, `proc_get_status` non disabilitate; `fastcgi_finish_request` o `litespeed_finish_request` |
-| Database | MySQL **8.0.19+** (serve `DROP CONSTRAINT`) o MariaDB **10.7+** (in pratica 10.11 o 11.4); InnoDB, `utf8mb4` |
-| Privilegi | tutti sul database del sito, compreso `TRIGGER`; con il log binario attivo `log_bin_trust_function_creators = 1` |
+| Database | **MariaDB 11.4 LTS** (riferimento); vanno anche MariaDB 10.11 e MySQL **8.0.19+** (serve `DROP CONSTRAINT`); InnoDB, `utf8mb4` |
+| Privilegi | tutti sul database del sito, compreso `TRIGGER`; con il log binario attivo `log_bin_trust_function_creators = 1` nel server o un utente con `SUPER` |
 | Web | HTTPS, document root impostabile su `current/public` |
-| Cron | una riga ogni minuto |
+| Coda e scheduler | server: worker con systemd o supervisor (`QUEUE_WORKER_MODE=daemon`) e `schedule:run` ogni minuto (cron o timer); hosting condiviso: una riga di cron |
 
 Se i trigger non si possono creare (errore 1419) e l'hosting non cambia l'impostazione: `DB_TRIGGERS_OPTIONAL=true`
 (le regole restano nei servizi; vedi [ADR 0002](adr/0002-mysql-mariadb-vincoli-trigger.md)).
@@ -71,7 +74,11 @@ serve Node.
 
 ## 4. Deploy di una nuova versione
 
-**Con lo script** [`strumenti/deploy/`](../../strumenti/deploy/README.md): `deploy.sh` fa i passi qui sotto (backup
+**Due modalità** in [`strumenti/deploy/`](../../strumenti/deploy/README.md): `deploy-pull.sh` (cartella unica,
+`git pull --ff-only`, come lavora Simone) e `deploy.sh` (rilasci con switch atomico e `rollback.sh`). Entrambe fanno
+backup, Composer, migrazioni, cache e `queue:restart` e si fermano al primo errore.
+
+**Con lo script a rilasci** [`strumenti/deploy/`](../../strumenti/deploy/README.md): `deploy.sh` fa i passi qui sotto (backup
 compreso, con [`strumenti/backup/backup.sh`](../../strumenti/backup/README.md)) e tiene 5 rilasci; `rollback.sh` torna
 al precedente e avvisa se il rilascio attivo ha migrazioni nuove. Il seeder dei permessi (passo 5) resta a mano.
 A mano:
@@ -83,21 +90,27 @@ A mano:
 5. `php artisan db:seed --class=RolesAndPermissionsSeeder --force` se sono cambiati i permessi in `StaffRole`.
 6. `php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan filament:optimize`
 7. `ln -sfn ~/eas8/releases/<data nuova> ~/eas8/current`
-8. `php artisan queue:restart` (il worker del cron prende il codice nuovo al giro dopo).
+8. `php artisan queue:restart` (il worker esce dopo il job in corso; systemd o supervisor lo riavviano sul codice
+   nuovo; con il cron lo prende il giro dopo).
 9. Prova: home, `/tickets`, `/admin`, un evento di test dalla Dashboard Stripe (§6).
 10. Tieni le ultime 5 release. **Ritorno indietro:** link `current` alla release precedente e `queue:restart`; se la
     versione aveva migrazioni non compatibili, ripristino dal backup (§8) e riconciliazione.
 
-## 5. Cron
+## 5. Coda e cron
 
-Una sola riga (crontab dell'utente):
+**Server pieno:** `QUEUE_WORKER_MODE=daemon` nel `.env`, worker `eas8-queue.service` (o supervisor) e la riga qui
+sotto (o `eas8-scheduler.timer`): [`strumenti/server/`](../../strumenti/server/README.md). Controllo:
+`systemctl status eas8-queue`, `php artisan queue:monitor database:critical,database:default --max=50`.
+
+**Hosting condiviso** (`QUEUE_WORKER_MODE=cron`): basta questa riga. La riga dello scheduler (crontab dell'utente) è
+la stessa nei due casi:
 
 ```
 * * * * * cd /home/<utente>/eas8/current && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Lo scheduler (`sito/routes/console.php`) lancia: `queue:work --queue=critical,default --stop-when-empty
---max-time=50` ogni minuto senza sovrapposizioni, `eas:expire-orders` ogni minuto, `eas:reconcile` alle 3:30
+Lo scheduler (`sito/routes/console.php`) lancia: in modalità `cron` `queue:work --queue=critical,default
+--stop-when-empty --max-time=50` ogni minuto senza sovrapposizioni, `eas:expire-orders` ogni minuto, `eas:reconcile` alle 3:30
 (Europe/Lisbon), pulizia dei codici di accesso e degli export ogni giorno. Verifica: `php artisan schedule:list`.
 
 Se l'hosting vieta `proc_open`, tre righe separate:

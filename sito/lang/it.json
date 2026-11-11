@@ -175,5 +175,8 @@
     "When": "Quando",
     "Workshop": "Workshop",
     "Workshop with limited seats, sold separately.": "Workshop a posti limitati, si compra a parte.",
-    "Workshop · sold separately": "Workshop · si compra a parte"
+    "Workshop · sold separately": "Workshop · si compra a parte",
+    "Invoice": "Fattura",
+    "Latest invoice": "Ultima fattura",
+    "Test environment: Stripe test mode, emails are not delivered.": "Ambiente di prova: Stripe in modalità test, le email non partono."
 }

@@ -69,6 +69,8 @@ class OrderResource extends Resource
             TextEntry::make('discountCode.code')->label('Discount code')->placeholder('—'),
             TextEntry::make('stripe_amount_total_cents')->label('Paid on Stripe')->money('EUR', divideBy: 100)->placeholder('—')->visible(self::canSeeAmounts(...)),
             TextEntry::make('stripe_payment_intent_id')->label('Stripe payment')->placeholder('—')->visible(self::canSeeAmounts(...)),
+            TextEntry::make('stripe_invoice_url')->label('Invoice')->formatStateUsing(fn () => 'Invoice')->placeholder('—')
+                ->url(fn (Order $record) => $record->stripe_invoice_url, shouldOpenInNewTab: true)->visible(self::canSeeAmounts(...)),
             Section::make('Items')->columnSpanFull()->schema([
                 RepeatableEntry::make('items')->hiddenLabel()->columns(3)->schema([
                     TextEntry::make('stripe_line_name')->label('Ticket'),

@@ -110,8 +110,11 @@ class ProcessStripeEvent implements ShouldQueue
             $result = $disputes->apply($object);
         } elseif (str_starts_with($type, 'customer.subscription.')) {
             $memberships->sync($object['id'], $at);
+        } elseif ($type === 'invoice.paid' && isset($object['metadata']['order_id'])) {
+            $result = $payments->attachInvoice($object);   // fattura del Checkout biglietti (invoice_creation)
         } elseif ($sub = $object['parent']['subscription_details']['subscription'] ?? $object['subscription'] ?? null) {
-            $memberships->sync($sub, $at);  // invoice.*: la subscription sta in parent nelle versioni recenti dell'API
+            // invoice.*: la subscription sta in parent nelle versioni recenti dell'API
+            $memberships->sync($sub, $at, $type === 'invoice.paid' ? ($object['hosted_invoice_url'] ?? null) : null);
         } else {
             return 'no_subscription';
         }

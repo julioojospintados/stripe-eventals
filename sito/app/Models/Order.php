@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
 #[Fillable(['event_id', 'user_id', 'buyer_email', 'status', 'review_reason', 'origin', 'price_role', 'price_tier_id', 'currency',
     'subtotal_cents', 'discount_cents', 'total_cents', 'tax_cents', 'discount_code_id', 'issued_by', 'comp_reason',
     'stripe_checkout_session_id', 'stripe_payment_intent_id', 'checkout_expires_at', 'discount_reserved', 'paid_at',
-    'livemode', 'stripe_amount_total_cents', 'locale', 'billing_details'])]
+    'livemode', 'stripe_amount_total_cents', 'locale', 'billing_details', 'stripe_invoice_id', 'stripe_invoice_url'])]
 class Order extends Model
 {
     use HasFactory, HasUuids;

@@ -1,6 +1,6 @@
 # Verifica dell'hosting
 
-Autore: Giulio Occhipinti. Versione 1.0 del 06/11/2026.
+Autore: Giulio Occhipinti. Versione 1.0 del 06/11/2026. Dal 11/11/2026 non serve per il server del cliente (nginx, PHP e MariaDB a scelta): resta per un hosting condiviso.
 
 `verifica-hosting.php` controlla da solo se l'hosting può ospitare il sito dell'EAS8 (Laravel 13 + Filament 5 con
 MySQL o MariaDB) e stampa un rapporto che si capisce anche senza essere tecnici. Prende il posto delle domande sui
@@ -57,7 +57,7 @@ e il sito si installa in modalità senza trigger (`DB_TRIGGERS_OPTIONAL=true`, `
 
 | Sezione | Cosa | Perché |
 |---|---|---|
-| 1. PHP | Versione (minimo 8.3, consigliata 8.4), altri PHP sul server, 64 bit | Laravel 13 chiede PHP 8.3+ |
+| 1. PHP | Versione (minimo 8.4.1), altri PHP sul server, 64 bit | `composer.json` chiede PHP 8.4 |
 | 2. Estensioni | `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `hash`, `intl`, `json`, `mbstring`, `openssl`, `pcre`, `pdo_mysql`, `session`, `sodium`, `tokenizer`, `xml`, `xmlreader`, `xmlwriter`, `zip`; `gd` o `imagick`; argon2id; `pcntl` e `bcmath` consigliate | Laravel, Filament, QR firmati in PNG, export e import Excel, password dello staff |
 | 3. Limiti | `memory_limit` (512M da riga di comando, e se si può alzare), `upload_max_filesize` e `post_max_size` (20M), `open_basedir` | Coda, import, foto |
 | 4. Funzioni | `proc_open` e simili, `exec`, `symlink`, `putenv`, `set_time_limit`, `ini_set`, `pcntl_*`, `escapeshellarg` in `disable_functions` | Composer, scheduler, deploy, backup |

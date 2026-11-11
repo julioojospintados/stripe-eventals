@@ -35,7 +35,7 @@ sequenceDiagram
         App->>S: retrieve della sessione, se open la riusa
     else prima volta
         App->>DB: allunga la riserva se è passato tempo
-        App->>S: crea Checkout Session (price_data, solo carta, expires_at, Idempotency-Key checkout-id)
+        App->>S: crea Checkout Session (price_data, solo carta, expires_at, Idempotency-Key checkout-id, invoice_creation con indirizzo e partita IVA se STRIPE_INVOICES)
         App->>DB: salva stripe_checkout_session_id
     end
     App-->>U: redirect alla pagina Stripe
@@ -43,8 +43,10 @@ sequenceDiagram
     S-->>U: redirect a /account/orders/{id}?session_id=...
     U->>App: GET pagina di successo
     App->>S: retrieve della sessione
-    App->>DB: PaymentService applySession, stesso codice del webhook
+    App->>DB: PaymentService applySession, stesso codice del webhook (salva anche stripe_invoice_id)
     App-->>U: esito con i QR
+    S->>App: invoice.paid con metadata.order_id (webhook in coda)
+    App->>DB: PaymentService attachInvoice: stripe_invoice_id e stripe_invoice_url, link «Invoice» sull'ordine
 ```
 
 ## 2. Webhook in coda con idempotenza e lock
@@ -181,7 +183,7 @@ sequenceDiagram
     App-->>U: prezzo membro attivo subito
     S->>App: checkout.session.completed, customer.subscription.*, invoice.* (webhook in coda)
     App->>S: retrieve subscription
-    App->>DB: aggiorna solo se l'evento non è più vecchio di last_stripe_event_at
+    App->>DB: aggiorna solo se l'evento non è più vecchio di last_stripe_event_at (invoice.paid: anche latest_invoice_url)
     U->>App: POST /membership/portal
     App->>S: Customer Portal session
     App-->>U: redirect al portale, annullamento e carta

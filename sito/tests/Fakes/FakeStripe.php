@@ -52,7 +52,7 @@ class FakeStripe extends StripeGateway
             'client_reference_id' => $params['client_reference_id'] ?? null, 'metadata' => $params['metadata'] ?? [],
             'amount_total' => collect($params['line_items'])->sum(fn ($l) => ($l['price_data']['unit_amount'] ?? 20000) * $l['quantity']),
             'payment_intent' => null, 'customer' => $params['customer'] ?? null, 'subscription' => null,
-            'created' => now()->timestamp,
+            'invoice_creation' => $params['invoice_creation'] ?? null, 'invoice' => null, 'created' => now()->timestamp,
         ];
     }
 
@@ -111,7 +111,8 @@ class FakeStripe extends StripeGateway
     public function pay(string $id): array
     {
         $session = $this->retrieveCheckoutSession($id);
-        $this->sessions[$id] = array_merge($session, ['status' => 'complete', 'payment_status' => 'paid', 'payment_intent' => 'pi_test_'.Str::random(16)]);
+        $this->sessions[$id] = array_merge($session, ['status' => 'complete', 'payment_status' => 'paid', 'payment_intent' => 'pi_test_'.Str::random(16),
+            'invoice' => ($session['invoice_creation']['enabled'] ?? false) ? 'in_test_'.Str::random(14) : null]);
 
         if ($session['mode'] === 'subscription') {
             $sub = 'sub_test_'.Str::random(14);
