@@ -77,7 +77,7 @@ flowchart LR
 | SMTP | Email in coda con limite di invio | 🟢 |
 | Check-in del partner | QR firmato verificabile con la chiave pubblica; export CSV dei biglietti validi | 🟢 Export; 🟡 API in Fase 2 |
 | Mailchimp | Oggi export CSV dei consensi; sincronizzazione in Fase 2 | 🟡 |
-| Xero | Collegato a Stripe dal lato Xero, nessun codice nostro | 🟡 Da verificare |
+| Fatture | Da Stripe, non da Xero (non collegato): fattura automatica dopo il pagamento dei biglietti con indirizzo di fatturazione e partita IVA facoltativa, link «Invoice» nell'area personale e nel pannello; membership con le fatture di Stripe Billing. Interruttore `STRIPE_INVOICES`. IVA e Stripe Tax restano una vostra decisione. Stripe fa pagare a parte le fatture dei pagamenti singoli (vedi il suo listino) | 🟢 Codice e test; 🟡 costo e testi e dati fiscali sulla fattura da impostare nella Dashboard Stripe |
 | Video (Wistia, Vimeo) | Fase 2 | 🔴 |
 
 ## Provarlo in locale

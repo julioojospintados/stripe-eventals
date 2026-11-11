@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Membership annuale; dopo l'attivazione la aggiornano solo gli eventi Stripe. */
 #[Fillable(['user_id', 'plan_id', 'stripe_subscription_id', 'stripe_customer_id', 'status', 'current_period_start',
-    'current_period_end', 'cancel_at_period_end', 'canceled_at', 'ended_at', 'activated_at', 'last_stripe_event_at'])]
+    'current_period_end', 'cancel_at_period_end', 'canceled_at', 'ended_at', 'activated_at', 'last_stripe_event_at', 'latest_invoice_url'])]
 class Membership extends Model
 {
     use HasFactory, HasUuids;

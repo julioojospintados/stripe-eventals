@@ -159,6 +159,7 @@ class CheckoutService
                 'price_tier' => $order->priceTier?->code, 'discount_code' => $order->discountCode?->code, 'env' => app()->environment(),
             ],
             'payment_intent_data' => ['metadata' => ['order_id' => $order->id]],
+            ...$this->invoiceParams($order),
             'expires_at' => $order->checkout_expires_at->timestamp,
             'locale' => $order->locale,
             'success_url' => $orderUrl.'?session_id={CHECKOUT_SESSION_ID}',
@@ -168,6 +169,26 @@ class CheckoutService
         $order->update(['stripe_checkout_session_id' => $session['id']]);
 
         return $session['url'];
+    }
+
+    /** Fattura di Stripe dopo il pagamento, con indirizzo di fatturazione e partita IVA facoltativa (config services.stripe.invoices). */
+    private function invoiceParams(Order $order): array
+    {
+        if (! config('services.stripe.invoices')) {
+            return [];
+        }
+
+        return [
+            'invoice_creation' => ['enabled' => true, 'invoice_data' => array_filter([
+                'description' => config('services.stripe.invoice_description'),
+                'footer' => config('services.stripe.invoice_footer'),
+                'metadata' => ['order_id' => $order->id],
+            ])],
+            'billing_address_collection' => 'required',
+            'tax_id_collection' => ['enabled' => true],
+            // Con un Customer esistente Stripe chiede customer_update.name=auto per salvare la partita IVA.
+            ...($order->user->stripe_customer_id ? ['customer_update' => ['name' => 'auto', 'address' => 'auto']] : []),
+        ];
     }
 
     /** Un solo ordine aperto per persona: il precedente si chiude solo dopo aver chiuso (o letto) la sua sessione. */

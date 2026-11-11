@@ -28,6 +28,9 @@
                 @else
                     <p>{{ __('You are not a member.') }} <a href="{{ route('membership.show') }}">{{ __('About membership') }}</a></p>
                 @endif
+                @if ($membershipInvoiceUrl)
+                    <p><a href="{{ $membershipInvoiceUrl }}" rel="noopener">{{ __('Latest invoice') }}</a></p>
+                @endif
                 @if (auth()->user()->stripe_customer_id)
                     <form method="post" action="{{ route('membership.portal') }}">
                         @csrf

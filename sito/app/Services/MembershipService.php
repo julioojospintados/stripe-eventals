@@ -52,13 +52,16 @@ class MembershipService
         return $this->sync($session['subscription'], now());
     }
 
-    /** customer.subscription.* e invoice.*: si rilegge la subscription; un evento più vecchio dell'ultimo non conta. */
-    public function sync(string $subscriptionId, Carbon $eventAt): ?Membership
+    /**
+     * customer.subscription.* e invoice.*: si rilegge la subscription; un evento più vecchio dell'ultimo non conta.
+     * $invoiceUrl: pagina della fattura pagata (invoice.paid), mostrata nell'area personale.
+     */
+    public function sync(string $subscriptionId, Carbon $eventAt, ?string $invoiceUrl = null): ?Membership
     {
         $sub = $this->stripe->retrieveSubscription($subscriptionId);
         $userId = $sub['metadata']['user_id'] ?? null;
 
-        return DB::transaction(function () use ($sub, $userId, $eventAt) {
+        return DB::transaction(function () use ($sub, $userId, $eventAt, $invoiceUrl) {
             $membership = Membership::where('stripe_subscription_id', $sub['id'])->lockForUpdate()->first();
             if (! $membership && ! $userId) {
                 return null;
@@ -88,6 +91,7 @@ class MembershipService
                 'ended_at' => $date($sub['ended_at'] ?? null),
                 'last_stripe_event_at' => $eventAt,
             ]);
+            $membership->latest_invoice_url = $invoiceUrl ?? $membership->latest_invoice_url;
             if ($sub['status'] === 'active') {
                 $membership->activated_at ??= now();
             }

@@ -49,6 +49,7 @@ class PaymentService
             }
 
             $order->stripe_payment_intent_id = $session['payment_intent'] ?? null;
+            $order->stripe_invoice_id ??= $session['invoice'] ?? null;
             $order->stripe_amount_total_cents = $session['amount_total'] ?? 0;
 
             if ($late && ! $this->capacity->rebook($order)) {
@@ -174,6 +175,18 @@ class PaymentService
 
             return true;
         }, 3);
+    }
+
+    /** invoice.paid della fattura del Checkout biglietti (metadata order_id): id e pagina pubblica sull'ordine. */
+    public function attachInvoice(array $invoice): string
+    {
+        $order = Order::find($invoice['metadata']['order_id'] ?? null);
+        if (! $order) {
+            return 'unknown_order';
+        }
+        $order->update(['stripe_invoice_id' => $invoice['id'], 'stripe_invoice_url' => $invoice['hosted_invoice_url'] ?? $order->stripe_invoice_url]);
+
+        return 'attached';
     }
 
     /** charge.refunded: registra i rimborsi (anche quelli fatti nella Dashboard) e aggiorna ordine e biglietti. */

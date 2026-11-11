@@ -41,6 +41,11 @@ return [
         'api_version' => env('STRIPE_API_VERSION'),
         // Price ricorrente annuale della membership (price_...), creato nella Dashboard Stripe.
         'membership_price' => env('STRIPE_MEMBERSHIP_PRICE'),
+        // Fattura Stripe sui biglietti (invoice_creation) con indirizzo di fatturazione e partita IVA facoltativa.
+        // Solo parametri tecnici: IVA e Stripe Tax li decide il cliente.
+        'invoices' => (bool) env('STRIPE_INVOICES', true),
+        'invoice_description' => env('STRIPE_INVOICE_DESCRIPTION'),
+        'invoice_footer' => env('STRIPE_INVOICE_FOOTER'),
     ],
 
 ];

@@ -20,6 +20,7 @@ class AccountController
             'orders' => $user->orders()->with('items')->latest()->get(),
             'tickets' => $this->ticketsOf($request)->with('ticketType')->where('status', 'valid')->get(),
             'isMember' => $user->isMemberUntil(now()),
+            'membershipInvoiceUrl' => $user->memberships()->whereNotNull('latest_invoice_url')->latest('updated_at')->value('latest_invoice_url'),
         ]);
     }
 
