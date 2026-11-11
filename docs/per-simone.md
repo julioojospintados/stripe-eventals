@@ -99,18 +99,9 @@ tutti dal pannello. Dettagli in `sito/README.md`; installazione e manutenzione s
 
 ## Domande di struttura
 
-Solo quello che cambia codice, database o installazione. Se non rispondi, vale la proposta.
-
-| # | Domanda | Perché conta | Proposta |
-|---|---|---|---|
-| 1 | Puoi lanciare `strumenti/verifica-hosting/verifica-hosting.php` via SSH e mandarci il riepilogo? | Versione PHP ed estensioni, MySQL/MariaDB, permesso per i trigger, cron, limiti | Senza riepilogo prepariamo l'installazione sul caso peggiore (trigger spenti) |
-| 2 | Come pubblichi oggi le applicazioni Laravel: git via SSH, CI, upload? C'è un ambiente di prova separato? | Script di deploy e migrazioni in produzione | Deploy via SSH con `git pull` e uno script, più un sottodominio di prova |
-| 3 | Convenzioni del tuo codice: Pint, PHPStan (livello), CI su GitHub Actions, struttura delle cartelle? | Allineare il codice al tuo modo di lavorare prima che cresca | Pint di default, PHPStan livello 6, CI che lancia i test su MariaDB |
-| 4 | Account Stripe: ci dai accesso in modalità test (o le chiavi di test) e chi configura il webhook in produzione? | Prova completa dei pagamenti prima del lancio | Le chiavi stanno solo nel `.env` del server; il webhook lo registri tu |
-| 5 | Xero e Stripe sono già collegati? Le fatture oggi partono da Stripe o da Xero? | Decide se serve codice nostro per le fatture | Nessun codice nostro, collegamento dal lato Xero |
-| 6 | Il partner del check-in può verificare un QR firmato Ed25519 con una chiave pubblica, o vuole un elenco/API? | Formato del QR inviato per email, da fissare prima di vendere | QR firmato più export CSV |
-| 7 | Email: la casella SMTP ha SPF e DKIM sul dominio e quanti invii all'ora regge? | Consegna dei biglietti | Limite di invio in coda già configurabile |
-| 8 | Ruoli e permessi: vanno bene admin, commerciale, organizzatore come in `docs/tecnico/permessi.md`, con MFA obbligatoria e nessuno che può eliminare dati? | Modello dei permessi | Sì, come oggi |
+Risposte dell'11/11/2026 in [`docs/cliente/risposte-struttura-2026-11-11.md`](cliente/risposte-struttura-2026-11-11.md).
+Resta aperta solo una domanda: il partner del check-in sa verificare un QR firmato Ed25519 con una chiave pubblica,
+o vuole un elenco CSV o un'API?
 
 ## Prima del lancio (lato tecnico)
 
