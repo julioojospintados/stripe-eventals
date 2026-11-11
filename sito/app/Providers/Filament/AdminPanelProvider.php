@@ -11,6 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -42,6 +43,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             // Avviso di fine import CSV del programma (la coda gira nel cron, quindi arriva come notifica salvata).
             ->databaseNotifications()
+            // Ambiente di prova: striscia «STAGING» e noindex (resources/views/partials/staging.blade.php).
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => app()->environment('staging') ? '<meta name="robots" content="noindex, nofollow">' : '')
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('partials.staging'))
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->navigationGroups(['Event', 'Programme', 'Sales', 'Orders', 'Exports', 'System'])
             ->middleware([

@@ -32,7 +32,7 @@ risposte precisa il server: **hosting condiviso con accesso SSH e MySQL o MariaD
 
 | Strato | Scelta | Motivo |
 |---|---|---|
-| Linguaggio | **PHP 8.4** (minimo 8.3) | Laravel 13 chiede PHP 8.3+ `[sure]` (`composer.json` di `laravel/framework` 13.40.0, installato il 06/11/2026). L'ultima versione di `spatie/laravel-translatable` (6.15.0) chiede già PHP 8.4 `[sure]` (risoluzione di Composer): con 8.3 si resta alla 6.14 |
+| Linguaggio | **PHP 8.4** (minimo 8.3; dall'11/11/2026 solo 8.4, server del cliente: ADR 0001) | Laravel 13 chiede PHP 8.3+ `[sure]` (`composer.json` di `laravel/framework` 13.40.0, installato il 06/11/2026). L'ultima versione di `spatie/laravel-translatable` (6.15.0) chiede già PHP 8.4 `[sure]` (risoluzione di Composer): con 8.3 si resta alla 6.14 |
 | Framework | **Laravel 13** (installata la 13.40.0 `[sure]`; bug fix fino al Q3 2027, sicurezza fino al Q1 2028 `[likely]`, [laravel-news.com](https://laravel-news.com/laravel-13-released)) | Copre l'evento di aprile 2027 con i bug fix |
 | Pannello | **Filament 5** (con Livewire 4) | Chiesto dal cliente. Compatibilità con Laravel 13: Composer risolve `filament/filament` 5.11.1 + `livewire/livewire` 4.4.8 su Laravel 13.40 e PHP 8.3 `[sure]` (prova `--dry-run` del 06/11/2026; non ancora avviato) |
 | Interfaccia pubblica | **Blade + Livewire 4 + Alpine.js** (§4.1) | Stessa tecnologia di Filament, pagine generate dal server |
@@ -681,7 +681,7 @@ ogni minuto, document root, HTTPS, paese del data center, processi PHP in parall
 
 | Voce | Serve | Perché |
 |---|---|---|
-| PHP | **8.4** (minimo 8.3) sia per il web sia da riga di comando, stessa versione | Laravel 13; `php` da SSH spesso è un'altra versione: va scelta quella giusta nel cron |
+| PHP | **8.4** (dall'11/11/2026 obbligatoria) sia per il web sia da riga di comando, stessa versione | Laravel 13; `php` da SSH spesso è un'altra versione: va scelta quella giusta nel cron |
 | Estensioni | `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `gd` (o `imagick`), `intl`, `mbstring`, `openssl`, `pdo_mysql`, `sodium`, `tokenizer`, `xml`, `xmlreader`, `xmlwriter`, `zip`; `pcntl` da riga di comando e `bcmath` consigliate (`bcmath` è solo un «suggest» delle librerie: Laravel 13 è installato e provato senza `[sure]`) | Laravel, Filament, QR firmati, immagini, export |
 | Funzioni | `proc_open`, `proc_get_status` **non** in `disable_functions`; `fastcgi_finish_request` o `litespeed_finish_request` | Scheduler e Composer; invio del codice di accesso dopo la risposta |
 | Argon2 | `PASSWORD_ARGON2ID` definito | Password dello staff (regola 1) |

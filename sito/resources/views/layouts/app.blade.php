@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
+    @if (app()->environment('staging'))<meta name="robots" content="noindex, nofollow">@endif
     <title>@hasSection('title')@yield('title') · @endif EAS8 Lisbon</title>
     <meta name="description" content="{{ __('EAS8 Lisbon, the congress of the European Aligner Society: 8–10 April 2027, Lisbon.') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
@@ -12,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('css/site.css') }}">
 </head>
 <body>
+@include('partials.staging')
 <a class="skip-link" href="#content">{{ __('Skip to content') }}</a>
 
 <header class="site-header dark">

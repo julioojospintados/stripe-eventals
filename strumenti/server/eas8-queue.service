@@ -1,0 +1,24 @@
+# Worker della coda di EAS8 sotto systemd (QUEUE_WORKER_MODE=daemon nel .env). Autore: Giulio Occhipinti.
+# Installazione: sudo cp eas8-queue.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#                sudo systemctl enable --now eas8-queue
+# Adatta utente e percorsi. Il worker esce da solo dopo un'ora (--max-time) o dopo queue:restart nel deploy:
+# systemd lo riavvia e rilegge il link current, cioè il codice nuovo.
+[Unit]
+Description=EAS8 queue worker
+After=network.target mariadb.service
+
+[Service]
+User=eas8
+Group=eas8
+WorkingDirectory=/home/eas8/eas8/current
+ExecStart=/usr/bin/php /home/eas8/eas8/current/artisan queue:work --queue=critical,default --sleep=3 --tries=5 --max-time=3600 --memory=192
+Restart=always
+RestartSec=5
+# Un job in corso ha tempo di finire prima dello stop.
+TimeoutStopSec=120
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -7,6 +7,7 @@ MYCNF="$HOME/.my.cnf"
 PASS_FILE="$HOME/.backup-pass"
 BACKUP_DIR="$HOME/backup/eas8"
 # File caricati: foto degli speaker (app/public) e file privati (app/private).
+# Modalità git pull (deploy-pull.sh): "$HOME/eas8/repo/sito/storage/app".
 FILES_DIR="$HOME/eas8/shared/storage/app"
 # Rotazione: ogni copia per KEEP_DAYS giorni, poi una per settimana per KEEP_WEEKS settimane.
 KEEP_DAYS=7

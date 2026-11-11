@@ -8,24 +8,27 @@ regole in [`../db/modello-dati.md`](../db/modello-dati.md).
 
 ## Requisiti
 
-- PHP 8.3 o 8.4 con `pdo_mysql`, `mbstring`, `intl`, `sodium` (firma dei QR) e argon2
+- PHP 8.4 (8.4.1 o più recente: `composer.json` chiede `^8.4`, `config.platform.php` è 8.4.1) con `pdo_mysql`,
+  `mbstring`, `intl`, `sodium` (firma dei QR), `gd` con JPEG, `zip`, `bcmath` e argon2
   (`php -r "var_dump(defined('PASSWORD_ARGON2ID'));"` deve dire `true`).
 - Composer 2.
-- **MySQL 8.0.19+ o MariaDB 10.7+** (in pratica 10.11 o 11.4). Niente SQLite: i vincoli del database fanno parte
-  delle regole e i test girano sul database vero.
-- Sull'hosting, per i trigger: `log_bin_trust_function_creators = 1` oppure il log binario spento; altrimenti
-  `DB_TRIGGERS_OPTIONAL=true` (vedi sotto).
+- **MariaDB 11.4 LTS** (riferimento, server del cliente); vanno anche MariaDB 10.11 e MySQL 8.0.19+ (la CI li prova
+  tutti e tre). Niente SQLite: i vincoli del database fanno parte delle regole e i test girano sul database vero.
+- Trigger attivi (`DB_TRIGGERS_OPTIONAL=false`): con il log binario acceso serve `log_bin_trust_function_creators = 1`
+  nel server o un utente con `SUPER` ([`../strumenti/server/README.md`](../strumenti/server/README.md#mariadb-e-trigger)).
+- Server: nginx + PHP-FPM ([`nginx-eas8.conf`](../strumenti/server/nginx-eas8.conf)), worker della coda con systemd o
+  supervisor, scheduler con cron o timer systemd ([`../strumenti/server/`](../strumenti/server/)).
 
 | Pacchetto | Versione installata | A cosa serve |
 |---|---|---|
-| `laravel/framework` | 13.40 | framework |
+| `laravel/framework` | 13.42 | framework |
 | `filament/filament` | 5.11 (con Livewire 4.4) | pannello `/admin` |
 | `spatie/laravel-permission` | 8.5 | ruoli e permessi dello staff |
 | `stripe/stripe-php` | 22.1 | Stripe (SDK diretto, senza Cashier) |
 | `bacon/bacon-qr-code` | 3.1 | immagine del QR dei biglietti (la usa già la MFA di Filament) |
-| `pestphp/pest` | 4.7 (con PHPUnit 12) | test |
+| `pestphp/pest` | 5.3 (con PHPUnit 13) | test |
 
-Pest 5 chiede PHP 8.4: con PHP 8.3 si resta alla 4. Dopo ogni modifica alle dipendenze: `composer audit`.
+Dopo ogni modifica alle dipendenze: `composer audit`.
 
 ## Installazione in locale
 
@@ -57,7 +60,7 @@ php artisan serve
 Pannello su `http://localhost:8000/admin`. Al primo accesso Filament chiede di attivare la MFA con un'app TOTP
 (obbligatoria per tutto lo staff) e mostra i codici di recupero.
 
-**Con Docker** (`compose.yaml`: PHP 8.3, MariaDB 10.11, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
+**Con Docker** (`compose.yaml`: PHP 8.4, MariaDB 11.4, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
 dati di prova e avvia sito (`:8000`, con lo scheduler per coda ed email) e Mailpit (`:8025`, tutte le email).
 Admin: `docker compose exec app php artisan eas:create-admin <email>`; test: `docker compose exec app php artisan test`.
 
@@ -71,7 +74,8 @@ Mai nel repository (è in `.gitignore`). `.env.example` elenca tutte le variabil
 | `APP_URL` | indirizzo pubblico, senza barra finale |
 | `HASH_DRIVER=argon2id` | password dello staff |
 | `DB_CONNECTION` | `mysql` per MySQL, `mariadb` per MariaDB |
-| `DB_TRIGGERS_OPTIONAL` | `false`; `true` solo se l'hosting rifiuta i trigger (errore 1419): le migrazioni li saltano con un avviso nel log |
+| `DB_TRIGGERS_OPTIONAL` | `false` (trigger attivi); `true` solo su un hosting che rifiuta i trigger (errore 1419): le migrazioni li saltano con un avviso nel log |
+| `QUEUE_WORKER_MODE` | `cron` (predefinito: lo scheduler lancia il worker ogni minuto; in locale e su hosting condiviso) o `daemon` (sul server: worker stabile con systemd o supervisor, lo scheduler non lo lancia più) |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_API_VERSION` | **solo chiavi di test** (`sk_test_…`) finché il cliente non dice altro; senza versione vale quella di `stripe-php` (`2026-10-28.endive`). Una chiave `sk_live_`/`rk_live_` rende l'ambiente «live»: i webhook con `livemode` diverso sono rifiutati |
 | `STRIPE_MEMBERSHIP_PRICE` | id del Price annuale della membership (`price_…`), creato nella Dashboard |
 | `STRIPE_INVOICES`, `STRIPE_INVOICE_DESCRIPTION`, `STRIPE_INVOICE_FOOTER` | fattura di Stripe sui biglietti (attiva di default, `false` per spegnerla) e testi facoltativi della fattura. Solo parametri tecnici: IVA e Stripe Tax li decide il cliente |
@@ -231,20 +235,36 @@ Dal pannello si fa tutto tranne la creazione del primo admin (`eas:create-admin`
    ```
 
    `stripe listen` stampa il segreto `whsec_…`: va in `STRIPE_WEBHOOK_SECRET` (poi `php artisan config:clear`).
-3. In tre terminali: `php artisan serve`, `stripe listen …` e `php artisan schedule:work` (fa quello che il cron fa
-   sull'hosting: worker della coda e scadenze ogni minuto). In alternativa `php artisan queue:work --queue=critical,default`.
+3. In tre terminali: `php artisan serve`, `stripe listen …` e `php artisan schedule:work` (con `QUEUE_WORKER_MODE=cron`
+   lancia anche il worker della coda ogni minuto). In alternativa `php artisan queue:work --queue=critical,default`.
 4. `http://localhost:8000/login`, codice nel log (`MAIL_MAILER=log`, `storage/logs/`), poi `/tickets`. Carta di prova
    `4242 4242 4242 4242`, data futura, CVC qualsiasi. Per simulare un evento: `stripe trigger checkout.session.completed`.
 
-### Cron sull'hosting
+### Staging
 
-Una sola riga di cron, ogni minuto (nessun processo sempre attivo):
+Copia separata con `.env` da [`.env.staging.example`](.env.staging.example): `APP_ENV=staging` mostra la striscia
+«STAGING» su pagine e pannello e mette `noindex` nelle pagine; Stripe solo con chiavi di test; email nel log (o in
+Mailpit). Webhook: un endpoint di test nella Dashboard Stripe verso `https://<staging>/stripe/webhook` (il suo
+`whsec_…` in `STRIPE_WEBHOOK_SECRET`), oppure, senza endpoint pubblico, `stripe listen --forward-to
+https://<staging>/stripe/webhook` dal computer di chi prova (il segreto lo stampa `stripe listen`). nginx e unità
+systemd della copia: [`../strumenti/server/README.md`](../strumenti/server/README.md#staging).
+
+### Coda e scheduler sul server
+
+Server pieno (`QUEUE_WORKER_MODE=daemon`): worker stabile con `eas8-queue.service` (o supervisor) e `schedule:run` ogni
+minuto con la riga di cron qui sotto o con `eas8-scheduler.timer`; file e passi in
+[`../strumenti/server/`](../strumenti/server/). Il worker gira con `queue:work --queue=critical,default --sleep=3
+--tries=5 --max-time=3600` e si riavvia da solo dopo un'ora o dopo `queue:restart`.
+
+### Cron su hosting condiviso
+
+Con `QUEUE_WORKER_MODE=cron`, una sola riga di cron, ogni minuto (nessun processo sempre attivo):
 
 ```text
 * * * * * cd /home/<utente>/eas8/current && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Lo scheduler (`routes/console.php`) lancia ogni minuto `queue:work --queue=critical,default --stop-when-empty
+Lo scheduler (`routes/console.php`) lancia ogni minuto (solo in modalità `cron`) `queue:work --queue=critical,default --stop-when-empty
 --max-time=50` (vuota la coda e si ferma prima del giro successivo; `withoutOverlapping` evita due worker insieme) ed
 `eas:expire-orders`; ogni notte alle 3:30 (Lisbona) `eas:reconcile`; ogni giorno pulisce i codici di accesso scaduti. Un job aspetta quindi al massimo circa un minuto:
 per questo il codice di accesso parte fuori coda e la pagina di successo conferma il pagamento da sola. Al deploy:

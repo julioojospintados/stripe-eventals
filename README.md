@@ -4,8 +4,8 @@ Autore: Giulio Occhipinti.
 
 Sito per gestire eventi (agenda con giorni, sale, sessioni e sottosezioni; speaker) e vendere l'accesso con
 prezzi per fascia (early bird, regular, last minute) e per ruolo (pubblico e membro), membership annuale e codici
-sconto, tutto incassato con Stripe. Primo evento: EAS8, Lisbona, 8–10 aprile 2027; Laravel + Filament su hosting
-condiviso con MySQL o MariaDB.
+sconto, tutto incassato con Stripe. Primo evento: EAS8, Lisbona, 8–10 aprile 2027; Laravel + Filament su PHP 8.4 e
+MariaDB 11.4 (server del cliente con nginx; vanno anche MariaDB 10.11 e MySQL 8.0).
 
 Fase attuale: **Fase 1 sviluppata** (passi 1–3 fatti, 189 test verdi su MariaDB). L'applicazione Laravel è in [`sito/`](sito/README.md):
 schema con i vincoli, vendita con Stripe e biglietti con QR, pannello Filament con i ruoli, export CSV, sito pubblico
@@ -14,7 +14,8 @@ EN/IT. Da fare prima dell'apertura: contenuti e date definitive dal cliente, hos
 | File | Cosa contiene |
 |---|---|
 | [`sito/`](sito/README.md) | applicazione Laravel 13 + Filament 5: schema della Fase 1 con i vincoli del database, vendita con Stripe, biglietti con QR, pannello `/admin` con le Policy per ruolo, export CSV, pagine pubbliche EN/IT, test Pest su MariaDB/MySQL; installazione e stato dei passi nel suo README |
-| [`docs/tecnico/`](docs/tecnico/README.md) | documentazione tecnica per lo sviluppatore: database generato (ER e dizionario), macchine a stati, flussi, regole di business con i test, matrice dei permessi, ADR, installazione e manutenzione sull'hosting |
+| [`strumenti/server/`](strumenti/server/README.md) | nginx, worker della coda (systemd o supervisor) e scheduler d'esempio per il server del cliente |
+| [`docs/tecnico/`](docs/tecnico/README.md) | documentazione tecnica per lo sviluppatore: database generato (ER e dizionario), macchine a stati, flussi, regole di business con i test, matrice dei permessi, ADR, installazione e manutenzione sul server |
 | [`strumenti/genera-doc-db/`](strumenti/genera-doc-db/README.md) | script PHP che rigenera `docs/tecnico/database.md` e la matrice dei permessi dal database dopo le migrazioni |
 | [`docs/per-simone.md`](docs/per-simone.md) | riepilogo per il cliente: cosa è pronto, cosa serve da lui, decisioni |
 | [`docs/brief.md`](docs/brief.md) | richiesta e decisioni di Giulio |

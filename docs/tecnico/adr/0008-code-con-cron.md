@@ -24,3 +24,12 @@ parte con `afterResponse`; la pagina di successo conferma il pagamento senza asp
 - Latenza fino a un minuto per email e webhook.
 - Al deploy serve `php artisan queue:restart`.
 - Se l'hosting vieta `proc_open`, servono righe di cron separate per `queue:work` ed `eas:expire-orders`.
+
+## Variante server pieno (11/11/2026)
+
+Sul server del cliente si può tenere acceso un processo: `QUEUE_WORKER_MODE=daemon` e un worker
+`queue:work --queue=critical,default --sleep=3 --tries=5 --max-time=3600` sotto systemd (`strumenti/server/eas8-queue.service`)
+o supervisor; lo scheduler non lancia più `queue:work` ma resta per scadenze, riconciliazione e pulizie
+(`schedule:run` ogni minuto con cron o `eas8-scheduler.timer`). Latenza di email e webhook: qualche secondo invece di
+un minuto. `queue:restart` nel deploy fa ripartire il worker sul codice nuovo. La modalità `cron` resta il
+predefinito del codice, per un hosting condiviso e in locale.

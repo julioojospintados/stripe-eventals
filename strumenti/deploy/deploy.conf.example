@@ -1,14 +1,16 @@
-# Configurazione di deploy.sh e rollback.sh. Copiala in deploy.conf (accanto agli script) e adattala.
-# Niente segreti qui: stanno in $DEPLOY_PATH/shared/.env.
+# Configurazione di deploy.sh, deploy-pull.sh e rollback.sh. Copiala in deploy.conf (accanto agli script) e adattala.
+# Niente segreti qui: stanno nel .env del sito ($DEPLOY_PATH/shared/.env o repo/sito/.env).
 
-# Cartella del sito sull'hosting: releases/, shared/ e il link current.
+# Cartella del sito sul server: il link current, più releases/ e shared/ (rilasci) o repo/ (git pull).
 DEPLOY_PATH="$HOME/eas8"
-# Repository e tag o branch da installare (ignorati se si passa un archivio a deploy.sh).
+# Repository e tag o branch da installare (ignorati se si passa un archivio a deploy.sh; con deploy-pull.sh solo un branch).
 REPO_URL="git@github.com:<account>/stripe-eventals.git"
 GIT_REF="main"
+# Solo deploy-pull.sh: clone del repository sul server (predefinito $DEPLOY_PATH/repo); GIT_REF è il suo branch.
+# PULL_DIR="$HOME/eas8/repo"
 # Sottocartella del repository con l'applicazione Laravel.
 APP_SUBDIR="sito"
-# PHP e Composer da riga di comando (per esempio /opt/cpanel/ea-php84/root/usr/bin/php).
+# PHP e Composer da riga di comando (per esempio /usr/bin/php8.4 o /opt/cpanel/ea-php84/root/usr/bin/php).
 PHP="php"
 COMPOSER="composer"
 # Rilasci da tenere (quello attivo compreso).

@@ -43,8 +43,8 @@ ini_set('display_errors', 'stderr');
 ini_set('log_errors', '0');
 
 define('VH_VERSIONE', '1.0');
-define('VH_PHP_MINIMO', '8.3.0');
-define('VH_PHP_CONSIGLIATO', '8.4.0');
+define('VH_PHP_MINIMO', '8.4.1');
+define('VH_PHP_CONSIGLIATO', '8.4.1');
 define('VH_PREFISSO', 'zz_verifica_');
 
 $GLOBALS['VH_ESITI'] = array();
@@ -271,16 +271,16 @@ function vh_controlla_php()
     }
 
     if (version_compare($v, VH_PHP_MINIMO, '<')) {
-        vh_esito('php.versione', 'BLOCCANTE', "PHP $v da riga di comando: troppo vecchio (serve almeno 8.3, meglio 8.4)",
-            'Laravel 13 chiede PHP 8.3 o più recente; Filament 5 gira sopra Laravel 13.',
-            'Nel pannello scegli PHP 8.4 (o almeno 8.3) per il sito e per la riga di comando, poi rilancia lo script.'
+        vh_esito('php.versione', 'BLOCCANTE', "PHP $v da riga di comando: troppo vecchio (serve 8.4.1 o più recente)",
+            'Il sito richiede PHP 8.4 (composer.json); le librerie installate chiedono almeno 8.4.1.',
+            'Nel pannello scegli PHP 8.4 per il sito e per la riga di comando, poi rilancia lo script.'
             . $suggerimento);
     } elseif (version_compare($v, VH_PHP_CONSIGLIATO, '<')) {
         vh_esito('php.versione', 'ATTENZIONE', "PHP $v da riga di comando: va bene, ma meglio 8.4",
             'Laravel 13 e Filament 5 funzionano con 8.3; alcune librerie nelle ultime versioni chiedono già 8.4.',
             'Se il pannello offre PHP 8.4, sceglilo per il sito e per la riga di comando.' . $suggerimento);
     } else {
-        vh_esito('php.versione', 'OK', "PHP $v da riga di comando (serve almeno 8.3, consigliato 8.4)");
+        vh_esito('php.versione', 'OK', "PHP $v da riga di comando (serve almeno 8.4.1)");
     }
 
     if (PHP_INT_SIZE < 8) {
