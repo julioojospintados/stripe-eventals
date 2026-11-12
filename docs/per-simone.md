@@ -1,6 +1,6 @@
 # EAS8 · guida per lo sviluppatore
 
-Autore: Giulio Occhipinti. Aggiornato al 12/11/2026.
+Autore: Giulio Occhipinti. Aggiornato al 12/11/2026 (sistema agnostico, sicurezza, carico).
 
 Ciao Simone, questo documento è per te come sviluppatore backend: architettura, codice, database, integrazioni,
 come provarlo e le poche domande di **struttura** che ci servono. Date, prezzi, testi e quantità **non** sono
@@ -115,6 +115,15 @@ staging, modifica dei permessi dei ruoli dal pannello (c'era già).
   `docs/tecnico/esercizio.md` §7.
 - **Primo admin:** `php artisan eventals:create-admin`, poi l'app di autenticazione al primo accesso; gli altri utenti
   dello staff si creano dal pannello.
+- **Sistema agnostico:** il codice non contiene più nulla di EAS8. Impostazioni dell'installazione in
+  `config/eventals.php` (dal `.env`), di ogni evento nel database (fuso, valuta, titolo). Più eventi convivono senza
+  mescolarsi (trigger su valuta, fasce, capienza e codici sconto). Comandi `eventals:*`, con gli `eas:*` come alias.
+  EAS8 è solo un seeder dimostrativo. Dettagli in `docs/tecnico/adr/0011-sistema-agnostico.md`.
+- **Prefisso del QR:** `QR_PREFIX` (EAS8 usa `EAS1`): va concordato con il partner del check-in.
+- **Proxy o CDN davanti:** se c'è, va configurato `trustProxies`, altrimenti i limiti per IP colpiscono tutti
+  insieme (`docs/tecnico/sicurezza.md`).
+- **Carico:** 500 utenti sugli ultimi 100 posti senza vendite in più né deadlock; con 4 core bastano 20-30 processi
+  PHP-FPM. Numeri e configurazione in `docs/tecnico/carico.md`, strumento in `strumenti/carico/`.
 
 ## Repository
 
@@ -133,6 +142,7 @@ Solo struttura. Se non rispondi, vale la proposta.
 | 4 | Dove copiamo i backup fuori dal server? | Uno spazio compatibile S3 in UE, cifrato |
 | 5 | Monitoraggio degli errori: basta il log con avviso via email o volete un servizio come Sentry (regione UE)? | Log più email; Sentry facoltativo |
 | 6 | HTTPS: certbot sul server o certificato gestito da un servizio davanti (per esempio Cloudflare)? | certbot con rinnovo automatico (`strumenti/server/nginx-eas8.conf`) |
+| 7 | La membership vale per tutti gli eventi dell'organizzatore (oggi: sì, con un prezzo membro per evento) o per un evento solo? | Per tutti gli eventi |
 
 ## Prima del lancio (lato tecnico)
 
