@@ -16,10 +16,13 @@ use Spatie\Permission\Models\Role;
  */
 class CreateAdmin extends Command
 {
-    protected $signature = 'eas:create-admin
+    protected $signature = 'eventals:create-admin
         {email : Email dell\'utente dello staff}
         {--name= : Nome mostrato nel pannello}
         {--role=admin : admin, commerciale o organizzatore}';
+
+    /** @var list<string> Nome di prima del sistema multi-evento, deprecato: resta per cron e script esistenti. */
+    protected $aliases = ['eas:create-admin'];
 
     protected $description = 'Crea un utente dello staff con il suo ruolo per il pannello /admin';
 

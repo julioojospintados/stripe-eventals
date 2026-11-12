@@ -22,7 +22,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ReconcileStripe extends Command
 {
-    protected $signature = 'eas:reconcile {--hours=48 : finestra da controllare}';
+    protected $signature = 'eventals:reconcile {--hours=48 : finestra da controllare}';
+
+    /** @var list<string> Nome di prima del sistema multi-evento, deprecato: resta per cron e script esistenti. */
+    protected $aliases = ['eas:reconcile'];
 
     protected $description = 'Confronta ordini e rimborsi con Stripe e rielabora i pagamenti mancanti';
 

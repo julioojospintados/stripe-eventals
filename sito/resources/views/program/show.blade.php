@@ -21,7 +21,7 @@
 
             <dl class="meta misura">
                 @if ($session->starts_at)
-                    <div><dt>{{ __('When') }}</dt><dd>{{ $session->starts_at->timezone($tz)->translatedFormat('l j F') }}, <span class="num">{{ $time($session) }}</span> ({{ __('Lisbon time') }})</dd></div>
+                    <div><dt>{{ __('When') }}</dt><dd>{{ $session->starts_at->timezone($tz)->translatedFormat('l j F') }}, <span class="num">{{ $time($session) }}</span> ({{ __('local time') }})</dd></div>
                 @endif
                 @if ($session->room)
                     <div><dt>{{ __('Room') }}</dt><dd>{{ localized($session->room->name) }}</dd></div>

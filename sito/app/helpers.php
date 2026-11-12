@@ -10,15 +10,15 @@ if (! function_exists('localized')) {
     }
 }
 
-if (! function_exists('euro')) {
-    /** Importo in centesimi formattato nella lingua corrente, es. € 695 o € 276,50. */
-    function euro(int $cents): string
+if (! function_exists('money')) {
+    /** Importo in centesimi nella valuta indicata (quella dell'evento o dell'ordine), es. € 695, US$ 276.50. */
+    function money(int $cents, ?string $currency = null): string
     {
         $fmt = new NumberFormatter(app()->getLocale() === 'it' ? 'it_IT' : 'en_IE', NumberFormatter::CURRENCY);
         if ($cents % 100 === 0) {
             $fmt->setAttribute(NumberFormatter::FRACTION_DIGITS, 0);
         }
 
-        return $fmt->formatCurrency($cents / 100, 'EUR');
+        return $fmt->formatCurrency($cents / 100, strtoupper($currency ?? config('eventals.currency')));
     }
 }

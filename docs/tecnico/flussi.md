@@ -191,7 +191,7 @@ sequenceDiagram
 
 ## 6. Riconciliazione notturna
 
-`eas:reconcile` alle 3:30 (Europe/Lisbon), o dal pannello in coda (permesso `reconciliation.run`).
+`eventals:reconcile` alle 3:30 (Europe/Lisbon), o dal pannello in coda (permesso `reconciliation.run`).
 
 ```mermaid
 sequenceDiagram

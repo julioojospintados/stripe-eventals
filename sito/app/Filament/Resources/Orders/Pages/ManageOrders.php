@@ -35,7 +35,7 @@ class ManageOrders extends ManageRecords
                 ->requiresConfirmation()
                 ->modalDescription('Compares the last 48 hours with Stripe in the background. The report goes to the audit log; admins get an email if something differs.')
                 ->action(function () {
-                    Artisan::queue('eas:reconcile');
+                    Artisan::queue('eventals:reconcile');
                     AuditLog::record('stripe.reconcile_requested', null, auth()->user());
                     Notification::make()->success()->title('Reconciliation queued')->send();
                 }),

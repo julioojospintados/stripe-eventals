@@ -9,8 +9,8 @@ Sull'hosting condiviso non ci sono Supervisor né systemd: un `queue:work` sempr
 ## Decisione
 
 Una sola riga di cron ogni minuto (`schedule:run`). Lo scheduler (`routes/console.php`) lancia
-`queue:work --queue=critical,default --stop-when-empty --max-time=50` con `withoutOverlapping`, `eas:expire-orders`
-ogni minuto, `eas:reconcile` alle 3:30 (Lisbona) e le pulizie giornaliere. Coda `database`. Il codice di accesso
+`queue:work --queue=critical,default --stop-when-empty --max-time=50` con `withoutOverlapping`, `eventals:expire-orders`
+ogni minuto, `eventals:reconcile` alle 3:30 (Lisbona) e le pulizie giornaliere. Coda `database`. Il codice di accesso
 parte con `afterResponse`; la pagina di successo conferma il pagamento senza aspettare la coda.
 
 ## Alternative
@@ -23,7 +23,7 @@ parte con `afterResponse`; la pagina di successo conferma il pagamento senza asp
 
 - Latenza fino a un minuto per email e webhook.
 - Al deploy serve `php artisan queue:restart`.
-- Se l'hosting vieta `proc_open`, servono righe di cron separate per `queue:work` ed `eas:expire-orders`.
+- Se l'hosting vieta `proc_open`, servono righe di cron separate per `queue:work` ed `eventals:expire-orders`.
 
 ## Variante server pieno (11/11/2026)
 

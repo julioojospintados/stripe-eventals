@@ -58,7 +58,7 @@ class ProgramService
         ]);
     }
 
-    /** Giorno dell'evento dall'ora di inizio (a Lisbona), sala e traccia dello stesso evento, slug alla creazione. */
+    /** Giorno dell'evento dall'ora di inizio (nel fuso dell'evento), sala e traccia dello stesso evento, slug alla creazione. */
     private function prepare(ProgramSession $session): void
     {
         $event = $session->event;

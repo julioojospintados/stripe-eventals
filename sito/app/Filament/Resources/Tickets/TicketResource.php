@@ -35,6 +35,7 @@ class TicketResource extends Resource
         return $table
             ->defaultSort('issued_at', 'desc')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 TextColumn::make('short_code')->label('Code')->searchable()->copyable(),
                 TextColumn::make('attendee_name')->label('Name')->searchable(),
                 TextColumn::make('attendee_email')->label('Email')->searchable(),
@@ -42,9 +43,12 @@ class TicketResource extends Resource
                 TextColumn::make('status')->badge(),
                 TextColumn::make('qr_version')->label('QR v.'),
                 TextColumn::make('attendee_corrections_count')->label('Corrections'),
-                TextColumn::make('issued_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon'),
+                TextColumn::make('issued_at')->dateTime('d/m/Y H:i', fn (Ticket $record) => $record->event->timezone),
             ])
-            ->filters([SelectFilter::make('status')->options(TicketStatus::class)])
+            ->filters([
+                SelectFilter::make('event_id')->relationship('event', 'slug')->label('Event'),
+                SelectFilter::make('status')->options(TicketStatus::class),
+            ])
             ->recordActions([self::correctAction(), self::resendAction()]);
     }
 

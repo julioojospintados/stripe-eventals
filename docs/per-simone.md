@@ -31,7 +31,7 @@ flowchart LR
   Q --> DB
   C[cron ogni minuto] --> SCH[schedule:run]
   SCH --> Q
-  SCH -->|eas:expire-orders, eas:reconcile| ST
+  SCH -->|eventals:expire-orders, eventals:reconcile| ST
   Q -->|SMTP| M[Email con QR firmato Ed25519]
 ```
 
@@ -87,7 +87,7 @@ cd sito
 composer install
 cp .env.example .env && php artisan key:generate   # DB, chiavi Stripe di test, SMTP, chiavi QR
 php artisan migrate:fresh --seed                    # dati di prova EAS8
-php artisan eas:create-admin                        # primo admin, poi MFA al primo accesso
+php artisan eventals:create-admin                        # primo admin, poi MFA al primo accesso
 php artisan test
 php artisan serve                                   # sito su :8000, pannello su /admin
 stripe listen --forward-to localhost:8000/stripe/webhook
@@ -113,7 +113,7 @@ staging, modifica dei permessi dei ruoli dal pannello (c'era già).
   fattura si impostano nella Dashboard. L'interruttore è `STRIPE_INVOICES`.
 - **Chiavi del QR:** la coppia Ed25519 si genera una volta e si custodisce fuori dal repository; la rotazione è in
   `docs/tecnico/esercizio.md` §7.
-- **Primo admin:** `php artisan eas:create-admin`, poi l'app di autenticazione al primo accesso; gli altri utenti
+- **Primo admin:** `php artisan eventals:create-admin`, poi l'app di autenticazione al primo accesso; gli altri utenti
   dello staff si creano dal pannello.
 
 ## Repository
@@ -150,6 +150,9 @@ Dettagli in `sito/README.md` (Fase 2) e `docs/tecnico/regole.md` (Programma e sp
 
 Restano: prenotazione delle sessioni gratuite a posti limitati, video per ruolo, sincronizzazione Mailchimp, accompagnatori ed
 espositori, API per il partner del check-in, abstract, attestati e crediti formativi.
+
+Il sistema è riusabile per altri eventi e altri organizzatori: fuso e valuta per evento, organizzatore nel `.env`
+(`EVENTALS_*`), comandi `eventals:*` (gli `eas:*` restano come alias); vedi `docs/tecnico/adr/0011-sistema-agnostico.md`.
 
 ## Come contribuire
 

@@ -15,7 +15,10 @@ use Throwable;
  */
 class ExpireOrders extends Command
 {
-    protected $signature = 'eas:expire-orders';
+    protected $signature = 'eventals:expire-orders';
+
+    /** @var list<string> Nome di prima del sistema multi-evento, deprecato: resta per cron e script esistenti. */
+    protected $aliases = ['eas:expire-orders'];
 
     protected $description = 'Chiude gli ordini con la riserva scaduta, dopo averlo chiesto a Stripe';
 

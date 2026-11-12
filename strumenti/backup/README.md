@@ -32,4 +32,4 @@ il numero di trigger (devono essere 9) e che l'archivio dei file si legga. Detta
 
 Le copie restano sull'hosting: portale anche fuori, in UE (esercizio.md §8). Ripristino vero:
 `openssl enc -d -aes-256-cbc -pbkdf2 -pass file:$HOME/.backup-pass -in <file> | gunzip | mysql <db>`, poi
-`php artisan eas:reconcile` come in esercizio.md §8.
+`php artisan eventals:reconcile` come in esercizio.md §8.

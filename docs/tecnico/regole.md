@@ -1,6 +1,6 @@
 # Regole di business: dove sono garantite e quale test le prova
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026 sul codice di `sito/` (304 test Pest su MariaDB).
+Autore: Giulio Occhipinti. Aggiornato al 12/11/2026 sul codice di `sito/` (330 test Pest su MariaDB).
 
 Percorsi relativi a `sito/`; i test a `sito/tests/`. Vincoli e trigger hanno il nome che si trova in
 [database.md](database.md); le righe indicate sono quelle del 07/11/2026 e si spostano con le modifiche: il nome del
@@ -19,7 +19,7 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Riserva di almeno 30 minuti; sessione 31, riserva 36 | SRV `CapacityService::hold()` r. 25 (`MIN_HOLD_MINUTES`); `CheckoutService` `SESSION_MINUTES`, `HOLD_EXTRA_MINUTES` | `Feature/Shop/CheckoutTest.php` › «riserva i posti per 36 minuti con la sessione da 31», «rifiuta una riserva sotto i 30 minuti» |
 | Riserva attiva con scadenza, rilasciata con data | DB `capacity_holds_active_expires`, `capacity_holds_released_dated` | `SalesSchemaTest.php` › «rifiuta una riserva attiva senza scadenza», «rifiuta una riserva rilasciata senza data» |
 | Una riserva per ordine e pool | DB `capacity_holds_order_id_pool_id_unique` | `SalesSchemaTest.php` › «rifiuta una doppia riserva per lo stesso ordine e pool» |
-| I posti si liberano solo dopo che Stripe conferma la scadenza | JOB `Console/Commands/ExpireOrders.php` r. 24-39 (expire su Stripe, poi `applySession`) | `Feature/Shop/PaymentTest.php` › eas:expire-orders › «non tocca le riserve non ancora scadute», «sessione ancora aperta: la fa scadere su Stripe e poi rilascia», «sessione pagata nel frattempo: conferma invece di rilasciare», «ordine mai arrivato a Stripe: chiuso senza chiamate» |
+| I posti si liberano solo dopo che Stripe conferma la scadenza | JOB `Console/Commands/ExpireOrders.php` r. 24-39 (expire su Stripe, poi `applySession`) | `Feature/Shop/PaymentTest.php` › eventals:expire-orders › «non tocca le riserve non ancora scadute», «sessione ancora aperta: la fa scadere su Stripe e poi rilascia», «sessione pagata nel frattempo: conferma invece di rilasciare», «ordine mai arrivato a Stripe: chiuso senza chiamate» |
 | Riserva allungata se l'acquirente aspetta prima di pagare | SRV `CheckoutService::extendIfNeeded()` r. 192 | `CheckoutTest.php` › «allunga la riserva se l'acquirente ha aspettato prima di pagare» |
 | Allungamento rifiutato se intanto il membro non lo è più | SRV `CheckoutService::extendIfNeeded()` r. 198 | **senza test** |
 | Limite per ordine su tipo e pool | SRV `CheckoutService::checkLimits()` r. 243, 249 | `CheckoutTest.php` › «applica il limite per ordine sul pool», «applica il limite per tipo» |
@@ -107,7 +107,7 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | QR firmato Ed25519 con ticket, versione, evento e chiave, senza nome | SRV `TicketService::qrPayload()` | `Feature/Account/TicketTest.php` › «firma il QR con ticket, versione, evento e chiave, senza il nome» |
 | QR e biglietti solo del proprietario o dell'intestatario, solo validi | POL `Http/Controllers/AccountController.php` `ticketsOf()`, `qr()` | `AccountTest.php` › «nega ordini e biglietti di un altro utente (IDOR)», «mostra il biglietto anche all'intestatario…»; `MoneyEdgeCasesTest.php` › «QR: niente per i biglietti di altri né per un biglietto rimborsato» |
 | Email dei biglietti una volta sola, con limite di invio | DB `sent_messages_dedupe_key_unique`; JOB `Jobs/SendTicketsEmail.php` r. 39, 50 | `TicketTest.php` › «manda all'acquirente tutti i biglietti e a ogni partecipante il suo, una volta sola», «mette le email in coda con il limite di invio» |
-| Reinvio solo di biglietti validi, con audit | SRV `TicketService::resend()` r. 52; POL `TicketPolicy::resend` | `Feature/Panel/PermissionsTest.php` › «Resend ticket dal pannello…»; `TicketTest.php` › «eas:resend-ticket rimanda il biglietto in coda» |
+| Reinvio solo di biglietti validi, con audit | SRV `TicketService::resend()` r. 52; POL `TicketPolicy::resend` | `Feature/Panel/PermissionsTest.php` › «Resend ticket dal pannello…»; `TicketTest.php` › «eventals:resend-ticket rimanda il biglietto in coda» |
 | Omaggi: 0 €, emessi dallo staff con motivo, contano nella capienza, revocabili | DB `orders_comp_shape`; SRV `Services/ComplimentaryService.php`; POL `OrderPolicy::issueComplimentary` | `OrdersSchemaTest.php` › omaggi (2 test); `ActionsTest.php` › «emette un omaggio a 0 €…», «rifiuta l'omaggio a pool pieno e lo revoca…» |
 | Un accompagnatore attivo per posto del pass | DB colonna generata `companion_claims.active_key` + `companion_claims_one_per_slot` | `OrdersSchemaTest.php` › «ammette un solo accompagnatore attivo per posto del pass» |
 | Export del check-in solo con biglietti validi | SRV `Services/CsvExports.php` | `Feature/Panel/ExportTest.php` › «esporta per il check-in solo i biglietti validi…» |
@@ -120,7 +120,7 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Limite di richieste del codice per email | SRV `LoginCodeService::send()` r. 28 | `LoginCodeTest.php` › «limita le richieste di codice per email» |
 | Limite per IP (invio e verifica) | SRV `LoginCodeService` r. 29, 49; rotte `throttle:10,1` | **senza test** |
 | Lo staff non entra con il codice | SRV `LoginCodeService` r. 31, 67 | `LoginCodeTest.php` › «non apre la sessione allo staff…» |
-| Staff: password argon2id | `.env` `HASH_DRIVER=argon2id`; `Console/Commands/CreateAdmin.php` | `Feature/StaffAccessTest.php` › «crea un admin con eas:create-admin» |
+| Staff: password argon2id | `.env` `HASH_DRIVER=argon2id`; `Console/Commands/CreateAdmin.php` | `Feature/StaffAccessTest.php` › «crea un admin con eventals:create-admin» |
 | Staff: MFA TOTP obbligatoria | `Providers/Filament/AdminPanelProvider.php` r. 32-34 (`isRequired: true`) | **senza test** |
 | Pannello solo allo staff | POL `User::canAccessPanel` | `StaffAccessTest.php` › «non apre il pannello a chi non è dello staff»; `Feature/Panel/PolicyTest.php` › «chiude il pannello a chi compra» |
 | Ogni azione del pannello con il suo permesso, mai con il nome del ruolo | POL `Policies/*.php`; seeder `RolesAndPermissionsSeeder` | `PermissionsTest.php` › «ogni ruolo può solo le azioni di §5.3», «i ruoli hanno esattamente i permessi predefiniti…»; `PolicyTest.php` (6 test) |
@@ -143,6 +143,21 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Sul sito solo sessioni pubblicate e speaker con almeno una sessione pubblicata | SRV `ProgramController`, `SpeakerController`, `Speaker::scopeVisible()` | `ProgramPagesTest.php` › «nasconde sessioni non pubblicate e chi parla solo lì» |
 | Programma, sale, tracce, speaker e import solo a organizzatore e admin | POL `RoomPolicy`, `TrackPolicy`, `ProgramSessionPolicy` (`import`), `SpeakerPolicy` | `Panel/PermissionsTest.php` › matrice; `Panel/PolicyTest.php` › pagine per ruolo, «mostra l'import del programma solo a chi ha program.import» |
 
+## Più eventi nella stessa installazione (ADR 0011)
+
+| Regola | Dove | Test |
+|---|---|---|
+| Pagine pubbliche su un solo evento: `EVENTALS_EVENT`, poi il prossimo pubblicato non finito, poi l'ultimo | SRV `Models/Event.php` `current()` | `MultiEventTest.php` › «sceglie l'evento pubblico…» |
+| Prezzo nella valuta dell'evento del tipo; fascia dello stesso evento del tipo | TRG `ticket_prices_same_event_insert`, `ticket_prices_same_event_update`; SRV `Models/TicketPrice.php` (valuta dall'evento); pannello `TicketPriceResource` (fasce filtrate) | `MultiEventTest.php` › «i trigger rifiutano prezzi, pool, codici e ordini mescolati…», «fasce e prezzi per evento…» |
+| Ordine e `price_data` di Stripe nella valuta dell'evento | TRG `orders_currency_matches_event`; SRV `CheckoutService::reserve()`, `Models/Order.php` | `MultiEventTest.php` › «fasce e prezzi per evento…» |
+| Valuta dell'evento fissa dopo il primo prezzo o ordine | TRG `events_currency_locked`; pannello `EventResource` (campo spento, `Event::hasSalesData()`) | `MultiEventTest.php` › «i trigger rifiutano…» |
+| Pool di capienza e tipi di un codice sconto nello stesso evento del tipo | TRG `ticket_type_pools_same_event_*`, `discount_code_ticket_types_same_event_*` | `MultiEventTest.php` › «la capienza di un evento non tocca…», «i trigger rifiutano…» |
+| Sconto a importo fisso solo nella sua valuta (codici senza evento) | SRV `CheckoutService::findDiscount()`; `Models/DiscountCode.php` (valuta dall'evento) | `MultiEventTest.php` › «un codice a importo fisso vale solo nella sua valuta…» |
+| Programma, sessioni e speaker pubblici solo dell'evento corrente | SRV `ProgramController`, `SpeakerController`, `Speaker::scopeVisible($eventId)` | `MultiEventTest.php` › «le pagine pubbliche mostrano solo l'evento corrente…» |
+| Export di biglietti e ordini per evento | SRV `CsvExports` (`$eventId`), pagina `Exports` | `MultiEventTest.php` › «gli export di biglietti e ordini sono per evento» |
+| Riconciliazione su tutti gli eventi, ogni ordine sul suo | JOB `eventals:reconcile` | `MultiEventTest.php` › «la riconciliazione rielabora gli ordini di entrambi…» |
+| Comandi `eventals:*`, alias `eas:*` deprecati | JOB `Console/Commands/*` (`$aliases`) | `MultiEventTest.php` › «i comandi hanno il prefisso eventals:…» |
+
 ## Regole senza test
 
 | Regola | Proposta |
@@ -157,4 +172,5 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | CHECK su `refunds` (importo, causa, origine) | test di schema |
 | Limite per IP del codice di accesso | test in `LoginCodeTest.php` |
 | MFA obbligatoria nel pannello | test che uno staff senza MFA configurata viene mandato alla configurazione |
+| Ore del pannello nel fuso dell'evento (form e tabelle con `Event::timezoneOf()`) | test Livewire su `PriceTierResource` con un evento a New York |
 | Installazione senza trigger (`DB_TRIGGERS_OPTIONAL=true`, errore 1419) | test di `App\Database\CreatesTriggers` con un'eccezione 1419 finta |

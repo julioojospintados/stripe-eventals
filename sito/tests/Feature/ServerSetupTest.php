@@ -15,8 +15,8 @@ function scheduledCommands(string $mode): string
 }
 
 it('lancia queue:work dallo scheduler solo in modalità cron', function () {
-    expect(scheduledCommands('cron'))->toContain('queue:work')->toContain('eas:expire-orders');
-    expect(scheduledCommands('daemon'))->not->toContain('queue:work')->toContain('eas:expire-orders');
+    expect(scheduledCommands('cron'))->toContain('queue:work')->toContain('eventals:expire-orders');
+    expect(scheduledCommands('daemon'))->not->toContain('queue:work')->toContain('eventals:expire-orders');
 });
 
 it('mostra la striscia STAGING e il noindex solo in staging', function () {

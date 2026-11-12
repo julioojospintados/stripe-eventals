@@ -11,7 +11,6 @@ class MembershipPlanFactory extends Factory
         return [
             'name' => ['en' => 'Annual membership'],
             'amount_cents' => 20000,
-            'currency' => 'eur',
             'billing_interval' => 'year',
         ];
     }

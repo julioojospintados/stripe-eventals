@@ -56,14 +56,14 @@
                                     <th scope="row">{{ localized($row['tier']->name) }}
                                         @if ($current) <span class="badge badge--info">{{ __('Now') }}</span> @endif</th>
                                     <td class="num">{{ $row['tier']->ends_at->timezone($tz)->subSecond()->translatedFormat('j M Y') }}</td>
-                                    <td class="num">{{ $row['public'] ? euro($row['public']->amount_cents) : '—' }}</td>
-                                    <td class="num">{{ $row['member'] && $row['member']->price_role->value === 'member' ? euro($row['member']->amount_cents) : '—' }}</td>
+                                    <td class="num">{{ $row['public'] ? money($row['public']->amount_cents, $event->currency) : '—' }}</td>
+                                    <td class="num">{{ $row['member'] && $row['member']->price_role->value === 'member' ? money($row['member']->amount_cents, $event->currency) : '—' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-                <p class="t-small t-muted">{{ __('Dates are Lisbon time. A dash means the public price applies.') }}</p>
+                <p class="t-small t-muted">{{ __('Dates are local time. A dash means the public price applies.') }}</p>
             @endif
         </div>
     </section>
@@ -77,7 +77,7 @@
                 @foreach ($passes as ['type' => $type, 'price' => $price, 'seats' => $seats])
                     @php $max = $type->max_per_order ?? 6; @endphp
                     <fieldset class="scheda">
-                        <legend class="t-2">{{ localized($type->name) }} · <span class="num">{{ euro($price->amount_cents) }}</span></legend>
+                        <legend class="t-2">{{ localized($type->name) }} · <span class="num">{{ money($price->amount_cents, $event->currency) }}</span></legend>
                         <p class="t-muted">{{ $price->price_role->value === 'member' ? __('Member price for your own ticket; other people pay the public price.') : __('Public price.') }}
                             {{ __('Write each name exactly as on an ID document: it is printed on the ticket and checked at the entrance.') }}</p>
                         @if ($seats === 0)
@@ -104,7 +104,7 @@
                             <div class="scheda workshop">
                                 <div class="workshop__testa">
                                     <h3 class="t-3">{{ localized($type->name) }}</h3>
-                                    <span class="prezzo">{{ euro($price->amount_cents) }}</span>
+                                    <span class="prezzo">{{ money($price->amount_cents, $event->currency) }}</span>
                                 </div>
                                 <p class="t-small">
                                     @if ($type->programSession?->starts_at)

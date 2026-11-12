@@ -30,7 +30,7 @@ class CapacityPoolResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             TextInput::make('name')->required()->maxLength(120),
             TextInput::make('capacity')->required()->integer()
                 // Sotto i posti già venduti o in riserva il database rifiuta: qui lo si dice prima.
@@ -45,6 +45,7 @@ class CapacityPoolResource extends Resource
         return $table
             ->defaultSort('name')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('capacity')->numeric(),
                 TextColumn::make('confirmed')->label('Sold')->numeric(),

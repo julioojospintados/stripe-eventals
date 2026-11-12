@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DiscountType;
 use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PriceRole;
@@ -353,6 +354,8 @@ class CheckoutService
 
         $valid = $code && $code->active
             && ($code->event_id === null || $code->event_id === $event->id)
+            // Un importo fisso in un'altra valuta non si applica (codici senza evento, eventi in valute diverse).
+            && ($code->discount_type !== DiscountType::Amount || $code->currency === $event->currency)
             && (! $code->valid_from || $code->valid_from->lte(now()))
             && (! $code->valid_to || $code->valid_to->gt(now()))
             && ($code->eligible_roles === null || in_array($role->value, $code->eligible_roles, true));

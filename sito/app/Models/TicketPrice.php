@@ -15,6 +15,12 @@ class TicketPrice extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function booted(): void
+    {
+        // La valuta è sempre quella dell'evento del tipo (il trigger ticket_prices_same_event rifiuta le altre).
+        static::creating(fn (TicketPrice $price) => $price->currency ??= $price->ticketType->event->currency);
+    }
+
     protected function casts(): array
     {
         return ['price_role' => PriceRole::class, 'amount_cents' => 'integer'];

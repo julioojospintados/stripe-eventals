@@ -14,10 +14,10 @@ class GenerateCsvExport implements ShouldQueue
 
     public int $timeout = 300;
 
-    public function __construct(public string $type, public int $userId, public string $filename) {}
+    public function __construct(public string $type, public int $userId, public string $filename, public ?string $eventId = null) {}
 
     public function handle(CsvExports $exports): void
     {
-        $exports->store($this->type, User::findOrFail($this->userId), $this->filename);
+        $exports->store($this->type, User::findOrFail($this->userId), $this->filename, $this->eventId);
     }
 }

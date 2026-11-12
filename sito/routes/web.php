@@ -9,7 +9,6 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\StripeWebhookController;
-use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -25,7 +24,7 @@ Route::get('/language/{locale}', function (string $locale) {
     auth()->user()?->update(['locale' => $locale]);
 
     return back();
-})->whereIn('locale', SetLocale::LOCALES)->name('locale');
+})->whereIn('locale', config('eventals.locales'))->name('locale');
 
 // Accesso dei clienti con codice via email (i limiti veri sono in LoginCodeService).
 Route::get('/login', [LoginController::class, 'show'])->name('login');

@@ -15,7 +15,7 @@ class ShopController
 {
     public function index(Request $request, Catalog $catalog)
     {
-        $event = Event::published()->latest('starts_on')->firstOrFail();
+        $event = Event::current() ?? abort(404);
         if (! $request->user()) {
             // Dopo il login si torna qui.
             $request->session()->put('url.intended', route('shop.index'));
@@ -51,7 +51,7 @@ class ShopController
             'discount_code' => __('discount code'),
         ])->validate();
 
-        $event = Event::published()->latest('starts_on')->firstOrFail();
+        $event = Event::current() ?? abort(404);
         $order = $checkout->reserve($request->user(), $event, $data['lines'], $data['discount_code'] ?? null, app()->getLocale());
 
         return $request->expectsJson()

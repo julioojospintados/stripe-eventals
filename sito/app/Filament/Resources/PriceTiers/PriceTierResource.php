@@ -39,13 +39,13 @@ class PriceTierResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             TextInput::make('code')->required()->regex('/^[a-z_]{2,30}$/')->helperText('Lowercase letters and _, e.g. early_bird.'),
             TextInput::make('name.en')->label('Name (EN)')->required()->maxLength(100),
             TextInput::make('name.it')->label('Name (IT)')->maxLength(100),
-            DateTimePicker::make('starts_at')->timezone('Europe/Lisbon')->required()->helperText('Lisbon time, included.'),
-            DateTimePicker::make('ends_at')->timezone('Europe/Lisbon')->required()->after('starts_at')
-                ->helperText('Lisbon time, excluded.')
+            DateTimePicker::make('starts_at')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->required()->helperText('Event time, included.'),
+            DateTimePicker::make('ends_at')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->required()->after('starts_at')
+                ->helperText('Event time, excluded.')
                 ->rules([fn (Get $get, ?PriceTier $record) => self::noOverlap($get, $record)]),
             TextInput::make('position')->integer()->default(0),
             Toggle::make('active')->default(true),
@@ -59,8 +59,8 @@ class PriceTierResource extends Resource
             if (! $get('active') || ! $get('starts_at') || ! $value) {
                 return;
             }
-            $tz = 'Europe/Lisbon';
-            // $value è l'ora di Lisbona scritta nel campo; $get dà lo stato già convertito in UTC dal DateTimePicker.
+            $tz = Event::timezoneOf($get('event_id'));
+            // $value è l'ora dell'evento scritta nel campo; $get dà lo stato già convertito in UTC dal DateTimePicker.
             $other = PriceTier::where('event_id', $get('event_id'))->where('active', true)
                 ->when($record, fn ($q) => $q->whereKeyNot($record->getKey()))
                 ->where('starts_at', '<', Carbon::parse($value, $tz)->utc())
@@ -81,10 +81,11 @@ class PriceTierResource extends Resource
         return $table
             ->defaultSort('starts_at')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 TextColumn::make('name.en')->label('Name'),
                 TextColumn::make('code'),
-                TextColumn::make('starts_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon'),
-                TextColumn::make('ends_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon'),
+                TextColumn::make('starts_at')->dateTime('d/m/Y H:i', fn (PriceTier $record) => $record->event->timezone),
+                TextColumn::make('ends_at')->dateTime('d/m/Y H:i', fn (PriceTier $record) => $record->event->timezone),
                 IconColumn::make('active')->boolean(),
             ])
             ->recordActions([EditAction::make()]);

@@ -24,6 +24,15 @@ class DiscountCode extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function booted(): void
+    {
+        // Lo sconto a importo fisso vale nella valuta del suo evento; senza evento in quella dell'installazione.
+        static::saving(function (DiscountCode $code) {
+            $code->currency = ($code->event_id ? Event::whereKey($code->event_id)->value('currency') : null)
+                ?? $code->currency ?? config('eventals.currency');
+        });
+    }
+
     protected function casts(): array
     {
         return [

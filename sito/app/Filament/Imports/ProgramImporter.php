@@ -23,13 +23,13 @@ abstract class ProgramImporter extends Importer
         return [
             Select::make('event_id')->label('Event')->required()
                 ->options(fn () => Event::latest('starts_on')->pluck('slug', 'id'))
-                ->default(fn () => Event::latest('starts_on')->value('id')),
+                ->default(fn () => Event::defaultId()),
         ];
     }
 
     protected function event(): Event
     {
-        return $this->event ??= Event::findOrFail($this->options['event_id'] ?? Event::latest('starts_on')->value('id'));
+        return $this->event ??= Event::findOrFail($this->options['event_id'] ?? Event::defaultId());
     }
 
     protected static function isExample(mixed $code): bool

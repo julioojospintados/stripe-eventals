@@ -1,6 +1,6 @@
 # Decisioni architetturali (ADR)
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026.
+Autore: Giulio Occhipinti. Aggiornato al 12/11/2026.
 
 Formato breve: contesto, decisione, alternative, conseguenze. Le motivazioni vengono da `docs/decisioni.md` e
 `docs/architettura.md`; «proposta, da confermare» è lo stato che quei documenti danno alla scelta.
@@ -17,3 +17,4 @@ Formato breve: contesto, decisione, alternative, conseguenze. Le motivazioni ven
 | [0008](0008-code-con-cron.md) | Code con cron, senza processi sempre attivi | proposta, da confermare |
 | [0009](0009-nessun-cambio-di-nome.md) | Nessun cambio di nome sul biglietto | accettata (la correzione del refuso è proposta) |
 | [0010](0010-permessi-granulari-policy.md) | Permessi granulari con Policy | proposta, da confermare |
+| [0011](0011-sistema-agnostico.md) | Sistema agnostico: più eventi, un organizzatore per installazione | proposta, da confermare |

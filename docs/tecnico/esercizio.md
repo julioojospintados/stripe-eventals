@@ -62,7 +62,7 @@ Nessun altro file del progetto, `.env` compreso, deve essere raggiungibile dal w
    php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan filament:optimize
    chmod -R u+rwX,go-rwx ~/eas8/shared/storage bootstrap/cache
    ln -sfn ~/eas8/releases/<data> ~/eas8/current
-   php artisan eas:create-admin <email> --name="<nome>" --role=admin
+   php artisan eventals:create-admin <email> --name="<nome>" --role=admin
    ```
 5. Imposta la document root (§2), il cron (§5) e il webhook (§6). Primo accesso a `/admin`: password e attivazione
    della MFA; conserva i codici di recupero.
@@ -110,15 +110,15 @@ la stessa nei due casi:
 ```
 
 Lo scheduler (`sito/routes/console.php`) lancia: in modalità `cron` `queue:work --queue=critical,default
---stop-when-empty --max-time=50` ogni minuto senza sovrapposizioni, `eas:expire-orders` ogni minuto, `eas:reconcile` alle 3:30
+--stop-when-empty --max-time=50` ogni minuto senza sovrapposizioni, `eventals:expire-orders` ogni minuto, `eventals:reconcile` alle 3:30
 (Europe/Lisbon), pulizia dei codici di accesso e degli export ogni giorno. Verifica: `php artisan schedule:list`.
 
 Se l'hosting vieta `proc_open`, tre righe separate:
 
 ```
 * * * * * cd …/current && php artisan queue:work --queue=critical,default --stop-when-empty --max-time=50 --tries=5
-* * * * * cd …/current && php artisan eas:expire-orders
-30 3 * * * cd …/current && php artisan eas:reconcile
+* * * * * cd …/current && php artisan eventals:expire-orders
+30 3 * * * cd …/current && php artisan eventals:reconcile
 ```
 
 ## 6. Webhook Stripe in produzione
@@ -213,7 +213,7 @@ Cifrare è obbligatorio: il dump contiene dati personali, hash delle password e 
 4. Annota data ed esito.
 
 **Dopo un ripristino vero:** i pagamenti arrivati dopo il dump non ci sono. Lancia
-`php artisan eas:reconcile --hours=<ore dal dump + 2>`: rielabora i pagamenti presenti solo su Stripe; i rimborsi
+`php artisan eventals:reconcile --hours=<ore dal dump + 2>`: rielabora i pagamenti presenti solo su Stripe; i rimborsi
 segnalati come `refund_not_recorded` si registrano rielaborando l'evento da Stripe (Dashboard → evento → «Resend»).
 
 ## 9. Migrazioni sicure in produzione
@@ -276,7 +276,7 @@ Ogni giorno (gli avvisi `StaffAlert` arrivano per email agli admin, ma non basta
 «invalid signature» = `STRIPE_WEBHOOK_SECRET` sbagliato o `config:cache` non rifatto; 400 «wrong mode» = chiave live
 con eventi di test o viceversa; 5xx = log di Laravel. Stripe riprova per 3 giorni: corretta la causa, gli eventi
 arrivano da soli; per quelli più vecchi «Resend» dalla Dashboard. Intanto i pagamenti si confermano dalla pagina di
-successo e da `eas:expire-orders`; dopo, `php artisan eas:reconcile --hours=<durata del guasto + 2>`.
+successo e da `eventals:expire-orders`; dopo, `php artisan eventals:reconcile --hours=<durata del guasto + 2>`.
 
 **La coda è bloccata.** `SELECT COUNT(*) FROM jobs;` cresce: controlla che il cron giri (log del cron dell'hosting,
 `php artisan schedule:run` a mano). Se c'è un lock rimasto da un worker ucciso: `php artisan cache:clear` libera il
@@ -289,14 +289,14 @@ e guarda l'errore.
 `php artisan tinker --execute="Mail::raw('prova', fn(\$m) => \$m->to('<tu>'))"`. Se la casella ha raggiunto il limite
 giornaliero, piano B: fornitore SMTP transazionale in UE e nuove credenziali nel `.env`. Il codice di accesso non
 passa dalla coda: se i clienti non lo ricevono, il problema è l'SMTP stesso. Un biglietto si rimanda con
-`php artisan eas:resend-ticket <id o codice breve> [--to=<email>]`.
+`php artisan eventals:resend-ticket <id o codice breve> [--to=<email>]`.
 
 **Ordine pagato senza biglietti.** Cerca l'ordine nel pannello e lo stato:
 
 | Stato | Causa | Cosa fare |
 |---|---|---|
-| `pending`, `expired`, `cancelled` ma pagato su Stripe | Webhook non elaborato | `stripe_events` per la sessione (`object_id`): se `failed`, correggi e rimetti in coda; se manca, `php artisan eas:reconcile` |
+| `pending`, `expired`, `cancelled` ma pagato su Stripe | Webhook non elaborato | `stripe_events` per la sessione (`object_id`): se `failed`, correggi e rimetti in coda; se manca, `php artisan eventals:reconcile` |
 | `needs_review` | Importo pagato diverso dal totale | Decidi: «Issue tickets» o «Refund instead» |
 | `needs_refund` | Pagamento tardivo senza posti | Il rimborso è automatico; se dopo un'ora non è `refunded`, `queue:failed` e Dashboard Stripe |
 | `paid` senza righe in `tickets` | Errore durante l'emissione (non dovrebbe: stessa transazione) | Segnala a Giulio con l'id; non inserire biglietti a mano in SQL |
-| `paid` con biglietti, email non ricevuta | Email | `eas:resend-ticket`; l'acquirente li vede comunque in `/account` |
+| `paid` con biglietti, email non ricevuta | Email | `eventals:resend-ticket`; l'acquirente li vede comunque in `/account` |

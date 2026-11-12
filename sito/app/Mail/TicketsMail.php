@@ -21,7 +21,10 @@ class TicketsMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: $this->lang === 'it' ? 'I tuoi biglietti EAS8' : 'Your EAS8 tickets');
+        $title = $this->tickets->first()->event->title;
+        $name = $title[$this->lang] ?? $title['en'] ?? '';
+
+        return new Envelope(subject: $this->lang === 'it' ? "I tuoi biglietti $name" : "Your $name tickets");
     }
 
     public function content(): Content

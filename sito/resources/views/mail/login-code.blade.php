@@ -1,4 +1,4 @@
-Your EAS8 access code / Il tuo codice di accesso EAS8:
+Your {{ config('eventals.organizer.name') }} access code / Il tuo codice di accesso {{ config('eventals.organizer.name') }}:
 
 {{ $code }}
 

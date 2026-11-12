@@ -12,7 +12,7 @@ né restare bloccato per sempre. Un webhook di pagamento può arrivare dopo la s
 - Pool di posti con contatori `held` e `confirmed` e `CHECK held + confirmed <= capacity`; ogni presa è un UPDATE
   condizionale sotto lock dei pool in ordine di id.
 - Riserva (`capacity_holds`) di 36 minuti: sessione Stripe di 31 (minimo Stripe 30) più 5 di margine.
-- I posti si liberano **solo dopo** che Stripe conferma la scadenza (webhook `expired` o `eas:expire-orders`, che
+- I posti si liberano **solo dopo** che Stripe conferma la scadenza (webhook `expired` o `eventals:expire-orders`, che
   prima chiama `expire`).
 - Pagamento tardivo: riprenota se ci sono ancora posti, altrimenti `needs_refund`, nessun biglietto, rimborso
   automatico e avviso.

@@ -46,5 +46,5 @@ it('crea la membership annuale da 200 € e si può rilanciare', function () {
     $this->seed(DatabaseSeeder::class);
 
     expect(MembershipPlan::sole()->amount_cents)->toBe(20000)
-        ->and(Event::count())->toBe(1);
+        ->and(Event::orderBy('slug')->pluck('slug')->all())->toBe(['demo-conference', 'eas8-lisbon-2027']);
 });

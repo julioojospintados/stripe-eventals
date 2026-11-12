@@ -10,9 +10,9 @@ Autore: Giulio Occhipinti.
 |---|---|
 | Server | 10.11.14-MariaDB-0ubuntu0.24.04.1 |
 | Database | `eas8` |
-| Ultima migrazione | `2026_11_11_090000_add_stripe_invoice_links` |
+| Ultima migrazione | `2026_11_12_090000_make_events_agnostic` |
 | Tabelle | 49 |
-| Trigger | 11 |
+| Trigger | 19 |
 
 Nota per MySQL: le colonne JSON qui risultano `longtext` con un `CHECK json_valid()` perché il documento è
 generato su MariaDB; su MySQL 8 sono di tipo `json`. Le colonne generate `*_key` o `active_*`
@@ -571,7 +571,7 @@ Codici sconto calcolati dal server: tipo, valore, validità, ruoli ammessi, limi
 | `discount_type` | varchar(10) | no |  |  |
 | `percent_off` | tinyint(3) unsigned | sì |  |  |
 | `amount_off_cents` | int(10) unsigned | sì |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `eligible_roles` | json (longtext) | sì |  |  |
 | `combinable_with_role_price` | tinyint(1) | no | `0` |  |
 | `applies_to_membership` | tinyint(1) | no | `0` |  |
@@ -630,6 +630,34 @@ Tipi di biglietto a cui si applica un codice sconto (vuota = tutti).
 - **Indici:** `discount_code_ticket_types_ticket_type_id_foreign` (ticket_type_id)
 - **FK** `discount_code_id` → `discount_codes.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`discount_code_ticket_types_discount_code_id_foreign`)
 - **FK** `ticket_type_id` → `ticket_types.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`discount_code_ticket_types_ticket_type_id_foreign`)
+- **Trigger** `discount_code_ticket_types_same_event_insert` (BEFORE INSERT)
+- **Trigger** `discount_code_ticket_types_same_event_update` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>discount_code_ticket_types_same_event_insert</code></summary>
+
+```sql
+begin
+  if exists (select 1 from discount_codes d join ticket_types t on t.id = new.ticket_type_id
+             where d.id = new.discount_code_id and d.event_id is not null and d.event_id <> t.event_id) then
+    signal sqlstate '45000' set message_text = 'discount_code_type_other_event';
+  end if;
+end
+```
+
+</details>
+
+<details><summary>Corpo di <code>discount_code_ticket_types_same_event_update</code></summary>
+
+```sql
+begin
+  if exists (select 1 from discount_codes d join ticket_types t on t.id = new.ticket_type_id
+             where d.id = new.discount_code_id and d.event_id is not null and d.event_id <> t.event_id) then
+    signal sqlstate '45000' set message_text = 'discount_code_type_other_event';
+  end if;
+end
+```
+
+</details>
 
 ### `disputes`
 
@@ -667,12 +695,12 @@ Evento (EAS8): nome tradotto, date, valuta, stato, finestra di vendita.
 | `summary` | json (longtext) | sì |  |  |
 | `description` | json (longtext) | sì |  |  |
 | `status` | varchar(20) | no | `'draft'` |  |
-| `timezone` | varchar(64) | no | `'Europe/Lisbon'` |  |
+| `timezone` | varchar(64) | no |  |  |
 | `starts_on` | date | no |  |  |
 | `ends_on` | date | no |  |  |
 | `venue_name` | varchar(200) | sì |  |  |
 | `venue_address` | varchar(500) | sì |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `sales_open_at` | datetime | sì |  |  |
 | `sales_close_at` | datetime | sì |  |  |
 | `created_at` | datetime | sì |  |  |
@@ -684,6 +712,21 @@ Evento (EAS8): nome tradotto, date, valuta, stato, finestra di vendita.
 - **CHECK** `events_dates_valid`: `ends_on >= starts_on`
 - **CHECK** `events_sales_window`: `sales_open_at is null or sales_close_at is null or sales_close_at > sales_open_at`
 - **CHECK** `events_status_valid`: `status in ('draft','published','cancelled','archived')`
+- **Trigger** `events_currency_locked` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>events_currency_locked</code></summary>
+
+```sql
+begin
+  if new.currency <> old.currency and (
+       exists (select 1 from orders o where o.event_id = old.id)
+       or exists (select 1 from ticket_prices p join ticket_types t on t.id = p.ticket_type_id where t.event_id = old.id)) then
+    signal sqlstate '45000' set message_text = 'event_currency_locked';
+  end if;
+end
+```
+
+</details>
 
 ### `event_days`
 
@@ -852,7 +895,7 @@ Piano della membership: prezzo mostrato e Price ID Stripe ricorrente.
 | `name` | json (longtext) | no |  |  |
 | `stripe_price_id` | varchar(255) | sì |  |  |
 | `amount_cents` | int(10) unsigned | no |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `billing_interval` | varchar(10) | no | `'year'` |  |
 | `active` | tinyint(1) | no | `1` |  |
 | `created_at` | datetime | sì |  |  |
@@ -967,7 +1010,7 @@ Ordini: stato, ruolo e fascia fissati alla riserva, importi in centesimi, sessio
 | `origin` | varchar(20) | no | `'checkout'` |  |
 | `price_role` | varchar(10) | no |  |  |
 | `price_tier_id` | uuid | sì |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `subtotal_cents` | int(11) | no |  |  |
 | `discount_cents` | int(11) | no | `0` |  |
 | `total_cents` | int(11) | no |  |  |
@@ -1006,7 +1049,20 @@ Ordini: stato, ruolo e fascia fissati alla riserva, importi in centesimi, sessio
 - **CHECK** `orders_paid_has_date`: `status <> 'paid' or paid_at is not null`
 - **CHECK** `orders_price_role_valid`: `price_role in ('public','member')`
 - **CHECK** `orders_status_valid`: `status in ('pending','processing','paid','expired','failed','needs_refund','cancelled','partially_refunded','refunded','needs_review')`
+- **Trigger** `orders_currency_matches_event` (BEFORE INSERT)
 - **Trigger** `orders_guard` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>orders_currency_matches_event</code></summary>
+
+```sql
+begin
+  if not exists (select 1 from events e where e.id = new.event_id and e.currency = new.currency) then
+    signal sqlstate '45000' set message_text = 'order_currency_mismatch';
+  end if;
+end
+```
+
+</details>
 
 <details><summary>Corpo di <code>orders_guard</code></summary>
 
@@ -1218,7 +1274,7 @@ Rimborsi Stripe per ordine: importo, causa, origine (auto, staff, dashboard), st
 | `order_id` | uuid | no |  |  |
 | `ticket_id` | uuid | sì |  |  |
 | `amount_cents` | int(11) | no |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `cause` | varchar(30) | sì |  |  |
 | `reason` | varchar(500) | sì |  |  |
 | `status` | varchar(20) | no | `'pending'` |  |
@@ -1530,7 +1586,7 @@ Prezzo in centesimi per tipo × fascia × ruolo di prezzo (pubblico, membro); fa
 | `price_tier_id` | uuid | sì |  |  |
 | `price_role` | varchar(10) | no |  |  |
 | `amount_cents` | int(10) unsigned | no |  |  |
-| `currency` | char(3) | no | `'eur'` |  |
+| `currency` | char(3) | no |  |  |
 | `created_at` | datetime | sì |  |  |
 | `updated_at` | datetime | sì |  |  |
 | `tier_key` | varchar(36) | sì |  | generata (stored): `coalesce(cast(price_tier_id as char(36) charset utf8mb4),'*')` |
@@ -1542,6 +1598,44 @@ Prezzo in centesimi per tipo × fascia × ruolo di prezzo (pubblico, membro); fa
 - **FK** `ticket_type_id` → `ticket_types.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`ticket_prices_ticket_type_id_foreign`)
 - **CHECK** `ticket_prices_currency_lower`: `currency = lcase(currency)`
 - **CHECK** `ticket_prices_role_valid`: `price_role in ('public','member')`
+- **Trigger** `ticket_prices_same_event_insert` (BEFORE INSERT)
+- **Trigger** `ticket_prices_same_event_update` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>ticket_prices_same_event_insert</code></summary>
+
+```sql
+begin
+  if not exists (select 1 from ticket_types t join events e on e.id = t.event_id
+                 where t.id = new.ticket_type_id and e.currency = new.currency) then
+    signal sqlstate '45000' set message_text = 'ticket_price_currency_mismatch';
+  end if;
+  if new.price_tier_id is not null and not exists (
+       select 1 from ticket_types t join price_tiers p on p.event_id = t.event_id
+       where t.id = new.ticket_type_id and p.id = new.price_tier_id) then
+    signal sqlstate '45000' set message_text = 'ticket_price_tier_other_event';
+  end if;
+end
+```
+
+</details>
+
+<details><summary>Corpo di <code>ticket_prices_same_event_update</code></summary>
+
+```sql
+begin
+  if not exists (select 1 from ticket_types t join events e on e.id = t.event_id
+                 where t.id = new.ticket_type_id and e.currency = new.currency) then
+    signal sqlstate '45000' set message_text = 'ticket_price_currency_mismatch';
+  end if;
+  if new.price_tier_id is not null and not exists (
+       select 1 from ticket_types t join price_tiers p on p.event_id = t.event_id
+       where t.id = new.ticket_type_id and p.id = new.price_tier_id) then
+    signal sqlstate '45000' set message_text = 'ticket_price_tier_other_event';
+  end if;
+end
+```
+
+</details>
 
 ### `ticket_types`
 
@@ -1590,6 +1684,34 @@ Quali pool di capienza consuma ogni tipo di biglietto (molti a molti).
 - **Indici:** `ticket_type_pools_pool_id_index` (pool_id)
 - **FK** `pool_id` → `capacity_pools.id` ON DELETE RESTRICT, ON UPDATE RESTRICT (`ticket_type_pools_pool_id_foreign`)
 - **FK** `ticket_type_id` → `ticket_types.id` ON DELETE CASCADE, ON UPDATE RESTRICT (`ticket_type_pools_ticket_type_id_foreign`)
+- **Trigger** `ticket_type_pools_same_event_insert` (BEFORE INSERT)
+- **Trigger** `ticket_type_pools_same_event_update` (BEFORE UPDATE)
+
+<details><summary>Corpo di <code>ticket_type_pools_same_event_insert</code></summary>
+
+```sql
+begin
+  if not exists (select 1 from ticket_types t join capacity_pools p on p.event_id = t.event_id
+                 where t.id = new.ticket_type_id and p.id = new.pool_id) then
+    signal sqlstate '45000' set message_text = 'pool_other_event';
+  end if;
+end
+```
+
+</details>
+
+<details><summary>Corpo di <code>ticket_type_pools_same_event_update</code></summary>
+
+```sql
+begin
+  if not exists (select 1 from ticket_types t join capacity_pools p on p.event_id = t.event_id
+                 where t.id = new.ticket_type_id and p.id = new.pool_id) then
+    signal sqlstate '45000' set message_text = 'pool_other_event';
+  end if;
+end
+```
+
+</details>
 
 ### `tracks`
 

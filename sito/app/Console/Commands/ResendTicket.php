@@ -11,7 +11,10 @@ use Illuminate\Support\Str;
 /** Rimanda per email un biglietto valido al suo intestatario (o a un altro indirizzo), con il limite di invio. */
 class ResendTicket extends Command
 {
-    protected $signature = 'eas:resend-ticket {ticket : id o codice breve del biglietto} {--to= : indirizzo diverso da quello del biglietto}';
+    protected $signature = 'eventals:resend-ticket {ticket : id o codice breve del biglietto} {--to= : indirizzo diverso da quello del biglietto}';
+
+    /** @var list<string> Nome di prima del sistema multi-evento, deprecato: resta per cron e script esistenti. */
+    protected $aliases = ['eas:resend-ticket'];
 
     protected $description = 'Rimanda l\'email con il biglietto e il QR';
 

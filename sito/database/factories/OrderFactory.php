@@ -21,7 +21,6 @@ class OrderFactory extends Factory
             'status' => OrderStatus::Pending,
             'origin' => OrderOrigin::Checkout,
             'price_role' => PriceRole::Public,
-            'currency' => 'eur',
             'subtotal_cents' => 10000,
             'discount_cents' => 0,
             'total_cents' => 10000,

@@ -6,7 +6,7 @@
         @forelse ($this->getFiles() as $file)
             <p>
                 <x-filament::link :href="route('exports.download', $file['name'])" icon="heroicon-o-arrow-down-tray">{{ $file['name'] }}</x-filament::link>
-                · {{ \Illuminate\Support\Carbon::createFromTimestamp($file['time'])->timezone('Europe/Lisbon')->format('d/m/Y H:i') }}
+                · {{ \Illuminate\Support\Carbon::createFromTimestamp($file['time'])->timezone(config('eventals.timezone'))->format('d/m/Y H:i') }}
                 · {{ number_format($file['size'] / 1024, 1) }} KB
             </p>
         @empty

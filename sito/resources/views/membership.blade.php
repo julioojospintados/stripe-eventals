@@ -5,9 +5,9 @@
 @section('content')
     <section class="dark">
         <div class="wrap stack" style="--stack: var(--s-4); padding-block: var(--s-7)">
-            <h1 class="t-1">{{ __('EAS membership') }}</h1>
+            <h1 class="t-1">{{ __(':name membership', ['name' => config('eventals.organizer.name')]) }}</h1>
             @if ($plan)
-                <p><span class="prezzo prezzo--grande">{{ euro($plan->amount_cents) }}</span> <span class="t-muted">{{ __('per year') }}</span></p>
+                <p><span class="prezzo prezzo--grande">{{ money($plan->amount_cents, $plan->currency) }}</span> <span class="t-muted">{{ __('per year') }}</span></p>
             @endif
             <p class="t-lead misura">{{ __('Active right after payment: the member price is available immediately.') }}</p>
         </div>
@@ -18,7 +18,7 @@
             <div class="colonna">
                 <h2 class="t-2">{{ __('What you get') }}</h2>
                 <ul class="stack" style="--stack: var(--s-2); list-style: disc; padding-left: var(--s-5)">
-                    <li>{{ __('The member price on your own EAS8 full pass.') }}</li>
+                    <li>{{ __('The member price on your own full pass.') }}</li>
                     <li>{{ __('The early bird price, for members only.') }}</li>
                     <li>{{ __('Renews every year; you can cancel any time from your account.') }}</li>
                 </ul>
@@ -28,7 +28,7 @@
             <div class="scheda">
                 @if ($isMember)
                     <p><span class="badge badge--ok">{{ __('Active') }}</span></p>
-                    <p>{{ __('You are a member until :date.', ['date' => $membership->current_period_end->timezone('Europe/Lisbon')->translatedFormat('j F Y')]) }}</p>
+                    <p>{{ __('You are a member until :date.', ['date' => $membership->current_period_end->timezone(config('eventals.timezone'))->translatedFormat('j F Y')]) }}</p>
                     <form method="post" action="{{ route('membership.portal') }}">
                         @csrf
                         <button class="btn btn--block">{{ __('Manage membership and invoices') }}</button>

@@ -54,11 +54,13 @@ class Speaker extends Model
         });
     }
 
-    public function scopeVisible(Builder $query): void
+    /** Con $eventId: solo chi ha una sessione pubblicata di quell'evento (gli speaker valgono per più edizioni). */
+    public function scopeVisible(Builder $query, ?string $eventId = null): void
     {
+        $published = fn (Builder $s) => $s->where('published', true)->when($eventId, fn ($q) => $q->where('event_id', $eventId));
         $query->where(fn (Builder $q) => $q
-            ->whereHas('programSessions', fn (Builder $s) => $s->where('published', true))
-            ->orWhereHas('sessionParts.programSession', fn (Builder $s) => $s->where('published', true)));
+            ->whereHas('programSessions', $published)
+            ->orWhereHas('sessionParts.programSession', $published));
     }
 
     public function name(): string

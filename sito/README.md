@@ -53,7 +53,7 @@ Poi `DB_PASSWORD` nel `.env` e:
 
 ```bash
 php artisan migrate:fresh --seed
-php artisan eas:create-admin tua@email.it --name="Il tuo nome"
+php artisan eventals:create-admin tua@email.it --name="Il tuo nome"
 php artisan serve
 ```
 
@@ -62,7 +62,7 @@ Pannello su `http://localhost:8000/admin`. Al primo accesso Filament chiede di a
 
 **Con Docker** (`compose.yaml`: PHP 8.4, MariaDB 11.4, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
 dati di prova e avvia sito (`:8000`, con lo scheduler per coda ed email) e Mailpit (`:8025`, tutte le email).
-Admin: `docker compose exec app php artisan eas:create-admin <email>`; test: `docker compose exec app php artisan test`.
+Admin: `docker compose exec app php artisan eventals:create-admin <email>`; test: `docker compose exec app php artisan test`.
 
 ## Il file `.env`
 
@@ -82,6 +82,35 @@ Mai nel repository (è in `.gitignore`). `.env.example` elenca tutte le variabil
 | `MAIL_*` | casella SMTP del cliente; in locale `MAIL_MAILER=log` |
 | `MAIL_RATE_PER_MINUTE` | email in coda al minuto (predefinito 15, sotto le circa 1.000 l'ora della casella) |
 | `QR_SIGNING_PRIVATE_KEY`, `QR_SIGNING_KEY_ID` | firma Ed25519 dei QR; il comando per generare la chiave è nel `.env.example` |
+| `QR_PREFIX` | prima parte del QR letta dal partner del check-in: `EAS1` per l'EAS8, predefinito `EVT1` |
+| `EVENTALS_*` | organizzatore, lingue, valuta e fuso proposti, evento pubblico: vedi «Un nuovo evento o un nuovo organizzatore» |
+
+## Un nuovo evento o un nuovo organizzatore
+
+Il sistema non contiene nulla dell'EAS8 nel codice ([ADR 0011](../docs/tecnico/adr/0011-sistema-agnostico.md)).
+Un'installazione = un organizzatore, con quanti eventi vuole.
+
+**Nuovo organizzatore** (installazione nuova): nel `.env` il blocco `config/eventals.php`.
+
+| Variabile | Esempio EAS8 | Note |
+|---|---|---|
+| `EVENTALS_ORGANIZER_NAME` | `European Aligner Society` | pannello, email (codice di accesso, avvisi), titolo senza evento |
+| `EVENTALS_CONTACT_EMAIL` | `office@eas-aligners.com` | contatto nella pagina dell'evento; vuoto = nessuno |
+| `EVENTALS_LOGO` | `images/eas-logo.png` | file in `public/`; vuoto = nessun logo |
+| `EVENTALS_ALERTS_EMAIL` | vuoto | indirizzo in più per gli avvisi, oltre agli admin |
+| `EVENTALS_LOCALES`, `EVENTALS_LOCALE` | `en,it`, `en` | lingue del sito (servono i file `lang/`) e predefinita |
+| `EVENTALS_CURRENCY`, `EVENTALS_TIMEZONE` | `eur`, `Europe/Lisbon` | proposti per un evento nuovo; usati per membership, registro audit e scheduler |
+| `EVENTALS_EVENT` | vuoto | slug dell'evento delle pagine pubbliche; vuoto = il prossimo pubblicato non ancora finito |
+
+Poi `php artisan migrate --force`, `php artisan db:seed --class=RolesAndPermissionsSeeder --force`,
+`php artisan eventals:create-admin …` e il Price della membership in Stripe (`STRIPE_MEMBERSHIP_PRICE`).
+
+**Nuovo evento** (stessa installazione): dal pannello, Event → New, con fuso e valuta; poi giorni, pool di capienza,
+fasce, tipi di biglietto e prezzi (Sales), programma (Programme). Per provare: `php artisan db:seed
+--class=DemoEventSeeder` crea un evento di esempio in bozza (New York, dollari). La valuta non si cambia dopo il primo
+prezzo o ordine; prezzi, pool e codici sconto non si collegano a un altro evento (trigger, vedi
+[regole](../docs/tecnico/regole.md)). Quando il nuovo evento è pubblicato e il precedente è finito, il sito passa da
+solo al nuovo; prima si forza con `EVENTALS_EVENT`.
 
 ## Migrazioni e dati
 
@@ -112,11 +141,15 @@ ogni `migrate` in produzione.
   posti a 100 € per tutti (massimo 2 per ordine); accompagnatore, espositore e omaggio presenti ma spenti e senza
   prezzo; membership annuale 200 €. Importi sempre in centesimi interi. **Le date delle fasce sono provvisorie** (early
   bird fino al 31/01/2027, regular fino al 31/03/2027): si cambiano dal pannello. Se l'evento esiste già non fa nulla.
+- `DemoEventSeeder`: evento generico in bozza a New York in dollari (2 giorni, early bird, pass, un workshop), per
+  provare più eventi insieme. Fuso, valuta e stato si scelgono dal costruttore (`MultiEventTest.php`).
+
+I comandi si chiamano `eventals:*`; i vecchi `eas:*` funzionano ancora come alias deprecati.
 
 Nessuna password nei seeder: gli utenti dello staff si creano con
 
 ```bash
-php artisan eas:create-admin email@esempio.it --name="Nome" --role=admin   # oppure commerciale, organizzatore
+php artisan eventals:create-admin email@esempio.it --name="Nome" --role=admin   # oppure commerciale, organizzatore
 ```
 
 La password si scrive a video (almeno 12 caratteri) e non passa dalla riga di comando; l'operazione va nel registro
@@ -134,7 +167,7 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 
 - `tests/Feature/Database/`: le prove di schema portate da `db/prove/prove_mysql.php` e quelle delle tabelle nuove.
 - `tests/Feature/Eas8SeederTest.php`: dati dell'EAS8.
-- `tests/Feature/StaffAccessTest.php`: accesso al pannello, permessi dei ruoli, comando `eas:create-admin`.
+- `tests/Feature/StaffAccessTest.php`: accesso al pannello, permessi dei ruoli, comando `eventals:create-admin`.
 - `tests/Feature/Panel/PermissionsTest.php`: matrice ruolo × azione scritta a mano da §5.3, seeder rilanciato, ruoli e
   permessi nel pannello, «Resend ticket», prezzo della membership.
 - `tests/Feature/Shop/StripeClosuresTest.php`: rimborsi rifiutati, importo diverso dal totale, contestazioni,
@@ -173,7 +206,7 @@ Stripe non viene mai chiamato nei test: `TestCase` mette nel container `Tests\Fa
 | `app/Mail`, `resources/views` | email (codice, biglietti con QR, avvisi allo staff), pagine pubbliche e area personale |
 | `app/Filament`, `app/Policies` | risorse del pannello, pagina Export, widget del cruscotto; una Policy per model |
 | `public/css/site.css`, `public/fonts/inter`, `lang/` | stile delle pagine pubbliche (senza build), Inter servito in locale, testi `lang/it.json` e `lang/{en,it}/*.php` |
-| `app/Console/Commands` | `eas:create-admin`, `eas:expire-orders`, `eas:resend-ticket`, `eas:reconcile` |
+| `app/Console/Commands` | `eventals:create-admin`, `eventals:expire-orders`, `eventals:resend-ticket`, `eventals:reconcile` |
 | `app/Providers/Filament/AdminPanelProvider.php` | pannello `/admin`: login, MFA obbligatoria |
 | `config/tickets.php` | chiave di firma dei QR; Stripe è in `config/services.php` |
 | `database/migrations`, `database/factories`, `database/seeders` | schema, factory per i test, dati |
@@ -199,10 +232,10 @@ Il perché è in `docs/architettura.md` §5.1, §6, §7, §8, §9, §11; qui cos
 | Importo diverso | `PaymentService::markPaid()` | se `amount_total` di Stripe non è il totale dell'ordine: posti tenuti, nessun biglietto, ordine `needs_review` (`review_reason = amount_mismatch`), avviso agli admin. Nel pannello «Issue tickets» (`approveReview`) o «Refund instead» (`refundReview`: posti liberati, `needs_refund`, rimborso di quanto incassato su Stripe), con il motivo e l'audit |
 | Rimborso rifiutato | `PaymentService::refundFailed()` | `refund.failed` o `refund.updated` con stato `failed`/`canceled` (anche in risposta a `createRefund`): rimborso segnato così e `needs_review`, ordine con `review_reason = refund_failed`, avviso; ordine e biglietti non cambiano stato (niente riattivati in silenzio). Un nuovo rimborso usa una Idempotency-Key nuova (`…-retry-<n>`) |
 | Contestazioni | `DisputeService`, tabella `disputes` | `charge.dispute.created/updated`: biglietti dell'ordine `disputed` (fuori dall'export del check-in), avviso; `closed` vinta (`won`, `warning_closed`, `prevented`) → di nuovo `valid`; persa → `cancelled`, posti liberati, `review_reason = dispute_lost`. Chiusa una volta: eventi arrivati dopo non cambiano nulla. Le prove si mandano dalla Dashboard |
-| Riconciliazione | `eas:reconcile` (ogni notte alle 3:30, ora di Lisbona) | con `StripeGateway::listCheckoutSessions()`/`listRefunds()` confronta le ultime 48 ore: pagato su Stripe ma non qui → evento `evt_reconcile_<sessione>` in `stripe_events` e lo stesso job `ProcessStripeEvent` (una volta sola); pagato qui ma non su Stripe e rimborsi non registrati → solo segnalati. Rapporto `stripe.reconciled` nel registro audit, avviso agli admin se ci sono differenze |
-| Scadenze | `eas:expire-orders` (ogni minuto) | riserve scadute: prima legge la sessione su Stripe (aperta → `expire`; pagata → conferma), poi rilascia posti, prezzo membro e codice |
+| Riconciliazione | `eventals:reconcile` (ogni notte alle 3:30, ora di Lisbona) | con `StripeGateway::listCheckoutSessions()`/`listRefunds()` confronta le ultime 48 ore: pagato su Stripe ma non qui → evento `evt_reconcile_<sessione>` in `stripe_events` e lo stesso job `ProcessStripeEvent` (una volta sola); pagato qui ma non su Stripe e rimborsi non registrati → solo segnalati. Rapporto `stripe.reconciled` nel registro audit, avviso agli admin se ci sono differenze |
+| Scadenze | `eventals:expire-orders` (ogni minuto) | riserve scadute: prima legge la sessione su Stripe (aperta → `expire`; pagata → conferma), poi rilascia posti, prezzo membro e codice |
 | Membership | `MembershipService`, `/membership` | Checkout `mode=subscription` con `STRIPE_MEMBERSHIP_PRICE`; attiva subito (pagina di successo o webhook, idempotente); poi solo rileggendo la subscription, ignorando eventi più vecchi dell'ultimo; Customer Portal |
-| Biglietti | `TicketService`, `SendTicketsEmail`, `eas:resend-ticket` | un biglietto per nominativo (unique su riga e numero); QR `EAS1.<dati>.<firma>` con ticket, `qr_version`, evento e `qr_key_id`, firmato Ed25519 (chiave nel `.env`, niente nome nel QR); email con il QR in PNG all'acquirente (tutti) e a ogni partecipante (il suo), in coda con `MAIL_RATE_PER_MINUTE` e `sent_messages` contro i doppi invii |
+| Biglietti | `TicketService`, `SendTicketsEmail`, `eventals:resend-ticket` | un biglietto per nominativo (unique su riga e numero); QR `EAS1.<dati>.<firma>` con ticket, `qr_version`, evento e `qr_key_id`, firmato Ed25519 (chiave nel `.env`, niente nome nel QR); email con il QR in PNG all'acquirente (tutti) e a ogni partecipante (il suo), in coda con `MAIL_RATE_PER_MINUTE` e `sent_messages` contro i doppi invii |
 | Area personale | `/account` | ordini e biglietti solo dalle relazioni dell'utente (un id altrui dà 404); link alla fattura dell'ordine e all'ultima fattura della membership |
 
 Rotte: `/login`, `/login/code`, `/tickets` (carrello), `POST /cart`, `POST /orders/{id}/checkout`, `/account`,
@@ -214,13 +247,13 @@ rotte rispondono in JSON.
 Comandi:
 
 ```bash
-php artisan eas:expire-orders                     # lo lancia lo scheduler ogni minuto
-php artisan eas:reconcile                         # lo lancia lo scheduler ogni notte; --hours=72 per una finestra più lunga
-php artisan eas:resend-ticket ABCD2345            # codice breve o id del biglietto
-php artisan eas:resend-ticket ABCD2345 --to=altro@esempio.it   # anche dal pannello: Tickets → Resend ticket
+php artisan eventals:expire-orders                     # lo lancia lo scheduler ogni minuto
+php artisan eventals:reconcile                         # lo lancia lo scheduler ogni notte; --hours=72 per una finestra più lunga
+php artisan eventals:resend-ticket ABCD2345            # codice breve o id del biglietto
+php artisan eventals:resend-ticket ABCD2345 --to=altro@esempio.it   # anche dal pannello: Tickets → Resend ticket
 ```
 
-Dal pannello si fa tutto tranne la creazione del primo admin (`eas:create-admin`).
+Dal pannello si fa tutto tranne la creazione del primo admin (`eventals:create-admin`).
 
 ### Provare in locale con Stripe in modalità test
 
@@ -266,10 +299,10 @@ Con `QUEUE_WORKER_MODE=cron`, una sola riga di cron, ogni minuto (nessun process
 
 Lo scheduler (`routes/console.php`) lancia ogni minuto (solo in modalità `cron`) `queue:work --queue=critical,default --stop-when-empty
 --max-time=50` (vuota la coda e si ferma prima del giro successivo; `withoutOverlapping` evita due worker insieme) ed
-`eas:expire-orders`; ogni notte alle 3:30 (Lisbona) `eas:reconcile`; ogni giorno pulisce i codici di accesso scaduti. Un job aspetta quindi al massimo circa un minuto:
+`eventals:expire-orders`; ogni notte alle 3:30 (Lisbona) `eventals:reconcile`; ogni giorno pulisce i codici di accesso scaduti. Un job aspetta quindi al massimo circa un minuto:
 per questo il codice di accesso parte fuori coda e la pagina di successo conferma il pagamento da sola. Al deploy:
 `php artisan queue:restart`. Se l'hosting vieta `proc_open`, righe di cron separate per `queue:work` ed
-`eas:expire-orders` (docs/architettura.md §8).
+`eventals:expire-orders` (docs/architettura.md §8).
 
 ## Passo 3: pannello e pagine
 
@@ -356,7 +389,7 @@ Testi in inglese nelle viste, italiano in `lang/it.json`; stati in `lang/{en,it}
 ## Cosa c'è e cosa manca
 
 **Passo 1:** dipendenze, schema della Fase 1 con i vincoli, model, enum, factory, seeder dell'EAS8, ruoli e
-permessi, pannello `/admin` con accesso solo allo staff e MFA, comando `eas:create-admin`, test di schema.
+permessi, pannello `/admin` con accesso solo allo staff e MFA, comando `eventals:create-admin`, test di schema.
 
 **Passo 2:** vendita, Stripe, webhook, biglietti con QR, membership, area personale, con le tabelle `login_codes`,
 `sent_messages` e `refunds` e i test di `tests/TODO-passo-2.md`.
@@ -365,7 +398,7 @@ permessi, pannello `/admin` con accesso solo allo staff e MFA, comando `eas:crea
 cruscotto, export CSV, pagine pubbliche EN/IT.
 
 **Chiusure del backend:** rimborsi rifiutati, ordini `needs_review` per importo diverso, contestazioni, riconciliazione
-notturna `eas:reconcile`, eventi ignorati con il motivo, permessi granulari con ruoli e permessi nel pannello,
+notturna `eventals:reconcile`, eventi ignorati con il motivo, permessi granulari con ruoli e permessi nel pannello,
 «Resend ticket» e prezzo della membership dal pannello (migrazione `2026_11_08_090000`).
 
 **Ancora aperto nella Fase 1:** eventi Stripe e job falliti nel pannello, sessione dello staff più breve e IP ammessi (dipendono dall'hosting), pulizia
