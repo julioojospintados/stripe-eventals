@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Mail\StaffAlert;
 use App\Mail\TicketsMail;
 use App\Models\Order;
 use App\Models\Ticket;
@@ -10,6 +11,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Email con i biglietti e i QR, in coda con il limite di invio della casella SMTP (RateLimiter "mail",
@@ -61,5 +63,11 @@ class SendTicketsEmail implements ShouldQueue
         DB::table('sent_messages')->insertOrIgnore([
             'dedupe_key' => $this->dedupeKey, 'mailable' => 'tickets', 'to_hash' => hash('sha256', $this->to), 'sent_at' => now(),
         ]);
+    }
+
+    /** Dopo un giorno di tentativi i biglietti non sono partiti: lo staff li reinvia dal pannello. */
+    public function failed(Throwable $e): void
+    {
+        StaffAlert::raise('Email dei biglietti non inviata', ["{$this->dedupeKey}: {$e->getMessage()}", 'Reinvia dal pannello (Tickets, Resend ticket).']);
     }
 }

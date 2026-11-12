@@ -137,9 +137,9 @@ class CsvExports
         return number_format($cents / 100, 2, '.', '');
     }
 
-    /** Contro la formula injection nei fogli di calcolo: un testo che inizia con = + - @ diventa testo. */
+    /** Contro la formula injection nei fogli di calcolo (OWASP): un testo che inizia con = + - @ tab o a capo diventa testo. */
     private function safe(mixed $value): mixed
     {
-        return is_string($value) && $value !== '' && str_contains('=+-@', $value[0]) && ! is_numeric($value) ? "'".$value : $value;
+        return is_string($value) && $value !== '' && str_contains("=+-@\t\r", $value[0]) && ! is_numeric($value) ? "'".$value : $value;
     }
 }
