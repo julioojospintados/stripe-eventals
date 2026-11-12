@@ -116,6 +116,11 @@ staging, modifica dei permessi dei ruoli dal pannello (c'era già).
 - **Primo admin:** `php artisan eas:create-admin`, poi l'app di autenticazione al primo accesso; gli altri utenti
   dello staff si creano dal pannello.
 
+## Repository
+
+Il repository resta sull'account di Giulio: puoi clonarlo e lavorare con branch e pull request (decisione del
+12/11/2026).
+
 ## Domande aperte
 
 Solo struttura. Se non rispondi, vale la proposta.
@@ -128,7 +133,6 @@ Solo struttura. Se non rispondi, vale la proposta.
 | 4 | Dove copiamo i backup fuori dal server? | Uno spazio compatibile S3 in UE, cifrato |
 | 5 | Monitoraggio degli errori: basta il log con avviso via email o volete un servizio come Sentry (regione UE)? | Log più email; Sentry facoltativo |
 | 6 | HTTPS: certbot sul server o certificato gestito da un servizio davanti (per esempio Cloudflare)? | certbot con rinnovo automatico (`strumenti/server/nginx-eas8.conf`) |
-| 7 | Il repository resta sull'account di Giulio con te come collaboratore, o lo trasferiamo nella vostra organizzazione GitHub? | Resta qui finché si sviluppa; trasferimento al lancio |
 
 ## Prima del lancio (lato tecnico)
 
