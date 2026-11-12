@@ -7,13 +7,13 @@ use App\Models\User;
 use App\Services\CsvExports;
 use Illuminate\Support\Facades\Mail;
 
-it('rifiuta i webhook se manca STRIPE_WEBHOOK_SECRET: una firma con chiave vuota non vale', function () {
-    config(['services.stripe.webhook_secret' => '']);
+it('rifiuta i webhook se manca STRIPE_WEBHOOK_SECRET: una firma con chiave vuota non vale', function (?string $secret) {
+    config(['services.stripe.webhook_secret' => $secret]);
 
     postWebhook(stripeEvent('checkout.session.completed', ['id' => 'cs_x', 'object' => 'checkout.session']), '')->assertStatus(500);
 
     expect(StripeEvent::count())->toBe(0);
-});
+})->with(['vuoto' => '', 'null' => null]);
 
 it('al massimo 10 codici di accesso al giorno per email, anche cambiando IP', function () {
     Mail::fake();

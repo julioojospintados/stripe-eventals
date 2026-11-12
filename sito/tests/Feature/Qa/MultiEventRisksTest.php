@@ -100,6 +100,16 @@ it('una Checkout Session in valuta diversa da quella dell\'evento non emette big
     expect(app(PaymentService::class)->markPaid($ok, $paid))->toBe('paid');
 });
 
+it('una Checkout Session senza valuta non emette biglietti', function () {
+    $order = qaOrder($this->demo, $this->demoPass);
+    $session = $this->stripe->pay($order->stripe_checkout_session_id);
+    unset($session['currency']);
+
+    expect(app(PaymentService::class)->markPaid($order, $session))->toBe('needs_review')
+        ->and($order->refresh()->status)->toBe(OrderStatus::NeedsReview)
+        ->and($order->tickets()->count())->toBe(0);
+});
+
 it('la scadenza degli ordini rilascia i posti solo dell\'evento dell\'ordine', function () {
     $demoOrder = qaOrder($this->demo, $this->demoPass);
     $easOrder = qaOrder($this->eas, passType());

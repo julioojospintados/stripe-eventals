@@ -93,6 +93,14 @@ it('fasce e prezzi per evento, ordine e Stripe nella valuta dell\'evento', funct
         ->and($easParams['line_items'][0]['price_data']['currency'])->toBe('eur');
 });
 
+it('un evento senza valuta o fuso prende quelli dell\'installazione', function () {
+    config(['eventals.currency' => 'USD', 'eventals.timezone' => 'America/New_York']);
+
+    $event = Event::factory()->create(['currency' => null, 'timezone' => null]);
+
+    expect($event->refresh()->only('currency', 'timezone'))->toBe(['currency' => 'usd', 'timezone' => 'America/New_York']);
+});
+
 it('la capienza di un evento non tocca i pool dell\'altro', function () {
     buyFor($this->demo, $this->demoPass);
 

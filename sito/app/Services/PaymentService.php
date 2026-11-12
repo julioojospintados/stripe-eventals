@@ -67,7 +67,8 @@ class PaymentService
 
             // Importo diverso dal totale: posti tenuti, nessun biglietto finché lo staff non decide (approveReview / refundReview).
             // Anche la valuta della sessione deve essere quella dell'ordine (e quindi dell'evento): 399 USD non sono 399 EUR.
-            $wrongCurrency = $session && isset($session['currency']) && strtolower((string) $session['currency']) !== $order->currency;
+            // Valuta mancante = non verificabile: si rivede come una valuta diversa.
+            $wrongCurrency = $session && strtolower((string) ($session['currency'] ?? '')) !== $order->currency;
             if ($session && ($order->stripe_amount_total_cents !== $order->total_cents || $wrongCurrency)) {
                 $order->review_reason = 'amount_mismatch';
                 $this->transition($order, OrderStatus::NeedsReview);
