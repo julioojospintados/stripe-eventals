@@ -94,3 +94,4 @@ dell'architettura (`docs/architettura.md`) in attesa del suo via libera. Le righ
 | 11/11/2026 | Fatture generate da Stripe (Xero non collegato) | Risposta di Simone |
 | 11/11/2026 | Deploy con `git pull` via SSH, ambiente di prova separato | Risposta di Simone |
 | 11/11/2026 | L'admin modifica dal pannello i permessi dei ruoli (già presente, escluso il ruolo admin) | Risposta di Simone |
+| 12/11/2026 | Il repository resta sull'account di Giulio; Simone lo clona come collaboratore | Decisione di Giulio |
