@@ -54,7 +54,7 @@ try {
 
             return app(PaymentService::class)->markPaid($order, [
                 'id' => $order->stripe_checkout_session_id, 'status' => 'complete', 'payment_status' => 'paid',
-                'payment_intent' => 'pi_test_parallel', 'amount_total' => $order->total_cents,
+                'payment_intent' => 'pi_test_parallel', 'amount_total' => $order->total_cents, 'currency' => $order->currency,
             ]);
         }),
     };

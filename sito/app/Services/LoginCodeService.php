@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Accesso dei clienti con un codice di 6 cifre via email, senza password (docs/architettura.md §5.1). Il codice si
- * salva solo come HMAC con APP_KEY, scade in 10 minuti, ammette 5 tentativi; limiti per email e per IP.
+ * salva solo come HMAC con APP_KEY, scade in 10 minuti, ammette 5 tentativi; limiti per email (anche al giorno) e per IP.
  * Lo staff entra solo dal pannello (password + MFA): il codice non gli apre la sessione.
  */
 class LoginCodeService
@@ -26,6 +26,8 @@ class LoginCodeService
     {
         $email = mb_strtolower(trim($email));
         $this->throttle('login-code-send:'.sha1($email), 3, 600);
+        // Tetto giornaliero per email: con IP diversi un attaccante resta a 10 codici × 5 tentativi = 50 prove al giorno su 10^6.
+        $this->throttle('login-code-send-day:'.sha1($email), 10, 86400);
         $this->throttle('login-code-send-ip:'.$ip, 20, 3600);
 
         if (User::where('email', $email)->first()?->isStaff()) {

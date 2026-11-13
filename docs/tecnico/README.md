@@ -1,6 +1,6 @@
 # Documentazione tecnica
 
-Autore: Giulio Occhipinti. Aggiornato al 07/11/2026. Per chi sviluppa e mantiene `sito/` (Laravel 13 + Filament 5).
+Autore: Giulio Occhipinti. Aggiornato al 12/11/2026. Per chi sviluppa e mantiene `sito/` (Laravel 13 + Filament 5).
 
 | Documento | Contenuto |
 |---|---|
@@ -8,6 +8,8 @@ Autore: Giulio Occhipinti. Aggiornato al 07/11/2026. Per chi sviluppa e mantiene
 | [stati.md](stati.md) | Macchine a stati di ordine, biglietto, riserva di capienza, rimborso, membership, contestazione, evento Stripe, con chi provoca ogni passaggio |
 | [flussi.md](flussi.md) | Diagrammi di sequenza: acquisto, webhook in coda, pagamento tardivo, rimborso dal pannello, membership, riconciliazione, contestazione, login con codice |
 | [regole.md](regole.md) | Regole di business → dove sono garantite (vincolo, trigger, servizio, Policy, job) → test che le prova; elenco delle regole senza test |
+| [sicurezza.md](sicurezza.md) | Revisione di sicurezza: cosa è controllato, cosa è corretto, cosa resta con la gravità |
+| [carico.md](carico.md) | Prova di carico dell'apertura vendite ([strumento](../../strumenti/carico/README.md)): numeri, limiti, configurazione consigliata di PHP-FPM e MariaDB |
 | [permessi.md](permessi.md) | Matrice ruolo × permesso generata dal seeder, scelte da confermare |
 | [adr/](adr/README.md) | Decisioni architetturali, una per file |
 | [esercizio.md](esercizio.md) | Installazione e deploy via SSH, cron, webhook Stripe, chiavi, backup e ripristino, migrazioni sicure, monitoraggio, checklist di go-live, cosa fare se |

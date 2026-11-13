@@ -358,7 +358,7 @@ it('riconciliazione: pagato qui ma non su Stripe e rimborso non registrato → s
 
 it('la riconciliazione è nello scheduler e si avvia dal pannello in coda', function () {
     $events = collect(app(Schedule::class)->events())->map->command->implode(' ');
-    expect($events)->toContain('eas:reconcile');
+    expect($events)->toContain('eventals:reconcile');
 
     Queue::fake();
     $this->actingAs(User::factory()->staff(StaffRole::Commerciale)->create());

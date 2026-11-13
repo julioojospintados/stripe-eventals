@@ -29,7 +29,7 @@ In entrambe: backup prima delle migrazioni (si ferma se fallisce), `composer ins
 
 Prima volta: `git clone --branch main <repository> ~/eas8/repo`, `deploy.conf` come sotto (`GIT_REF` = il branch del
 clone; `PULL_DIR` se il clone sta altrove), `.env` in `repo/sito/`, backup pronto, poi `~/eas8/strumenti/deploy/deploy-pull.sh`
-e dal sito (`cd ~/eas8/current`) i seeder e `php artisan eas:create-admin` (esercizio.md §3, punto 4). Ogni versione:
+e dal sito (`cd ~/eas8/current`) i seeder e `php artisan eventals:create-admin` (esercizio.md §3, punto 4). Ogni versione:
 lo stesso comando. Si ferma anche se il clone ha modifiche locali o è su un altro branch: niente fusioni sul server.
 
 ## Modalità a rilasci
@@ -56,7 +56,7 @@ comando, Composer, git (o un archivio caricato via SFTP) e il cron.
 3. Crea `~/eas8/shared/.env` da `sito/.env.example` (`chmod 600`) e compilalo (esercizio.md §3). `APP_KEY`, una volta
    sola e mai più rigenerata: `php -r "echo 'base64:'.base64_encode(random_bytes(32)), PHP_EOL;"`.
 4. `~/eas8/strumenti/deploy/deploy.sh`, poi dal rilascio attivo (`cd ~/eas8/current`) i seeder e
-   `php artisan eas:create-admin` (esercizio.md §3, punto 4).
+   `php artisan eventals:create-admin` (esercizio.md §3, punto 4).
 5. **Document root** del dominio: `/home/<utente>/eas8/current/public` (se il pannello impone `public_html`:
    `ln -s ~/eas8/current/public ~/public_html` dopo averne salvato il contenuto).
 6. **Coda e cron:** sul server pieno worker e scheduler da [`../server/`](../server/README.md); su un hosting condiviso

@@ -17,7 +17,7 @@ class ProgramController
 
     public function index(Request $request)
     {
-        $event = Event::published()->latest('starts_on')->firstOrFail();
+        $event = Event::current() ?? abort(404);
         $tz = $event->timezone;
         $days = $event->days;
         $day = $days->first(fn ($d) => $d->day->toDateString() === $request->query('day')) ?? $days->first();
@@ -47,7 +47,7 @@ class ProgramController
 
     public function show(string $slug)
     {
-        $event = Event::published()->latest('starts_on')->firstOrFail();
+        $event = Event::current() ?? abort(404);
         $session = $event->programSessions()->published()->where('slug', $slug)
             ->with(['room', 'track', 'eventDay', 'speakers', 'parts.speakers', 'ticketType'])->firstOrFail();
 

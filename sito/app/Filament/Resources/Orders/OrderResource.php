@@ -8,6 +8,7 @@ use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Jobs\RefundOrderFully;
 use App\Models\AuditLog;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\ComplimentaryService;
 use App\Services\PaymentService;
 use App\Services\ShopException;
@@ -60,14 +61,14 @@ class OrderResource extends Resource
             TextEntry::make('buyer_email'),
             TextEntry::make('price_role'),
             TextEntry::make('priceTier.code')->label('Tier')->placeholder('—'),
-            TextEntry::make('created_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon'),
-            TextEntry::make('paid_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->placeholder('—'),
+            TextEntry::make('created_at')->dateTime('d/m/Y H:i', fn (Order $record) => $record->event->timezone),
+            TextEntry::make('paid_at')->dateTime('d/m/Y H:i', fn (Order $record) => $record->event->timezone)->placeholder('—'),
             TextEntry::make('comp_reason')->placeholder('—'),
-            TextEntry::make('subtotal_cents')->label('Subtotal')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
-            TextEntry::make('discount_cents')->label('Discount')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
-            TextEntry::make('total_cents')->label('Total')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
+            TextEntry::make('subtotal_cents')->label('Subtotal')->money(fn ($record) => $record->currency, divideBy: 100)->visible(self::canSeeAmounts(...)),
+            TextEntry::make('discount_cents')->label('Discount')->money(fn ($record) => $record->currency, divideBy: 100)->visible(self::canSeeAmounts(...)),
+            TextEntry::make('total_cents')->label('Total')->money(fn ($record) => $record->currency, divideBy: 100)->visible(self::canSeeAmounts(...)),
             TextEntry::make('discountCode.code')->label('Discount code')->placeholder('—'),
-            TextEntry::make('stripe_amount_total_cents')->label('Paid on Stripe')->money('EUR', divideBy: 100)->placeholder('—')->visible(self::canSeeAmounts(...)),
+            TextEntry::make('stripe_amount_total_cents')->label('Paid on Stripe')->money(fn ($record) => $record->currency, divideBy: 100)->placeholder('—')->visible(self::canSeeAmounts(...)),
             TextEntry::make('stripe_payment_intent_id')->label('Stripe payment')->placeholder('—')->visible(self::canSeeAmounts(...)),
             TextEntry::make('stripe_invoice_url')->label('Invoice')->formatStateUsing(fn () => 'Invoice')->placeholder('—')
                 ->url(fn (Order $record) => $record->stripe_invoice_url, shouldOpenInNewTab: true)->visible(self::canSeeAmounts(...)),
@@ -75,7 +76,7 @@ class OrderResource extends Resource
                 RepeatableEntry::make('items')->hiddenLabel()->columns(3)->schema([
                     TextEntry::make('stripe_line_name')->label('Ticket'),
                     TextEntry::make('quantity'),
-                    TextEntry::make('total_cents')->label('Total')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
+                    TextEntry::make('total_cents')->label('Total')->money(fn (OrderItem $record) => $record->order->currency, divideBy: 100)->visible(self::canSeeAmounts(...)),
                 ]),
             ]),
             Section::make('Tickets')->columnSpanFull()->schema([
@@ -88,7 +89,7 @@ class OrderResource extends Resource
             ]),
             Section::make('Refunds')->columnSpanFull()->visible(self::canSeeAmounts(...))->schema([
                 RepeatableEntry::make('refunds')->hiddenLabel()->columns(4)->schema([
-                    TextEntry::make('amount_cents')->label('Amount')->money('EUR', divideBy: 100),
+                    TextEntry::make('amount_cents')->label('Amount')->money(fn ($record) => $record->currency, divideBy: 100),
                     TextEntry::make('cause')->placeholder('—'),
                     TextEntry::make('source'),
                     TextEntry::make('status')->badge(),
@@ -102,7 +103,8 @@ class OrderResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('created_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->sortable(),
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
+                TextColumn::make('created_at')->dateTime('d/m/Y H:i', fn (Order $record) => $record->event->timezone)->sortable(),
                 TextColumn::make('buyer_email')->searchable(),
                 TextColumn::make('status')->badge()->color(fn (OrderStatus $state) => match ($state) {
                     OrderStatus::Paid => 'success',
@@ -113,9 +115,10 @@ class OrderResource extends Resource
                 TextColumn::make('review_reason')->label('To review')->badge()->color('danger')->placeholder('—'),
                 TextColumn::make('origin'),
                 TextColumn::make('items_count')->counts('items')->label('Lines'),
-                TextColumn::make('total_cents')->label('Total')->money('EUR', divideBy: 100)->visible(self::canSeeAmounts(...)),
+                TextColumn::make('total_cents')->label('Total')->money(fn ($record) => $record->currency, divideBy: 100)->visible(self::canSeeAmounts(...)),
             ])
             ->filters([
+                SelectFilter::make('event_id')->relationship('event', 'slug')->label('Event'),
                 SelectFilter::make('status')->options(OrderStatus::class),
                 SelectFilter::make('origin')->options(OrderOrigin::class),
             ])

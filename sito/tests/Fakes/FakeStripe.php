@@ -50,6 +50,7 @@ class FakeStripe extends StripeGateway
             'id' => $id, 'object' => 'checkout.session', 'url' => "https://checkout.stripe.test/$id",
             'mode' => $params['mode'], 'status' => 'open', 'payment_status' => 'unpaid',
             'client_reference_id' => $params['client_reference_id'] ?? null, 'metadata' => $params['metadata'] ?? [],
+            'currency' => $params['line_items'][0]['price_data']['currency'] ?? null,
             'amount_total' => collect($params['line_items'])->sum(fn ($l) => ($l['price_data']['unit_amount'] ?? 20000) * $l['quantity']),
             'payment_intent' => null, 'customer' => $params['customer'] ?? null, 'subscription' => null,
             'invoice_creation' => $params['invoice_creation'] ?? null, 'invoice' => null, 'created' => now()->timestamp,

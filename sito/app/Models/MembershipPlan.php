@@ -13,6 +13,11 @@ class MembershipPlan extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function booted(): void
+    {
+        static::creating(fn (MembershipPlan $plan) => $plan->currency ??= config('eventals.currency'));
+    }
+
     protected function casts(): array
     {
         return ['name' => 'array', 'amount_cents' => 'integer', 'active' => 'boolean'];

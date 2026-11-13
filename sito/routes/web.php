@@ -9,7 +9,6 @@ use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\StripeWebhookController;
-use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -25,7 +24,7 @@ Route::get('/language/{locale}', function (string $locale) {
     auth()->user()?->update(['locale' => $locale]);
 
     return back();
-})->whereIn('locale', SetLocale::LOCALES)->name('locale');
+})->whereIn('locale', config('eventals.locales'))->name('locale');
 
 // Accesso dei clienti con codice via email (i limiti veri sono in LoginCodeService).
 Route::get('/login', [LoginController::class, 'show'])->name('login');
@@ -44,9 +43,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/account/orders/{order}', [AccountController::class, 'order'])->whereUuid('order')->name('account.orders.show');
     Route::get('/account/tickets/{ticket}/qr', [AccountController::class, 'qr'])->whereUuid('ticket')->name('account.tickets.qr');
 
-    Route::post('/membership', [MembershipController::class, 'start'])->name('membership.start');
-    Route::get('/membership/success', [MembershipController::class, 'success'])->name('membership.success');
-    Route::post('/membership/portal', [MembershipController::class, 'portal'])->name('membership.portal');
+    // Ogni richiesta chiama l'API di Stripe: il limite evita che un solo account consumi il rate limit di tutti.
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/membership', [MembershipController::class, 'start'])->name('membership.start');
+        Route::get('/membership/success', [MembershipController::class, 'success'])->name('membership.success');
+        Route::post('/membership/portal', [MembershipController::class, 'portal'])->name('membership.portal');
+    });
 
     // Export generati in coda (pannello, pagina Export): solo lo staff che li ha chiesti.
     Route::get('/admin/exports/{file}', ExportDownloadController::class)

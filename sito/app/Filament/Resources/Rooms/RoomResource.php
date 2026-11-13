@@ -32,7 +32,7 @@ class RoomResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             TextInput::make('code')->required()->regex('/^[A-Za-z0-9-]{1,30}$/')
                 ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule, Get $get) => $rule->where('event_id', $get('event_id')))
                 ->helperText('Key used in sessions.csv, e.g. room-01. Do not change it after the first import.'),
@@ -50,6 +50,7 @@ class RoomResource extends Resource
             ->defaultSort('position')
             ->reorderable('position')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 TextColumn::make('position')->label('#'),
                 TextColumn::make('name.en')->label('Name')->searchable(),
                 TextColumn::make('code')->searchable(),

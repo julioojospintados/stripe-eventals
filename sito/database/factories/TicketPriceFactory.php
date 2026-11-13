@@ -15,7 +15,6 @@ class TicketPriceFactory extends Factory
             'price_tier_id' => null,
             'price_role' => PriceRole::Public,
             'amount_cents' => 10000,
-            'currency' => 'eur',
         ];
     }
 }

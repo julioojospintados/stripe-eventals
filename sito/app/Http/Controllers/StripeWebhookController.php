@@ -19,6 +19,13 @@ class StripeWebhookController
 {
     public function __invoke(Request $request, StripeGateway $stripe)
     {
+        // Con il segreto vuoto chiunque calcolerebbe una firma valida (HMAC con chiave vuota): si rifiuta tutto.
+        if (blank(config('services.stripe.webhook_secret'))) {
+            report(new \RuntimeException('STRIPE_WEBHOOK_SECRET mancante: webhook rifiutato.'));
+
+            return response('webhook not configured', 500);
+        }
+
         try {
             $event = Webhook::constructEvent(
                 $request->getContent(), (string) $request->header('Stripe-Signature'), (string) config('services.stripe.webhook_secret'),

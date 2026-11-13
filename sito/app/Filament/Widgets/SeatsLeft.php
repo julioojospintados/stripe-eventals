@@ -24,8 +24,9 @@ class SeatsLeft extends TableWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(CapacityPool::query()->orderBy('name'))
+            ->query(CapacityPool::query()->with('event')->orderBy('event_id')->orderBy('name'))
             ->columns([
+                TextColumn::make('event.slug')->label('Event'),
                 TextColumn::make('name'),
                 TextColumn::make('capacity')->numeric(),
                 TextColumn::make('confirmed')->label('Sold')->numeric(),

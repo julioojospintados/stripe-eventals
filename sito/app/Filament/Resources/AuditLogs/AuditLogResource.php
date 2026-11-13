@@ -30,7 +30,7 @@ class AuditLogResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            TextEntry::make('occurred_at')->dateTime('d/m/Y H:i:s', 'Europe/Lisbon'),
+            TextEntry::make('occurred_at')->dateTime('d/m/Y H:i:s'),
             TextEntry::make('action'),
             TextEntry::make('actor.email')->label('By')->placeholder('system'),
             TextEntry::make('entity_type')->placeholder('—'),
@@ -45,7 +45,7 @@ class AuditLogResource extends Resource
         return $table
             ->defaultSort('occurred_at', 'desc')
             ->columns([
-                TextColumn::make('occurred_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->sortable(),
+                TextColumn::make('occurred_at')->dateTime('d/m/Y H:i')->sortable(),
                 TextColumn::make('action')->searchable(),
                 TextColumn::make('actor.email')->label('By')->placeholder('system'),
                 TextColumn::make('entity_type'),

@@ -51,9 +51,9 @@
                             <tbody>
                                 @foreach ($orders as $order)
                                     <tr>
-                                        <td><a href="{{ route('account.orders.show', $order->id) }}">{{ $order->created_at->timezone('Europe/Lisbon')->translatedFormat('j M Y, H:i') }}</a></td>
+                                        <td><a href="{{ route('account.orders.show', $order->id) }}">{{ $order->created_at->timezone($order->event->timezone)->translatedFormat('j M Y, H:i') }}</a></td>
                                         <td>{{ __('status.'.$order->status->value) }}</td>
-                                        <td class="num">{{ euro($order->total_cents) }}</td>
+                                        <td class="num">{{ money($order->total_cents, $order->currency) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

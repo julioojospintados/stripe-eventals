@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
     @if (app()->environment('staging'))<meta name="robots" content="noindex, nofollow">@endif
-    <title>@hasSection('title')@yield('title') · @endif EAS8 Lisbon</title>
-    <meta name="description" content="{{ __('EAS8 Lisbon, the congress of the European Aligner Society: 8–10 April 2027, Lisbon.') }}">
+    <title>@hasSection('title')@yield('title') · @endif {{ $site['name'] }}</title>
+    <meta name="description" content="{{ $site['description'] }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <link rel="preload" href="{{ asset('fonts/inter/inter-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/site.css') }}">
@@ -19,8 +19,8 @@
 <header class="site-header dark">
     <div class="wrap site-header__in">
         <a class="brand" href="{{ route('home') }}">
-            <img src="{{ asset('images/eas-logo.png') }}" width="84" height="47" alt="European Aligner Society">
-            <span>EAS8 Lisbon</span>
+            @if ($site['logo'])<img src="{{ asset($site['logo']) }}" width="84" height="47" alt="{{ $site['organizer'] }}">@endif
+            <span>{{ $site['name'] }}</span>
         </a>
         <nav class="nav" aria-label="{{ __('Main') }}">
             <a href="{{ route('program.index') }}" @if (request()->routeIs('program.*')) aria-current="page" @endif>{{ __('Programme') }}</a>
@@ -59,8 +59,8 @@
 
 <footer class="site-footer">
     <div class="wrap site-footer__in">
-        <img src="{{ asset('images/eas-logo.png') }}" width="84" height="47" alt="">
-        <p>EAS8 Lisbon · European Aligner Society · {{ __('8–10 April 2027') }}</p>
+        @if ($site['logo'])<img src="{{ asset($site['logo']) }}" width="84" height="47" alt="">@endif
+        <p>{{ $site['name'] }} · {{ $site['organizer'] }}@if ($site['dates']) · {{ $site['dates'] }}@endif</p>
         @auth
             <form method="post" action="{{ route('logout') }}" class="inline-form">
                 @csrf

@@ -270,7 +270,7 @@ Nessun ruolo elimina: nel pannello le cose si spengono. Chiavi del partner ed ev
 permesso (non c'è una pagina nel pannello). Codici sconto: `DiscountCodePolicy` ammette commerciale e organizzatore;
 ogni creazione e modifica va nel registro audit con l'autore (`discount_codes.created_by`).
 
-Il primo admin si crea via SSH con `php artisan eas:create-admin <email> --name="…" --role=admin`.
+Il primo admin si crea via SSH con `php artisan eventals:create-admin <email> --name="…" --role=admin`.
 
 ### 5.4 Cosa sostituisce l'RLS di Supabase
 

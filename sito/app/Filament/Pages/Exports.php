@@ -3,9 +3,11 @@
 namespace App\Filament\Pages;
 
 use App\Jobs\GenerateCsvExport;
+use App\Models\Event;
 use App\Services\CsvExports;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -50,24 +52,30 @@ class Exports extends Page
             ->label($label)
             ->icon(Heroicon::OutlinedArrowDownTray)
             ->visible(fn () => auth()->user()->can(CsvExports::PERMISSIONS[$type]))
-            ->action(function (CsvExports $exports) use ($type) {
+            // Biglietti e ordini di un evento alla volta: il partner del check-in e la contabilità lavorano per evento.
+            ->schema($type === 'consents' ? [] : [
+                Select::make('event_id')->label('Event')->options(fn () => Event::latest('starts_on')->pluck('slug', 'id'))
+                    ->default(fn () => Event::defaultId())->required(),
+            ])
+            ->action(function (CsvExports $exports, array $data) use ($type) {
                 $user = auth()->user();
                 abort_unless($user->can(CsvExports::PERMISSIONS[$type]), 403);
-                $rows = $exports->count($type);
+                $eventId = $data['event_id'] ?? null;
+                $rows = $exports->count($type, $eventId);
                 $filename = $exports->filename($type);
 
                 if ($rows > CsvExports::$syncLimit) {
-                    GenerateCsvExport::dispatch($type, $user->id, $filename);
-                    $exports->audit($type, $user, $rows, 'queued');
+                    GenerateCsvExport::dispatch($type, $user->id, $filename, $eventId);
+                    $exports->audit($type, $user, $rows, 'queued', $eventId);
                     Notification::make()->success()->title('Export queued')
                         ->body("$rows rows: the file appears on this page within a few minutes.")->send();
 
                     return null;
                 }
 
-                $exports->audit($type, $user, $rows, 'download');
+                $exports->audit($type, $user, $rows, 'download', $eventId);
 
-                return response()->streamDownload(fn () => $exports->write($type, fopen('php://output', 'w')), $filename, [
+                return response()->streamDownload(fn () => $exports->write($type, fopen('php://output', 'w'), $eventId), $filename, [
                     'Content-Type' => 'text/csv; charset=UTF-8',
                 ]);
             });

@@ -32,9 +32,9 @@ class MembershipResource extends Resource
             ->columns([
                 TextColumn::make('user.email')->label('Member')->searchable(),
                 TextColumn::make('status')->badge(),
-                TextColumn::make('current_period_end')->label('Paid until')->dateTime('d/m/Y', 'Europe/Lisbon')->sortable(),
+                TextColumn::make('current_period_end')->label('Paid until')->dateTime('d/m/Y')->sortable(),
                 IconColumn::make('cancel_at_period_end')->label('Cancels at end')->boolean(),
-                TextColumn::make('activated_at')->dateTime('d/m/Y', 'Europe/Lisbon'),
+                TextColumn::make('activated_at')->dateTime('d/m/Y'),
                 TextColumn::make('stripe_subscription_id')->label('Stripe subscription')->copyable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([SelectFilter::make('status')->options(MembershipStatus::class)]);

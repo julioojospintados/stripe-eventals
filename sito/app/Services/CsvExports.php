@@ -17,6 +17,7 @@ use InvalidArgumentException;
  * Export CSV del pannello (docs/architettura.md §11.2, §13.3): biglietti validi per il partner del check-in, ordini
  * per la contabilità, iscritti alla newsletter con consenso. Fino a $syncLimit righe si scaricano subito, oltre si
  * generano in coda in un file privato dello staff (storage/app/private/exports/<id utente>/), tenuto 7 giorni.
+ * Biglietti e ordini si esportano per evento ($eventId); null = tutti gli eventi.
  */
 class CsvExports
 {
@@ -39,21 +40,21 @@ class CsvExports
         'consents' => ['email', 'granted_at', 'source', 'locale', 'text_version'],
     ];
 
-    public function count(string $type): int
+    public function count(string $type, ?string $eventId = null): int
     {
         return match ($type) {
-            'tickets' => Ticket::where('status', TicketStatus::Valid)->count(),
-            'orders' => Order::count(),
+            'tickets' => Ticket::where('status', TicketStatus::Valid)->when($eventId, fn ($q) => $q->where('event_id', $eventId))->count(),
+            'orders' => Order::when($eventId, fn ($q) => $q->where('event_id', $eventId))->count(),
             'consents' => $this->consents()->count(),
             default => throw new InvalidArgumentException($type),
         };
     }
 
     /** Scrive intestazione e righe su un file aperto (php://output per lo scaricamento diretto). */
-    public function write(string $type, $handle): void
+    public function write(string $type, $handle, ?string $eventId = null): void
     {
         fputcsv($handle, self::HEADERS[$type]);
-        foreach ($this->rows($type) as $row) {
+        foreach ($this->rows($type, $eventId) as $row) {
             fputcsv($handle, array_map($this->safe(...), $row));
         }
     }
@@ -69,39 +70,39 @@ class CsvExports
         return "exports/{$user->id}/".$filename;
     }
 
-    public function store(string $type, User $user, string $filename): void
+    public function store(string $type, User $user, string $filename, ?string $eventId = null): void
     {
         $disk = Storage::disk('local');
         $disk->makeDirectory(self::path($user));
         $handle = fopen($disk->path(self::path($user, $filename)), 'w');
         try {
-            $this->write($type, $handle);
+            $this->write($type, $handle, $eventId);
         } finally {
             fclose($handle);
         }
     }
 
-    public function audit(string $type, User $user, int $rows, string $mode): void
+    public function audit(string $type, User $user, int $rows, string $mode, ?string $eventId = null): void
     {
-        AuditLog::record('export.'.$type, null, $user, ['rows' => $rows, 'mode' => $mode]);
+        AuditLog::record('export.'.$type, null, $user, array_filter(['rows' => $rows, 'mode' => $mode, 'event_id' => $eventId], fn ($v) => $v !== null));
     }
 
     /** @return iterable<list<string|int|null>> */
-    private function rows(string $type): iterable
+    private function rows(string $type, ?string $eventId): iterable
     {
         if ($type === 'tickets') {
             $days = $this->daysByType();
-            foreach (Ticket::with('ticketType')->where('status', TicketStatus::Valid)->orderBy('short_code')->lazy() as $t) {
+            foreach (Ticket::with('ticketType')->where('status', TicketStatus::Valid)->when($eventId, fn ($q) => $q->where('event_id', $eventId))->orderBy('short_code')->lazy() as $t) {
                 yield [$t->id, $t->qr_version, $t->short_code, $t->attendee_name, $t->ticketType->kind->value,
                     $t->ticketType->name['en'] ?? '', $days[$t->ticket_type_id] ?? '', $t->status->value];
             }
         } elseif ($type === 'orders') {
-            $orders = Order::with('priceTier', 'discountCode')->withSum(['refunds' => fn ($q) => $q->where('status', '!=', 'failed')], 'amount_cents');
+            $orders = Order::with('priceTier', 'discountCode')->when($eventId, fn ($q) => $q->where('event_id', $eventId))->withSum(['refunds' => fn ($q) => $q->where('status', '!=', 'failed')], 'amount_cents');
             foreach ($orders->orderBy('created_at')->lazy() as $o) {
                 yield [$o->id, $o->created_at->toIso8601String(), $o->paid_at?->toIso8601String(), $o->status->value,
                     $o->origin->value, $o->buyer_email, $o->price_role->value, $o->priceTier?->code, $o->currency,
-                    $this->euro($o->subtotal_cents), $this->euro($o->discount_cents), $this->euro($o->total_cents),
-                    $this->euro((int) $o->refunds_sum_amount_cents), $o->discountCode?->code, $o->stripe_payment_intent_id];
+                    $this->amount($o->subtotal_cents), $this->amount($o->discount_cents), $this->amount($o->total_cents),
+                    $this->amount((int) $o->refunds_sum_amount_cents), $o->discountCode?->code, $o->stripe_payment_intent_id];
             }
         } else {
             foreach ($this->consents()->orderBy('email')->cursor() as $c) {
@@ -131,14 +132,14 @@ class CsvExports
             })->all();
     }
 
-    private function euro(int $cents): string
+    private function amount(int $cents): string
     {
         return number_format($cents / 100, 2, '.', '');
     }
 
-    /** Contro la formula injection nei fogli di calcolo: un testo che inizia con = + - @ diventa testo. */
+    /** Contro la formula injection nei fogli di calcolo (OWASP): un testo che inizia con = + - @ tab o a capo diventa testo. */
     private function safe(mixed $value): mixed
     {
-        return is_string($value) && $value !== '' && str_contains('=+-@', $value[0]) && ! is_numeric($value) ? "'".$value : $value;
+        return is_string($value) && $value !== '' && str_contains("=+-@\t\r", $value[0]) && ! is_numeric($value) ? "'".$value : $value;
     }
 }

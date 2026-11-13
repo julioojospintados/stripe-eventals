@@ -39,7 +39,7 @@ class TicketTypeResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             Select::make('kind')->options(TicketKind::class)->required()->live(),
             TextInput::make('name.en')->label('Name (EN)')->required()->maxLength(200),
             TextInput::make('name.it')->label('Name (IT)')->maxLength(200),
@@ -55,8 +55,8 @@ class TicketTypeResource extends Resource
             TextInput::make('max_per_host')->integer()->minValue(1)->maxValue(5)->label('Max per pass (companion only)')
                 ->visible(self::kindIs(TicketKind::Companion))
                 ->required(self::kindIs(TicketKind::Companion)),
-            DateTimePicker::make('sales_start')->timezone('Europe/Lisbon'),
-            DateTimePicker::make('sales_end')->timezone('Europe/Lisbon')->after('sales_start'),
+            DateTimePicker::make('sales_start')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id'))),
+            DateTimePicker::make('sales_end')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->after('sales_start'),
             TextInput::make('position')->integer()->default(0),
             Toggle::make('active')->default(true),
             CheckboxList::make('pools')->relationship('pools', 'name')->columns(3)->columnSpanFull()
@@ -75,6 +75,7 @@ class TicketTypeResource extends Resource
         return $table
             ->defaultSort('position')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 TextColumn::make('name.en')->label('Name')->searchable(),
                 TextColumn::make('kind')->badge(),
                 TextColumn::make('channel'),

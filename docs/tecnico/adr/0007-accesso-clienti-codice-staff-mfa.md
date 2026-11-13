@@ -13,7 +13,7 @@ ruolo: password come hash scrypt o argon2, cookie `httpOnly`, limite ai tentativ
   e per IP; account creato al primo accesso; email mandata dopo la risposta (`afterResponse`), non dalla coda.
 - Staff: solo da `/admin`, password argon2id (`HASH_DRIVER=argon2id`) e TOTP obbligatorio di Filament con codici di
   recupero. Un indirizzo dello staff non riceve il codice e non apre la sessione con il codice.
-- Primo admin con `php artisan eas:create-admin`.
+- Primo admin con `php artisan eventals:create-admin`.
 
 ## Alternative
 

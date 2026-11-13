@@ -13,7 +13,6 @@ class DiscountCodeFactory extends Factory
             'code' => fake()->unique()->bothify('CODE-####'),
             'discount_type' => DiscountType::Percent,
             'percent_off' => 10,
-            'currency' => 'eur',
         ];
     }
 }

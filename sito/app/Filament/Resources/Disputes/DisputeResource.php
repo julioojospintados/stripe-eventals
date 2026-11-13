@@ -27,7 +27,7 @@ class DisputeResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('created_at')->label('Opened')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->sortable(),
+                TextColumn::make('created_at')->label('Opened')->dateTime('d/m/Y H:i')->sortable(),
                 TextColumn::make('order.buyer_email')->label('Buyer')->searchable(),
                 TextColumn::make('status')->badge()->color(fn (string $state) => match ($state) {
                     'won', 'warning_closed', 'prevented' => 'success',
@@ -35,9 +35,9 @@ class DisputeResource extends Resource
                     default => 'warning',
                 }),
                 TextColumn::make('reason'),
-                TextColumn::make('amount_cents')->label('Amount')->money('EUR', divideBy: 100),
-                TextColumn::make('evidence_due_by')->label('Answer by')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->placeholder('—'),
-                TextColumn::make('closed_at')->dateTime('d/m/Y H:i', 'Europe/Lisbon')->placeholder('—'),
+                TextColumn::make('amount_cents')->label('Amount')->money(fn ($record) => $record->currency, divideBy: 100),
+                TextColumn::make('evidence_due_by')->label('Answer by')->dateTime('d/m/Y H:i')->placeholder('—'),
+                TextColumn::make('closed_at')->dateTime('d/m/Y H:i')->placeholder('—'),
                 TextColumn::make('stripe_dispute_id')->label('Stripe')->copyable()->toggleable(isToggledHiddenByDefault: true),
             ]);
     }

@@ -11,9 +11,9 @@ Chi provoca il passaggio, nelle etichette:
 | **W** | webhook Stripe, elaborato dal job `ProcessStripeEvent` in coda | `checkout.session.completed`, `charge.refunded` |
 | **J** | job in coda | `RefundOrderFully`, `SendTicketsEmail` |
 | **S** | staff dal pannello Filament | rimborso, decisione su `needs_review`, omaggio, correzione del nome |
-| **C** | comando o scheduler | `eas:expire-orders` (ogni minuto), `eas:reconcile` (ogni notte) |
+| **C** | comando o scheduler | `eventals:expire-orders` (ogni minuto), `eventals:reconcile` (ogni notte) |
 
-La pagina di successo, `eas:expire-orders` ed `eas:reconcile` chiamano lo stesso `PaymentService` del webhook: un
+La pagina di successo, `eventals:expire-orders` ed `eventals:reconcile` chiamano lo stesso `PaymentService` del webhook: un
 pagamento si conferma da qualunque delle quattro strade arrivi prima, una volta sola (lock sull'ordine).
 
 ## Ordine (`orders.status`)
@@ -103,7 +103,7 @@ stateDiagram-v2
 ```
 
 - I posti di una riserva scaduta si liberano **solo dopo** che Stripe conferma la scadenza (webhook `expired` o
-  `eas:expire-orders`, che prima chiama `expire` sulla sessione): un job fermo fa vendere meno, mai due volte.
+  `eventals:expire-orders`, che prima chiama `expire` sulla sessione): un job fermo fa vendere meno, mai due volte.
 - CHECK: `active` ha sempre `expires_at`, `released` ha sempre `released_at`.
 
 ## Rimborso (`refunds.status`)
@@ -182,7 +182,7 @@ stateDiagram-v2
 
 ## Evento Stripe (`stripe_events.status`)
 
-Enum `App\Enums\StripeEventStatus`; righe scritte da `StripeWebhookController` e da `eas:reconcile`
+Enum `App\Enums\StripeEventStatus`; righe scritte da `StripeWebhookController` e da `eventals:reconcile`
 (`evt_reconcile_<session>`), elaborate da `ProcessStripeEvent` (5 tentativi, attese 10 s, 1, 5, 15 minuti).
 
 ```mermaid

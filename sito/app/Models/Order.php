@@ -31,6 +31,12 @@ class Order extends Model
 {
     use HasFactory, HasUuids;
 
+    protected static function booted(): void
+    {
+        // Sempre la valuta dell'evento (il trigger orders_currency_matches_event rifiuta le altre).
+        static::creating(fn (Order $order) => $order->currency ??= Event::whereKey($order->event_id)->value('currency'));
+    }
+
     protected function casts(): array
     {
         return [

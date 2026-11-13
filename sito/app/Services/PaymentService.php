@@ -66,7 +66,10 @@ class PaymentService
             $late ? $this->retakeClaims($order) : $this->capacity->convert($order);
 
             // Importo diverso dal totale: posti tenuti, nessun biglietto finché lo staff non decide (approveReview / refundReview).
-            if ($session && $order->stripe_amount_total_cents !== $order->total_cents) {
+            // Anche la valuta della sessione deve essere quella dell'ordine (e quindi dell'evento): 399 USD non sono 399 EUR.
+            // Valuta mancante = non verificabile: si rivede come una valuta diversa.
+            $wrongCurrency = $session && strtolower((string) ($session['currency'] ?? '')) !== $order->currency;
+            if ($session && ($order->stripe_amount_total_cents !== $order->total_cents || $wrongCurrency)) {
                 $order->review_reason = 'amount_mismatch';
                 $this->transition($order, OrderStatus::NeedsReview);
                 StaffAlert::raise('Importo pagato diverso dall\'ordine: biglietti non emessi', [

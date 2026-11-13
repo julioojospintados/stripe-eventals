@@ -56,15 +56,14 @@ class ProgramSessionResource extends Resource
 
     protected static ?string $modelLabel = 'session';
 
-    private const TZ = 'Europe/Lisbon';
-
     public static function form(Schema $schema): Schema
     {
         $name = fn (Room|Track $record) => $record->name['en'] ?? '';
+        $partTz = fn (Get $get) => Event::timezoneOf($get('../../event_id'));
 
         return $schema->columns(1)->components([
             Section::make('Session')->columns(2)->schema([
-                Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+                Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId())->live(),
                 TextInput::make('code')->required()->regex('/^[A-Za-z0-9-]{1,30}$/')
                     ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule, Get $get) => $rule->where('event_id', $get('event_id')))
                     ->helperText('Key used in the CSV files, e.g. ses-001. Do not change it after the first import.'),
@@ -76,12 +75,12 @@ class ProgramSessionResource extends Resource
                     ProgramSessionAccess::IncludedBooking->value => 'Included, booking needed',
                     ProgramSessionAccess::Paid->value => 'Paid (workshop ticket in Sales)',
                 ])->required()->default(ProgramSessionAccess::Included->value),
-                Select::make('room_id')->relationship('room', 'code', fn (Builder $query) => $query->orderBy('position'))
+                Select::make('room_id')->relationship('room', 'code', fn (Builder $query, Get $get) => $query->where('event_id', $get('event_id'))->orderBy('position'))
                     ->getOptionLabelFromRecordUsing($name)->preload()->requiredWith('starts_at'),
-                Select::make('track_id')->relationship('track', 'slug', fn (Builder $query) => $query->orderBy('position'))
+                Select::make('track_id')->relationship('track', 'slug', fn (Builder $query, Get $get) => $query->where('event_id', $get('event_id'))->orderBy('position'))
                     ->getOptionLabelFromRecordUsing($name)->preload(),
-                DateTimePicker::make('starts_at')->label('Starts (Lisbon time)')->timezone(self::TZ)->seconds(false)->requiredWith('room_id'),
-                DateTimePicker::make('ends_at')->label('Ends (Lisbon time)')->timezone(self::TZ)->seconds(false)
+                DateTimePicker::make('starts_at')->label('Starts (event time)')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->seconds(false)->requiredWith('room_id'),
+                DateTimePicker::make('ends_at')->label('Ends (event time)')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->seconds(false)
                     ->after('starts_at')->requiredWith('starts_at')
                     ->rules([fn (Get $get, ?ProgramSession $record) => self::roomFree($get, $record)]),
                 Textarea::make('abstract.en')->label('Abstract (EN)')->rows(5)->maxLength(5000),
@@ -105,8 +104,8 @@ class ProgramSessionResource extends Resource
                     ->schema([
                         TextInput::make('title.en')->label('Title (EN)')->required()->maxLength(300),
                         TextInput::make('title.it')->label('Title (IT)')->maxLength(300),
-                        DateTimePicker::make('starts_at')->label('Starts (Lisbon time)')->timezone(self::TZ)->seconds(false),
-                        DateTimePicker::make('ends_at')->label('Ends (Lisbon time)')->timezone(self::TZ)->seconds(false)->after('starts_at'),
+                        DateTimePicker::make('starts_at')->label('Starts (event time)')->timezone($partTz)->seconds(false),
+                        DateTimePicker::make('ends_at')->label('Ends (event time)')->timezone($partTz)->seconds(false)->after('starts_at'),
                         Select::make('speakers')->relationship('speakers', 'last_name')->multiple()->preload()
                             ->getOptionLabelFromRecordUsing(fn (Speaker $record) => $record->name())->columnSpanFull(),
                         Textarea::make('abstract.en')->label('Abstract (EN)')->rows(3)->maxLength(5000),
@@ -153,10 +152,11 @@ class ProgramSessionResource extends Resource
     {
         return $table
             ->defaultSort('starts_at')
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['room', 'track', 'ticketType']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['event', 'room', 'track', 'ticketType']))
             ->columns([
-                TextColumn::make('starts_at')->label('Starts')->dateTime('D d/m H:i', self::TZ)->sortable(),
-                TextColumn::make('ends_at')->label('Ends')->dateTime('H:i', self::TZ),
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
+                TextColumn::make('starts_at')->label('Starts')->dateTime('D d/m H:i', fn (ProgramSession $record) => $record->event->timezone)->sortable(),
+                TextColumn::make('ends_at')->label('Ends')->dateTime('H:i', fn (ProgramSession $record) => $record->event->timezone),
                 TextColumn::make('room.name.en')->label('Room'),
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('title.en')->label('Title')->limit(60)->wrap()

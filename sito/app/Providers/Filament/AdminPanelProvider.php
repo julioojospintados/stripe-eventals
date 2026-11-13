@@ -27,7 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('EAS8')
+            ->brandName(fn () => config('eventals.organizer.name'))
             // Solo lo staff (User::canAccessPanel), con password argon2id e MFA TOTP obbligatoria (architettura §5.2).
             ->login()
             ->multiFactorAuthentication([

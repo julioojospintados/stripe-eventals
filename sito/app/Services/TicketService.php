@@ -20,8 +20,6 @@ use RuntimeException;
  */
 class TicketService
 {
-    private const PREFIX = 'EAS1';
-
     /** Un biglietto per nominativo; si può rilanciare (unique su riga e numero). Va chiamato sotto lock dell'ordine. */
     public function issue(Order $order): void
     {
@@ -45,7 +43,7 @@ class TicketService
 
     public const MAX_CORRECTIONS = 3;
 
-    /** Rimanda per email un biglietto valido al suo intestatario o a un altro indirizzo (pannello e eas:resend-ticket). */
+    /** Rimanda per email un biglietto valido al suo intestatario o a un altro indirizzo (pannello e eventals:resend-ticket). */
     public function resend(Ticket $ticket, ?string $to = null, ?User $staff = null): string
     {
         if ($ticket->status !== TicketStatus::Valid) {
@@ -102,7 +100,7 @@ class TicketService
         ]);
         $signature = sodium_crypto_sign_detached($message, $this->secretKey());
 
-        return self::PREFIX.'.'.$this->b64($message).'.'.$this->b64($signature);
+        return config('tickets.qr.prefix').'.'.$this->b64($message).'.'.$this->b64($signature);
     }
 
     /**
@@ -112,7 +110,7 @@ class TicketService
     public function verify(string $payload): ?array
     {
         $parts = explode('.', $payload);
-        if (count($parts) !== 3 || $parts[0] !== self::PREFIX) {
+        if (count($parts) !== 3 || $parts[0] !== config('tickets.qr.prefix')) {
             return null;
         }
         $message = base64_decode(strtr($parts[1], '-_', '+/'));

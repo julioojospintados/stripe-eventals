@@ -13,7 +13,7 @@
     <section class="sezione">
         <div class="wrap stack" style="--stack: var(--s-5)">
             <h1 class="t-1">{{ __('Programme') }}</h1>
-            <p class="t-lead misura">{{ __('Times are Lisbon time. Sessions are included in the full pass unless marked as a workshop.') }}</p>
+            <p class="t-lead misura">{{ __('Times are local time. Sessions are included in the full pass unless marked as a workshop.') }}</p>
 
             @if ($days->isNotEmpty())
                 <nav aria-label="{{ __('Days') }}">

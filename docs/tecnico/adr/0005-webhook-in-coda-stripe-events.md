@@ -14,7 +14,7 @@ richiesta.
   chiave) e job `ProcessStripeEvent` nella **stessa transazione** (coda `database`), risposta 200 subito.
 - `ProcessStripeEvent`: lock sulla riga dell'evento, uscita se già `processed`/`ignored`; i servizi bloccano l'ordine e
   cambiano stato solo dagli stati ammessi; biglietti con `unique (order_item_id, seq)`.
-- Pagina di successo, `eas:expire-orders` ed `eas:reconcile` usano lo stesso `PaymentService`.
+- Pagina di successo, `eventals:expire-orders` ed `eventals:reconcile` usano lo stesso `PaymentService`.
 - Laravel Cashier non si usa: SDK `stripe-php` diretto, un solo webhook e una sola tabella di idempotenza.
 
 ## Alternative

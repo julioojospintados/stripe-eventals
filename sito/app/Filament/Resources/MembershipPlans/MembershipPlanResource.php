@@ -34,7 +34,7 @@ class MembershipPlanResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            TextInput::make('amount_cents')->label('Amount per year (€)')->required()->numeric()->minValue(0)->step('0.01')
+            TextInput::make('amount_cents')->label('Amount per year')->required()->numeric()->minValue(0)->step('0.01')
                 ->formatStateUsing(fn ($state) => $state === null ? null : $state / 100)
                 ->dehydrateStateUsing(fn ($state) => (int) round($state * 100)),
             TextInput::make('stripe_price_id')->label('Stripe Price ID')->maxLength(255)->regex('/^price_[A-Za-z0-9]+$/')
@@ -48,7 +48,7 @@ class MembershipPlanResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name.en')->label('Plan'),
-                TextColumn::make('amount_cents')->label('Amount')->money('EUR', divideBy: 100),
+                TextColumn::make('amount_cents')->label('Amount')->money(fn ($record) => $record->currency, divideBy: 100),
                 TextColumn::make('stripe_price_id')->label('Stripe Price ID')->placeholder('from .env')->copyable(),
                 TextColumn::make('active')->badge(),
             ])

@@ -13,7 +13,8 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Dati veri dell'EAS8 (risposte del cliente del 06/11/2026, db/modello-dati.md §3.3). Importi in centesimi.
+ * Dati veri dell'EAS8 (risposte del cliente del 06/11/2026, db/modello-dati.md §3.3), primo evento dimostrativo
+ * del sistema: per un altro evento si parte da DemoEventSeeder o dal pannello. Importi in centesimi.
  * Le date delle fasce sono provvisorie (da confermare con Simone) e si cambiano dal pannello.
  * Non fa nulla se l'evento esiste già.
  */

@@ -22,7 +22,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
- * sessions.csv. Orari di Lisbona convertiti in UTC; sala occupata, sala o speaker sconosciuti e giorno fuori
+ * sessions.csv. Orari nel fuso dell'evento convertiti in UTC; sala occupata, sala o speaker sconosciuti e giorno fuori
  * dall'evento sono errori della riga. Le sessioni nuove arrivano non pubblicate.
  * paid=yes: alla prima importazione crea il tipo di biglietto del workshop (spento), il suo pool di posti e il prezzo
  * base pubblico; dopo, biglietto, posti e prezzo si cambiano dal pannello (Sales), non dal foglio.
@@ -57,7 +57,8 @@ class ProgramSessionImporter extends ProgramImporter
             ImportColumn::make('moderator_codes')->array('|')->nestedRecursiveRules([$code]),
             ImportColumn::make('paid')->requiredMapping()->rules(['required', 'in:yes,no']),
             ImportColumn::make('seats')->integer()->rules(['nullable', 'required_if:paid,yes', 'integer', 'min:1']),
-            ImportColumn::make('price_eur')->castStateUsing(fn ($state) => blank($state) ? null : str_replace(',', '.', (string) $state))
+            // Prezzo nella valuta dell'evento; price_eur è il nome della colonna nei fogli dell'EAS8.
+            ImportColumn::make('price')->guess(['price_eur'])->castStateUsing(fn ($state) => blank($state) ? null : str_replace(',', '.', (string) $state))
                 ->rules(['nullable', 'decimal:0,2', 'min:0']),
         ];
     }
@@ -170,8 +171,8 @@ class ProgramSessionImporter extends ProgramImporter
     {
         $event = $this->event();
         $session = $this->record;
-        $cents = filled($this->data['price_eur'] ?? null)
-            ? (int) round((float) $this->data['price_eur'] * 100)
+        $cents = filled($this->data['price'] ?? null)
+            ? (int) round((float) $this->data['price'] * 100)
             : TicketPrice::whereNull('price_tier_id')->where('price_role', PriceRole::Public)
                 ->whereHas('ticketType', fn ($q) => $q->where('event_id', $event->id)->where('kind', TicketKind::PaidSession))
                 ->value('amount_cents') ?? self::DEFAULT_WORKSHOP_CENTS;

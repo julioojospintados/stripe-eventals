@@ -12,10 +12,10 @@ if (config('queue.worker_mode') !== 'daemon') {
         ->everyMinute()->withoutOverlapping(5)->runInBackground();
 }
 
-Schedule::command('eas:expire-orders')->everyMinute()->withoutOverlapping(5);
+Schedule::command('eventals:expire-orders')->everyMinute()->withoutOverlapping(5);
 
 // Riconciliazione con Stripe delle ultime 48 ore: rapporto nel registro audit, avviso se ci sono differenze.
-Schedule::command('eas:reconcile')->dailyAt('03:30')->timezone('Europe/Lisbon')->withoutOverlapping(30);
+Schedule::command('eventals:reconcile')->dailyAt('03:30')->timezone(config('eventals.timezone'))->withoutOverlapping(30);
 
 Schedule::call(fn () => LoginCode::where('expires_at', '<', now()->subDay())->delete())->daily()->name('prune-login-codes');
 

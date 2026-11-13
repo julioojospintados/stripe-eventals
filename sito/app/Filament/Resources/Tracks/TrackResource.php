@@ -34,7 +34,7 @@ class TrackResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::value('id')),
+            Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             TextInput::make('name.en')->label('Name (EN)')->required()->maxLength(100)
                 ->helperText('Same text as the track column of sessions.csv.')
                 ->rules([fn (Get $get, ?Track $record) => function (string $attribute, $value, Closure $fail) use ($get, $record) {
@@ -56,6 +56,7 @@ class TrackResource extends Resource
             ->defaultSort('position')
             ->reorderable('position')
             ->columns([
+                TextColumn::make('event.slug')->label('Event')->toggleable(),
                 ColorColumn::make('color'),
                 TextColumn::make('name.en')->label('Name')->searchable(),
                 TextColumn::make('name.it')->label('Name (IT)'),

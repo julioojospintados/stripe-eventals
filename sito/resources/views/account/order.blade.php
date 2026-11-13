@@ -46,7 +46,7 @@
                 </div>
             @endif
 
-            <p class="t-small t-muted">{{ __('Order status') }}: <b>{{ __('status.'.$status) }}</b> · {{ $order->created_at->timezone('Europe/Lisbon')->translatedFormat('j M Y, H:i') }}</p>
+            <p class="t-small t-muted">{{ __('Order status') }}: <b>{{ __('status.'.$status) }}</b> · {{ $order->created_at->timezone($order->event->timezone)->translatedFormat('j M Y, H:i') }}</p>
             @if ($order->stripe_invoice_url)
                 <p><a href="{{ $order->stripe_invoice_url }}" rel="noopener">{{ __('Invoice') }}</a></p>
             @endif
@@ -60,15 +60,15 @@
                             <tr>
                                 <td>{{ $item->stripe_line_name }} × {{ $item->quantity }}</td>
                                 <td>@foreach ($item->attendees as $a)<b>{{ $a['name'] }}</b><br><span class="t-muted">{{ $a['email'] }}</span><br>@endforeach</td>
-                                <td class="num">{{ euro($item->total_cents) }}</td>
+                                <td class="num">{{ money($item->total_cents, $order->currency) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         @if ($order->discount_cents)
-                            <tr><th scope="row" colspan="2">{{ __('Discount') }}</th><td class="num">−{{ euro($order->discount_cents) }}</td></tr>
+                            <tr><th scope="row" colspan="2">{{ __('Discount') }}</th><td class="num">−{{ money($order->discount_cents, $order->currency) }}</td></tr>
                         @endif
-                        <tr><th scope="row" colspan="2">{{ __('Total') }}</th><td class="num">{{ euro($order->total_cents) }}</td></tr>
+                        <tr><th scope="row" colspan="2">{{ __('Total') }}</th><td class="num">{{ money($order->total_cents, $order->currency) }}</td></tr>
                     </tfoot>
                 </table>
             </div>
@@ -81,8 +81,8 @@
                         <span><b>{{ __('I have checked the names.') }}</b> {{ __('I understand that they cannot be changed after payment.') }}</span>
                     </label>
                     <p class="campo__aiuto" id="confirm-help">{{ __('Required. Tickets are non-refundable; we refund automatically only if the event is cancelled.') }}</p>
-                    <button class="btn btn--primary btn--block">{{ $order->total_cents ? __('Pay :amount by card on Stripe', ['amount' => euro($order->total_cents)]) : __('Confirm the order') }}</button>
-                    <p class="t-small t-muted">{{ __('Seats are held until :time (Lisbon time). Card only, Apple Pay and Google Pay included: your card details never reach us.', ['time' => $order->checkout_expires_at->timezone('Europe/Lisbon')->format('H:i')]) }}</p>
+                    <button class="btn btn--primary btn--block">{{ $order->total_cents ? __('Pay :amount by card on Stripe', ['amount' => money($order->total_cents, $order->currency)]) : __('Confirm the order') }}</button>
+                    <p class="t-small t-muted">{{ __('Seats are held until :time (local time). Card only, Apple Pay and Google Pay included: your card details never reach us.', ['time' => $order->checkout_expires_at->timezone($order->event->timezone)->format('H:i')]) }}</p>
                 </form>
             @endif
 

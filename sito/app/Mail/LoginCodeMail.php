@@ -12,7 +12,7 @@ class LoginCodeMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'EAS8: '.$this->code);
+        return new Envelope(subject: config('eventals.organizer.name').': '.$this->code);
     }
 
     public function content(): Content

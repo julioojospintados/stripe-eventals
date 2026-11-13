@@ -15,6 +15,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -34,6 +35,8 @@ class EventResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $tz = fn (Get $get) => $get('timezone') ?: config('eventals.timezone');
+
         return $schema->components([
             Section::make('Event')->columns(2)->columnSpanFull()->schema([
                 TextInput::make('title.en')->label('Title (EN)')->required()->maxLength(200),
@@ -48,9 +51,14 @@ class EventResource extends Resource
             Section::make('Dates')->columns(2)->columnSpanFull()->schema([
                 DatePicker::make('starts_on')->required(),
                 DatePicker::make('ends_on')->required()->afterOrEqual('starts_on'),
-                DateTimePicker::make('sales_open_at')->timezone('Europe/Lisbon')->helperText('Lisbon time. Empty = open now.'),
-                DateTimePicker::make('sales_close_at')->timezone('Europe/Lisbon')->after('sales_open_at'),
-                TextInput::make('timezone')->required()->default('Europe/Lisbon')->in(timezone_identifiers_list()),
+                DateTimePicker::make('sales_open_at')->timezone($tz)->helperText('Event time. Empty = open now.'),
+                DateTimePicker::make('sales_close_at')->timezone($tz)->after('sales_open_at'),
+                TextInput::make('timezone')->required()->default(fn () => config('eventals.timezone'))->in(timezone_identifiers_list())
+                    ->helperText('e.g. Europe/Lisbon. Every time in the panel and on the site is shown in this zone.'),
+                // Fissata dal primo prezzo o ordine: il trigger events_currency_locked rifiuta il cambio.
+                TextInput::make('currency')->required()->default(fn () => config('eventals.currency'))->regex('/^[A-Za-z]{3}$/')
+                    ->helperText('ISO code, e.g. eur, usd, gbp.')->dehydrateStateUsing(fn (string $state) => strtolower($state))
+                    ->disabled(fn (?Event $record) => $record?->hasSalesData() ?? false),
             ]),
             Repeater::make('days')->relationship()->columnSpanFull()->columns(3)
                 ->schema([
@@ -71,6 +79,8 @@ class EventResource extends Resource
                 TextColumn::make('starts_on')->date(),
                 TextColumn::make('ends_on')->date(),
                 TextColumn::make('venue_name'),
+                TextColumn::make('timezone')->toggleable(),
+                TextColumn::make('currency')->formatStateUsing(fn (string $state) => strtoupper($state)),
             ])
             ->recordActions([EditAction::make()]);
     }
