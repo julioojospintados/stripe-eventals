@@ -29,6 +29,7 @@ services:
     command: >-
       sh -c "[ -f .env ] || cp .env.example .env;
       grep -q '^APP_KEY=base64' .env || php artisan key:generate;
+      php docker/genera-chiave-qr.php;
       composer install --no-interaction &&
       php artisan migrate --seed --force &&
       (php artisan schedule:work &) && exec php artisan serve --host=0.0.0.0 --port=8000"
