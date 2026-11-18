@@ -1,0 +1,23 @@
+# File locali di editor e sistema, nella radice del repository (sito/ ha il suo .gitignore di Laravel).
+.idea/
+.vscode/
+.zed/
+.fleet/
+.cursor/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# ddev: la configurazione condivisa si può versionare, le parti locali no.
+.ddev/.gitignore
+.ddev/*.local.*
+.ddev/.homeadditions
+.ddev/.global_commands
+.ddev/db_snapshots/
+.ddev/import-db/
+.ddev/.ddev-docker-compose-*.yaml
+.ddev/.webimageBuild/
+.ddev/.dbimageBuild/
+.ddev/traefik/
