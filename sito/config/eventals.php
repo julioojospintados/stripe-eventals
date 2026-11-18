@@ -5,6 +5,9 @@
 
 return [
 
+    // MFA dello staff nel pannello: false solo per lo sviluppo locale; in produzione è sempre obbligatoria.
+    'staff_mfa_required' => env('STAFF_MFA_REQUIRED', true),
+
     'organizer' => [
         // Nome nel pannello, nei titoli delle pagine senza evento e nelle email (codice di accesso, avvisi).
         'name' => env('EVENTALS_ORGANIZER_NAME', env('APP_NAME', 'Eventals')),

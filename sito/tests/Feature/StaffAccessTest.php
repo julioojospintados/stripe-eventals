@@ -3,6 +3,7 @@
 use App\Enums\StaffRole;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Providers\Filament\AdminPanelProvider;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
@@ -68,4 +69,18 @@ it('salva cifrati il segreto MFA e i codici di recupero', function () {
         ->and(decrypt($row->app_authentication_secret, false))->toBe('JBSWY3DPEHPK3PXP')
         ->and($row->app_authentication_recovery_codes)->not->toContain('code-1')
         ->and($user->fresh()->getAppAuthenticationRecoveryCodes())->toBe(['code-1', 'code-2']);
+});
+
+it('rende la MFA facoltativa solo fuori produzione, con STAFF_MFA_REQUIRED=false', function () {
+    $provider = AdminPanelProvider::class;
+
+    config(['eventals.staff_mfa_required' => true]);
+    expect($provider::staffMfaRequired())->toBeTrue();
+
+    config(['eventals.staff_mfa_required' => false]);
+    expect($provider::staffMfaRequired())->toBeFalse();
+
+    app()->detectEnvironment(fn () => 'production');
+    expect($provider::staffMfaRequired())->toBeTrue();
+    app()->detectEnvironment(fn () => 'testing');
 });

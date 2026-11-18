@@ -59,6 +59,7 @@ php artisan serve
 
 Pannello su `http://localhost:8000/admin`. Al primo accesso Filament chiede di attivare la MFA con un'app TOTP
 (obbligatoria per tutto lo staff) e mostra i codici di recupero.
+Solo in locale si può spegnere con `STAFF_MFA_REQUIRED=false` nel `.env`; in produzione resta obbligatoria comunque.
 
 **Con Docker** (`compose.yaml`: PHP 8.4, MariaDB 11.4, Mailpit): `docker compose up` crea `.env`, chiave, tabelle e
 dati di prova e avvia sito (`:8000`, con lo scheduler per coda ed email) e Mailpit (`:8025`, tutte le email).
