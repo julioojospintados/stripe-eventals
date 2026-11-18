@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DiscountCodes;
 
 use App\Enums\DiscountType;
 use App\Enums\PriceRole;
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\DiscountCodes\Pages\ManageDiscountCodes;
 use App\Models\AuditLog;
 use App\Models\DiscountCode;
@@ -30,7 +31,7 @@ use UnitEnum;
 
 /**
  * Codici sconto (admin, commerciale, organizzatore). Lo sconto lo calcola il server (PriceResolver); creazioni e
- * modifiche vanno nel registro audit con l'autore. Si disattivano, non si cancellano.
+ * modifiche vanno nel registro audit con l'autore. Si eliminano solo se mai usati (ConfigDeletion), altrimenti si disattivano.
  */
 class DiscountCodeResource extends Resource
 {
@@ -100,7 +101,9 @@ class DiscountCodeResource extends Resource
             ])
             ->recordActions([
                 EditAction::make()->after(fn (DiscountCode $record) => self::audit('discount_code.updated', $record)),
-            ]);
+                DeleteConfig::make(),
+            ])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function audit(string $action, DiscountCode $record): void

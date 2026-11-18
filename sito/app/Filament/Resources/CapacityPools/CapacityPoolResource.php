@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CapacityPools;
 
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\CapacityPools\Pages\ManageCapacityPools;
 use App\Models\CapacityPool;
 use App\Models\Event;
@@ -54,7 +55,8 @@ class CapacityPoolResource extends Resource
                     ->state(fn (CapacityPool $record) => $record->capacity - $record->held - $record->confirmed),
                 TextColumn::make('max_per_order'),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

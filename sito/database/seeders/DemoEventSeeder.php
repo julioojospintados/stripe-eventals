@@ -60,9 +60,12 @@ class DemoEventSeeder extends Seeder
                 'ends_at' => $starts->copy()->subMonth()->utc(),
             ]);
 
+            // In vendita dall'inizio dell'early bird all'apertura dell'evento.
+            $sales = ['sales_start' => $earlyBird->starts_at, 'sales_end' => $starts->copy()->utc()];
+
             $pass = $event->ticketTypes()->create([
                 'kind' => TicketKind::FullPass, 'channel' => TicketChannel::Public, 'position' => 1,
-                'name' => ['en' => 'Full pass', 'it' => 'Pass completo'],
+                'name' => ['en' => 'Full pass', 'it' => 'Pass completo'], ...$sales,
             ]);
             $pass->pools()->attach($dayPools);
             $pass->prices()->createMany([
@@ -77,7 +80,7 @@ class DemoEventSeeder extends Seeder
             ]);
             $workshop = $event->ticketTypes()->create([
                 'kind' => TicketKind::PaidSession, 'channel' => TicketChannel::Public, 'position' => 11,
-                'program_session_id' => $session->id, 'max_per_order' => 2, 'name' => ['en' => 'Workshop 1', 'it' => 'Workshop 1'],
+                'program_session_id' => $session->id, 'max_per_order' => 2, 'name' => ['en' => 'Workshop 1', 'it' => 'Workshop 1'], ...$sales,
             ]);
             $workshop->pools()->attach($event->capacityPools()->create(['name' => 'Workshop W01', 'capacity' => 20, 'max_per_order' => 2]));
             $workshop->prices()->create(['price_role' => PriceRole::Public, 'amount_cents' => 9900]);

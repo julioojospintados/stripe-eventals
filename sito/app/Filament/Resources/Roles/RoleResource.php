@@ -18,8 +18,9 @@ use Spatie\Permission\PermissionRegistrar;
 use UnitEnum;
 
 /**
- * Ruoli e permessi (RolePolicy): si vedono con roles.view; i permessi di commerciale e organizzatore si cambiano con
- * roles.update, con audit. Admin ha sempre tutto. I valori predefiniti sono in App\Enums\StaffRole.
+ * Ruoli e permessi (RolePolicy): si vedono con roles.view e si cambiano con roles.update, con audit. Il ruolo admin
+ * tiene sempre StaffRole::ADMIN_LOCKED: se li si toglie, al salvataggio tornano. I valori predefiniti sono in
+ * App\Enums\StaffRole.
  */
 class RoleResource extends Resource
 {
@@ -37,7 +38,10 @@ class RoleResource extends Resource
     {
         return $schema->components([
             CheckboxList::make('permissions')->relationship('permissions', 'name')->columns(2)->bulkToggleable()
-                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name.' · '.(StaffRole::allPermissions()[$record->name] ?? '')),
+                ->getOptionLabelFromRecordUsing(fn ($record) => $record->name.' · '.(StaffRole::allPermissions()[$record->name] ?? ''))
+                ->helperText(fn (?Role $record) => $record?->name === StaffRole::Admin->value
+                    ? 'Il ruolo admin tiene sempre: '.implode(', ', StaffRole::ADMIN_LOCKED).'. Se li togli, al salvataggio tornano.'
+                    : null),
         ]);
     }
 
@@ -58,6 +62,9 @@ class RoleResource extends Resource
                         $old = $record->permissions()->pluck('name')->all();
                     })
                     ->after(function (Role $record) use (&$old) {
+                        if ($record->name === StaffRole::Admin->value) {
+                            $record->givePermissionTo(StaffRole::ADMIN_LOCKED);
+                        }
                         app(PermissionRegistrar::class)->forgetCachedPermissions();
                         $new = $record->permissions()->pluck('name')->all();
                         AuditLog::record('role.permissions_updated', $record, auth()->user(), [

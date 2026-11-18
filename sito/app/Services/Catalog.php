@@ -19,7 +19,7 @@ class Catalog
         $tier = $this->prices->activeTier($event, now());
 
         $types = $event->ticketTypes()->with('pools', 'programSession')
-            ->where('active', true)->where('channel', TicketChannel::Public)->get()
+            ->onSale()->where('channel', TicketChannel::Public)->get()
             ->map(fn ($type) => [
                 'type' => $type,
                 'price' => $this->prices->resolve($type, $role, $tier),
@@ -29,7 +29,7 @@ class Catalog
             ])
             ->filter(fn ($row) => $row['price'] !== null);
 
-        $pass = $event->ticketTypes()->where('kind', TicketKind::FullPass)->first();
+        $pass = $event->ticketTypes()->onSale()->where('channel', TicketChannel::Public)->where('kind', TicketKind::FullPass)->first();
         $tiers = $event->priceTiers()->where('active', true)->get()->map(fn ($t) => [
             'tier' => $t,
             'public' => $pass ? $this->prices->resolve($pass, PriceRole::Public, $t) : null,

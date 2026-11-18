@@ -56,14 +56,15 @@ $crud = fn (string $model, bool $commercialeWrites, bool $organizzatoreWrites) =
     "viewAny $model" => ['viewAny', $model, true, true, true],
     "create $model" => ['create', $model, true, $commercialeWrites, $organizzatoreWrites],
     "update $model" => ['update', $model, true, $commercialeWrites, $organizzatoreWrites],
-    "delete $model" => ['delete', $model, false, false, false],
+    // Configurazione: elimina l'admin e l'organizzatore (se il dato non è usato lo decide ConfigDeletion).
+    "delete $model" => ['delete', $model, true, false, $organizzatoreWrites],
 ];
 // Programma: organizzatore e admin, nessun accesso per il commerciale.
 $program = fn (string $model) => [
     "viewAny $model" => ['viewAny', $model, true, false, true],
     "create $model" => ['create', $model, true, false, true],
     "update $model" => ['update', $model, true, false, true],
-    "delete $model" => ['delete', $model, false, false, false],
+    "delete $model" => ['delete', $model, true, false, true],
 ];
 $matrix = [
     ...$program(Room::class),
@@ -96,7 +97,7 @@ $matrix = [
     'delete User' => ['delete', User::class, false, false, false],
     'viewAny Role' => ['viewAny', Role::class, true, false, false],
     'update Role organizzatore' => ['update', 'role:organizzatore', true, false, false],
-    'update Role admin' => ['update', 'role:admin', false, false, false],
+    'update Role admin' => ['update', 'role:admin', true, false, false],
     'orders.view_amounts' => ['orders.view_amounts', null, true, true, false],
     'orders.export' => ['orders.export', null, true, true, false],
     'attendees.export' => ['attendees.export', null, true, true, true],
@@ -115,18 +116,20 @@ it('ogni ruolo può solo le azioni di §5.3', function (string $ability, ?string
     }
 })->with($matrix);
 
-it('i ruoli hanno esattamente i permessi predefiniti, nessuno può eliminare', function (StaffRole $role) {
+it('i ruoli hanno esattamente i permessi predefiniti; elimina solo admin e organizzatore, mai lo staff', function (StaffRole $role) {
     $granted = Role::findByName($role->value)->permissions->pluck('name');
 
     foreach (array_keys(StaffRole::allPermissions()) as $permission) {
         expect($granted->contains($permission))->toBe(in_array($permission, $role->permissions(), true), "$permission per {$role->value}");
     }
-    expect($granted->filter(fn ($p) => str_ends_with($p, '.delete')))->toBeEmpty();
+    expect($granted->filter(fn ($p) => str_ends_with($p, '.delete'))->isNotEmpty())->toBe($role !== StaffRole::Commerciale)
+        ->and(Permission::where('name', 'staff.delete')->exists())->toBeFalse();
 })->with(StaffRole::cases());
 
-it('il seeder si rilancia: non duplica, toglie i permessi vecchi, dà i nuovi e tiene le modifiche dell\'admin', function () {
+it('il seeder si rilancia: non duplica, toglie i permessi vecchi, dà i nuovi e tiene le modifiche del pannello', function () {
     $organizzatore = Role::findByName('organizzatore');
     $organizzatore->revokePermissionTo('event.update');   // modifica fatta dall'admin nel pannello
+    Role::findByName('admin')->revokePermissionTo(['event.delete', 'roles.update']);   // roles.update è fisso: torna
     Permission::findOrCreate('sales.manage')->assignRole($organizzatore);   // permesso che non esiste più
     Permission::findByName('tickets.resend')->delete();   // permesso nuovo per questo database
 
@@ -139,7 +142,9 @@ it('il seeder si rilancia: non duplica, toglie i permessi vecchi, dà i nuovi e 
         ->and($organizzatore->fresh()->hasPermissionTo('event.update'))->toBeFalse()
         ->and(Role::findByName('commerciale')->hasPermissionTo('tickets.resend'))->toBeTrue()
         ->and(Role::findByName('organizzatore')->hasPermissionTo('tickets.resend'))->toBeFalse()
-        ->and(Role::findByName('admin')->permissions()->count())->toBe(count(StaffRole::Admin->permissions()));
+        ->and(Role::findByName('admin')->hasPermissionTo('event.delete'))->toBeFalse()
+        ->and(Role::findByName('admin')->hasPermissionTo('roles.update'))->toBeTrue()
+        ->and(Role::findByName('admin')->permissions()->count())->toBe(count(StaffRole::Admin->permissions()) - 1);
 });
 
 it('apre ruoli, contestazioni e prezzo della membership solo a chi ha il permesso', function (StaffRole $role) {
@@ -155,14 +160,13 @@ it('apre ruoli, contestazioni e prezzo della membership solo a chi ha il permess
     }
 })->with(StaffRole::cases());
 
-it('l\'admin cambia i permessi di un ruolo con audit; il ruolo admin non si modifica', function () {
+it('l\'admin cambia i permessi di un ruolo con audit', function () {
     $this->actingAs(User::factory()->staff(StaffRole::Admin)->create());
     $organizzatore = Role::findByName('organizzatore');
     $before = $organizzatore->permissions->pluck('id')->all();
     $resend = Permission::findByName('tickets.resend');
 
     Livewire::test(ManageRoles::class)
-        ->assertActionHidden(TestAction::make(EditAction::class)->table(Role::findByName('admin')))
         ->callAction(TestAction::make(EditAction::class)->table($organizzatore), data: ['permissions' => [...$before, $resend->id]])
         ->assertHasNoActionErrors();
 
@@ -170,6 +174,23 @@ it('l\'admin cambia i permessi di un ruolo con audit; il ruolo admin non si modi
     expect(User::factory()->staff(StaffRole::Organizzatore)->create()->can('tickets.resend'))->toBeTrue()
         ->and($log->data['added'])->toBe(['tickets.resend'])
         ->and($log->data['removed'])->toBe([]);
+});
+
+it('l\'admin modifica anche il ruolo admin, ma non può togliersi ruoli e staff', function () {
+    $admin = User::factory()->staff(StaffRole::Admin)->create();
+    $this->actingAs($admin);
+    $role = Role::findByName('admin');
+    $keep = Permission::whereIn('name', ['orders.view', 'event.view'])->pluck('id')->all();
+
+    Livewire::test(ManageRoles::class)
+        ->callAction(TestAction::make(EditAction::class)->table($role), data: ['permissions' => $keep])
+        ->assertHasNoActionErrors();
+
+    expect($role->fresh()->permissions->pluck('name')->sort()->values()->all())
+        ->toBe(collect(['orders.view', 'event.view', ...StaffRole::ADMIN_LOCKED])->sort()->values()->all())
+        ->and($admin->fresh()->can('roles.update'))->toBeTrue()
+        ->and($admin->fresh()->can('event.delete'))->toBeFalse()
+        ->and(AuditLog::where('action', 'role.permissions_updated')->sole()->data['removed'])->not->toContain('roles.update');
 });
 
 it('Resend ticket dal pannello: in coda all\'indirizzo scelto, con audit; nascosto a chi non ha il permesso', function () {

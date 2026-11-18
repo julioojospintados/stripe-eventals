@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\TicketChannel;
 use App\Enums\TicketKind;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,24 @@ class TicketType extends Model
             'sales_end' => 'datetime',
             'active' => 'boolean',
         ];
+    }
+
+    /**
+     * L'unica regola di «in vendita» (checkout, pagine pubbliche, prezzi mostrati, pannello): attivo, con data d'inizio
+     * impostata e passata, senza data di fine o non ancora finito, evento pubblicato con le vendite aperte.
+     * Il canale (pubblico, invito, pannello) lo filtra chi chiama.
+     */
+    public function scopeOnSale(Builder $query): void
+    {
+        $query->where('active', true)
+            ->whereNotNull('sales_start')->where('sales_start', '<=', now())
+            ->where(fn ($q) => $q->whereNull('sales_end')->orWhere('sales_end', '>', now()))
+            ->whereIn('event_id', Event::salesOpen()->select('id'));
+    }
+
+    public function isOnSale(): bool
+    {
+        return self::onSale()->whereKey($this->getKey())->exists();
     }
 
     /** @return BelongsTo<Event, $this> */

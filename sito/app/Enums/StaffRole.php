@@ -5,7 +5,7 @@ namespace App\Enums;
 /**
  * Ruoli dello staff (spatie/laravel-permission) e i loro permessi predefiniti, da docs/architettura.md §5.3.
  * Membro non è un ruolo: si deriva da memberships. Dopo una modifica: php artisan db:seed --class=RolesAndPermissionsSeeder
- * (crea i permessi nuovi e li dà ai ruoli come qui; non tocca le modifiche fatte dall'admin nel pannello).
+ * (crea i permessi nuovi e li dà ai ruoli come qui; non tocca le modifiche fatte nel pannello, admin compreso).
  */
 enum StaffRole: string
 {
@@ -13,7 +13,10 @@ enum StaffRole: string
     case Commerciale = 'commerciale';
     case Organizzatore = 'organizzatore';
 
-    /** Risorse con vedi, crea, modifica, elimina. Nessun ruolo elimina: nel pannello si spegne, non si cancella. */
+    /**
+     * Risorse con vedi, crea, modifica, elimina. Elimina vale solo per dati di configurazione non ancora usati da ordini,
+     * biglietti, riserve o utilizzi (App\Services\ConfigDeletion); lo staff non si elimina (gli si toglie il ruolo).
+     */
     public const RESOURCES = [
         'event' => 'Evento, date e giorni',
         'ticket_types' => 'Tipi di biglietto',
@@ -29,6 +32,12 @@ enum StaffRole: string
     ];
 
     public const VERBS = ['view' => 'vedi', 'create' => 'crea', 'update' => 'modifica', 'delete' => 'elimina'];
+
+    /** Risorse senza «elimina». */
+    public const NOT_DELETABLE = ['staff'];
+
+    /** Permessi che il ruolo admin tiene sempre (pannello e seeder li rimettono): così l'admin non si chiude fuori. */
+    public const ADMIN_LOCKED = ['roles.view', 'roles.update', 'staff.view', 'staff.create', 'staff.update'];
 
     /** Permessi che non sono «vedi, crea, modifica, elimina» di una risorsa. */
     public const ACTIONS = [
@@ -64,6 +73,9 @@ enum StaffRole: string
         $all = [];
         foreach (self::RESOURCES as $resource => $label) {
             foreach (self::VERBS as $verb => $word) {
+                if ($verb === 'delete' && in_array($resource, self::NOT_DELETABLE, true)) {
+                    continue;
+                }
                 $all["$resource.$verb"] = "$label: $word";
             }
         }
@@ -78,9 +90,10 @@ enum StaffRole: string
         $program = ['rooms', 'tracks', 'program_sessions', 'speakers'];
         $read = fn (array $resources) => array_map(fn ($r) => "$r.view", $resources);
         $write = fn (array $resources) => array_merge(...array_map(fn ($r) => ["$r.view", "$r.create", "$r.update"], $resources));
+        $delete = fn (array $resources) => array_map(fn ($r) => "$r.delete", $resources);
 
         return match ($this) {
-            self::Admin => array_values(array_filter(array_keys(self::allPermissions()), fn ($p) => ! str_ends_with($p, '.delete'))),
+            self::Admin => array_keys(self::allPermissions()),
             self::Commerciale => [
                 ...$read(['event', ...$sales]), ...$write(['discount_codes']),
                 'orders.view', 'orders.view_amounts', 'orders.refund', 'orders.review', 'orders.export',
@@ -89,7 +102,8 @@ enum StaffRole: string
                 'invite_codes.view', 'invite_codes.manage',
             ],
             self::Organizzatore => [
-                ...$write(['event', ...$sales, 'discount_codes', ...$program]), 'program.import',
+                ...$write(['event', ...$sales, 'discount_codes', ...$program]),
+                ...$delete(['event', ...$sales, 'discount_codes', ...$program]), 'program.import',
                 'orders.view', 'complimentary.view', 'complimentary.issue', 'tickets.view', 'attendees.export',
                 'invite_codes.view', 'videos.manage',
             ],

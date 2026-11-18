@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ProgramSessions;
 use App\Enums\ProgramSessionAccess;
 use App\Enums\SessionFormat;
 use App\Enums\SpeakerRole;
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\ProgramSessions\Pages\CreateProgramSession;
 use App\Filament\Resources\ProgramSessions\Pages\EditProgramSession;
 use App\Filament\Resources\ProgramSessions\Pages\ListProgramSessions;
@@ -173,8 +174,9 @@ class ProgramSessionResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn (Room $record) => $record->name['en'] ?? $record->code),
                 TernaryFilter::make('published'),
             ])
-            ->recordActions([EditAction::make()])
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
             ->toolbarActions([
+                DeleteConfig::bulk(),
                 BulkAction::make('publish')->label('Publish')->icon(Heroicon::OutlinedEye)
                     ->authorize('update', ProgramSession::class)
                     ->action(fn (Collection $records) => ProgramSession::whereKey($records->modelKeys())->update(['published' => true])),

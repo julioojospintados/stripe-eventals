@@ -264,9 +264,10 @@ ogni accesso ai video. Matrice completa (51 permessi, generata dal database) e s
 | Export partecipanti per il check-in (`attendees.export`) | ✔ | ✔ | ✔ |
 | Video e ruoli ammessi (`videos.manage`, fase 2) | ✔ | — | ✔ |
 | Utenti dello staff, ruoli, registro audit (`staff.*`, `roles.*`, `audit_log.view`) | ✔ | — | — |
-| Eliminare (`*.delete`) | — | — | — |
+| Eliminare la configurazione mai usata (`*.delete`) | ✔ | — | ✔ (le sue risorse) |
 
-Nessun ruolo elimina: nel pannello le cose si spengono. Chiavi del partner ed eventi Stripe non hanno ancora un
+Si elimina solo la configurazione che nessun ordine, biglietto, riserva o utilizzo usa (18/11/2026,
+`docs/tecnico/permessi.md`); il resto si spegne. Chiavi del partner ed eventi Stripe non hanno ancora un
 permesso (non c'è una pagina nel pannello). Codici sconto: `DiscountCodePolicy` ammette commerciale e organizzatore;
 ogni creazione e modifica va nel registro audit con l'autore (`discount_codes.created_by`).
 

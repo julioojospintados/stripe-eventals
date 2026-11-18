@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TicketTypes;
 
 use App\Enums\TicketChannel;
 use App\Enums\TicketKind;
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\TicketTypes\Pages\ManageTicketTypes;
 use App\Models\Event;
 use App\Models\TicketType;
@@ -16,6 +17,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -25,7 +27,10 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use UnitEnum;
 
-/** Tipi di biglietto con i pool di posti che consumano. Si spengono, non si cancellano. */
+/**
+ * Tipi di biglietto con i pool di posti che consumano. In vendita solo con TicketType::onSale(); si eliminano solo se
+ * nessun ordine o biglietto li usa (ConfigDeletion), altrimenti si spengono.
+ */
 class TicketTypeResource extends Resource
 {
     protected static ?string $model = TicketType::class;
@@ -39,6 +44,9 @@ class TicketTypeResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
+            Text::make('Il prezzo si decide così: tipo di biglietto × fascia attiva in quel momento × ruolo (pubblico o membro). '
+                .'I prezzi si scrivono in Prices, le date delle fasce in Price tiers. Senza prezzo pubblico il biglietto non si compra.')
+                ->columnSpanFull(),
             Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             Select::make('kind')->options(TicketKind::class)->required()->live(),
             TextInput::make('name.en')->label('Name (EN)')->required()->maxLength(200),
@@ -55,10 +63,13 @@ class TicketTypeResource extends Resource
             TextInput::make('max_per_host')->integer()->minValue(1)->maxValue(5)->label('Max per pass (companion only)')
                 ->visible(self::kindIs(TicketKind::Companion))
                 ->required(self::kindIs(TicketKind::Companion)),
-            DateTimePicker::make('sales_start')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id'))),
-            DateTimePicker::make('sales_end')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->after('sales_start'),
+            DateTimePicker::make('sales_start')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))
+                ->helperText('Senza data d\'inizio il biglietto non è in vendita. Ora dell\'evento.'),
+            DateTimePicker::make('sales_end')->timezone(fn (Get $get) => Event::timezoneOf($get('event_id')))->after('sales_start')
+                ->helperText('Vuota: in vendita finché non lo spegni.'),
             TextInput::make('position')->integer()->default(0),
-            Toggle::make('active')->default(true),
+            Toggle::make('active')->default(true)
+                ->helperText('In vendita solo se attivo, con la data d\'inizio passata e l\'evento pubblicato.'),
             CheckboxList::make('pools')->relationship('pools', 'name')->columns(3)->columnSpanFull()
                 ->helperText('Seats used by one ticket of this type: one seat in each pool.'),
         ]);
@@ -84,7 +95,8 @@ class TicketTypeResource extends Resource
                 TextColumn::make('pools.name')->label('Pools')->listWithLineBreaks()->limitList(3),
             ])
             ->filters([SelectFilter::make('kind')->options(TicketKind::class)])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

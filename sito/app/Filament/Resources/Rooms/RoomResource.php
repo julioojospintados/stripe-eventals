@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Rooms;
 
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\Rooms\Pages\ManageRooms;
 use App\Models\Event;
 use App\Models\Room;
@@ -58,7 +59,8 @@ class RoomResource extends Resource
                 TextColumn::make('floor'),
                 TextColumn::make('program_sessions_count')->counts('programSessions')->label('Sessions'),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

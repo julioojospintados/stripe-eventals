@@ -107,7 +107,8 @@ Poi `php artisan migrate --force`, `php artisan db:seed --class=RolesAndPermissi
 `php artisan eventals:create-admin …` e il Price della membership in Stripe (`STRIPE_MEMBERSHIP_PRICE`).
 
 **Nuovo evento** (stessa installazione): dal pannello, Event → New, con fuso e valuta; poi giorni, pool di capienza,
-fasce, tipi di biglietto e prezzi (Sales), programma (Programme). Per provare: `php artisan db:seed
+fasce, tipi di biglietto e prezzi (Sales), programma (Programme); le vendite si aprono scrivendo la data d'inizio sui
+tipi di biglietto (passi in [docs/tecnico/prezzi.md](../docs/tecnico/prezzi.md)). Per provare: `php artisan db:seed
 --class=DemoEventSeeder` crea un evento di esempio in bozza (New York, dollari). La valuta non si cambia dopo il primo
 prezzo o ordine; prezzi, pool e codici sconto non si collegano a un altro evento (trigger, vedi
 [regole](../docs/tecnico/regole.md)). Quando il nuovo evento è pubblicato e il precedente è finito, il sito passa da
@@ -170,7 +171,10 @@ i trigger, i test che li riguardano vengono saltati con un messaggio (`requireTr
 - `tests/Feature/Eas8SeederTest.php`: dati dell'EAS8.
 - `tests/Feature/StaffAccessTest.php`: accesso al pannello, permessi dei ruoli, comando `eventals:create-admin`.
 - `tests/Feature/Panel/PermissionsTest.php`: matrice ruolo × azione scritta a mano da §5.3, seeder rilanciato, ruoli e
-  permessi nel pannello, «Resend ticket», prezzo della membership.
+  permessi nel pannello (anche admin, con i permessi fissi), «Resend ticket», prezzo della membership.
+- `tests/Feature/Panel/SetupJourneyTest.php`: percorso completo dal pannello (evento, tipo, fasce, prezzi, capienza,
+  apertura vendite, acquisto pubblico e membro, eliminazione di un prezzo usato e non usato);
+  `ConfigDeletionTest.php` le regole di eliminazione; `tests/Feature/Shop/OnSaleTest.php` la regola «in vendita».
 - `tests/Feature/Shop/StripeClosuresTest.php`: rimborsi rifiutati, importo diverso dal totale, contestazioni,
   riconciliazione, eventi ignorati con il motivo.
 - `tests/Feature/Shop/`: prezzi e codici sconto, riserva e checkout, pagamenti e conferma tardiva, webhook, membership.
@@ -328,7 +332,8 @@ pagina risponde 403 e le azioni non compaiono.
 | Sales | Prezzo della membership e Price ID Stripe (senza Price ID vale `STRIPE_MEMBERSHIP_PRICE`) | modifica | lettura | — |
 | Exports | Export CSV (vedi sotto) | tutti | tutti | check-in |
 | System | Utenti dello staff (ruolo, password di almeno 12 caratteri), registro audit | ✔ | — | — |
-| System | Ruoli e permessi: lettura; permessi di commerciale e organizzatore modificabili, con audit (admin no) | ✔ | — | — |
+| System | Ruoli e permessi: lettura e modifica di tutti i ruoli, con audit; l'admin tiene sempre ruoli e staff | ✔ | — | — |
+| Event, Sales, Programme | «Delete» (singola e di massa, con conferma e audit) della configurazione mai usata | ✔ | — | ✔ |
 
 ### Permessi
 
@@ -337,8 +342,13 @@ In `App\Enums\StaffRole`: per ogni risorsa `<risorsa>.view|create|update|delete`
 `orders.view_amounts`, `orders.refund`, `orders.review`, `orders.export`, `complimentary.view`, `complimentary.issue`,
 `tickets.view`, `tickets.correct_attendee`, `tickets.resend`, `attendees.export`, `consents.export`, `memberships.view`,
 `membership_plans.view`, `membership_plans.update`, `disputes.view`, `reconciliation.run`, `roles.view`, `roles.update`,
-`audit_log.view` (più `invite_codes.*` e `videos.manage` per la fase 2). `admin` ha tutto tranne `*.delete`: nessun ruolo
-cancella (si spegne, non si cancella). Le Policy di vendita estendono `ResourcePolicy`; `RolePolicy` è registrata in
+`audit_log.view` (più `invite_codes.*` e `videos.manage` per la fase 2). `admin` ha tutto; l'organizzatore ha anche
+`*.delete` sulle sue risorse; `staff` non ha `delete`. Si elimina solo la configurazione (prezzi, fasce, tipi,
+capienze, codici sconto, sale, tracce, sessioni, speaker, eventi) che nessun ordine, biglietto, riserva o utilizzo usa
+(`App\Services\ConfigDeletion`): altrimenti il pannello dice «Usato da N ordini: disattivalo invece di eliminarlo».
+Ordini, biglietti, rimborsi, contestazioni, membership, eventi Stripe e audit non si eliminano mai. Il ruolo admin si
+modifica dal pannello ma tiene sempre `StaffRole::ADMIN_LOCKED`; il seeder aggiunge i permessi nuovi senza togliere
+quelli scelti nel pannello. Le Policy di vendita estendono `ResourcePolicy`; `RolePolicy` è registrata in
 `AppServiceProvider`. Per aggiungere un permesso: una riga in `StaffRole`, il controllo nella Policy, poi
 `php artisan db:seed --class=RolesAndPermissionsSeeder` e una riga nella matrice di `PermissionsTest`.
 
@@ -350,7 +360,12 @@ Il rimborso dal pannello usa lo stesso job del rimborso automatico (`Idempotency
 volta per ordine); ordine e biglietti diventano `refunded` quando arriva `charge.refunded`.
 
 Il cruscotto mostra ordini in `needs_refund` e `needs_review` (con link al filtro), ordini pagati e biglietti validi, biglietti venduti
-per tipo e fascia, posti rimasti per pool.
+per tipo e fascia, posti rimasti per pool e **Prezzo oggi** (anche nella pagina Ticket types): per tipo e ruolo, se è in
+vendita, la fascia attiva con la fine e il prezzo calcolato da `PriceResolver`, come al checkout.
+
+Un tipo di biglietto è in vendita solo con `TicketType::onSale()`: attivo, data d'inizio impostata e passata, fine
+vuota o futura, evento pubblicato. Senza data d'inizio non si vende. Regola dei prezzi e configurazione di un evento
+da zero: [docs/tecnico/prezzi.md](../docs/tecnico/prezzi.md).
 
 ### Export CSV
 
