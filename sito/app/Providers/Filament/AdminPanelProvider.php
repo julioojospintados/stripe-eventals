@@ -21,6 +21,15 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
+    /**
+     * MFA obbligatoria per lo staff. Si può spegnere solo fuori produzione (STAFF_MFA_REQUIRED=false per lo
+     * sviluppo locale): in produzione resta obbligatoria anche se il .env dice il contrario.
+     */
+    public static function staffMfaRequired(): bool
+    {
+        return app()->isProduction() || (bool) config('eventals.staff_mfa_required', true);
+    }
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -32,7 +41,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->multiFactorAuthentication([
                 AppAuthentication::make()->recoverable(),
-            ], isRequired: true)
+            ], isRequired: self::staffMfaRequired())
             ->colors([
                 'primary' => Color::Teal,
             ])
