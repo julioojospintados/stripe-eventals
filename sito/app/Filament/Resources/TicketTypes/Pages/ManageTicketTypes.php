@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketTypes\Pages;
 
 use App\Filament\Resources\TicketTypes\TicketTypeResource;
+use App\Filament\Widgets\PricesToday;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
@@ -15,5 +16,10 @@ class ManageTicketTypes extends ManageRecords
         return [
             CreateAction::make(),
         ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [PricesToday::class];
     }
 }

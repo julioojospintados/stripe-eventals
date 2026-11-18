@@ -52,6 +52,8 @@ class Speaker extends Model
                 $disk->delete($speaker->getOriginal('photo_path'));
             }
         });
+
+        static::deleted(fn (Speaker $speaker) => $speaker->photo_path && Storage::disk('public')->delete($speaker->photo_path));
     }
 
     /** Con $eventId: solo chi ha una sessione pubblicata di quell'evento (gli speaker valgono per più edizioni). */

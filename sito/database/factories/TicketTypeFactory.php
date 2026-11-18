@@ -18,6 +18,8 @@ class TicketTypeFactory extends Factory
             'channel' => TicketChannel::Public,
             'name' => ['en' => 'Full pass', 'it' => 'Pass completo'],
             'max_per_order' => 4,
+            // In vendita da una data fissa nel passato: i test che viaggiano nel tempo restano dopo l'apertura.
+            'sales_start' => '2020-01-01 00:00:00',
         ];
     }
 

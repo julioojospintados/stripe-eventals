@@ -1,6 +1,6 @@
 # EAS8 · guida per lo sviluppatore
 
-Autore: Giulio Occhipinti. Aggiornato al 12/11/2026 (sistema agnostico, sicurezza, carico).
+Autore: Giulio Occhipinti. Aggiornato al 18/11/2026 (correzioni dopo la tua prova del pannello).
 
 Ciao Simone, questo documento è per te come sviluppatore backend: architettura, codice, database, integrazioni,
 come provarlo e le poche domande di **struttura** che ci servono. Date, prezzi, testi e quantità **non** sono
@@ -12,10 +12,21 @@ domande: sono dati che si inseriscono e si cambiano dal pannello.
 |---|---|
 | Applicazione Laravel 13 + Filament 5 in `sito/` | 🟢 Fase 1 sviluppata: vendita, pagamenti Stripe, membership, biglietti con QR, pannello a tre ruoli, export |
 | Fase 2 | 🟡 Iniziata: programma (12 sale, tracce, sessioni, interventi) e speaker, con import CSV e pagine pubbliche |
-| Test | 🟢 321 test Pest su PHP 8.4 e MariaDB 10.11 (in CI anche 11.4 e MySQL 8.0), compresi test in parallelo su posti, prezzo membro e webhook |
+| Test | 🟢 392 test Pest su PHP 8.4 e MariaDB 10.11 (in CI anche 11.4 e MySQL 8.0), compresi test in parallelo su posti, prezzo membro e webhook |
 | Documentazione tecnica | 🟢 `docs/tecnico/`: database, stati, flussi, regole, permessi, ADR, esercizio |
 | Prova con Stripe vero (modalità test) | 🔴 Da fare |
 | Installazione sul vostro server (staging e produzione) | 🔴 Da fare |
+
+## Correzioni dopo la tua prova (18/11/2026)
+
+| Problema | Correzione |
+|---|---|
+| Un tipo senza `sales_start` risultava in vendita | 🟢 Una sola regola, `TicketType::onSale()`: attivo, data d'inizio impostata e passata, fine vuota o futura, evento pubblicato. La usano checkout, pagine pubbliche, prezzi mostrati e pannello. Seeder EAS8 e demo con date esplicite |
+| Nessuno poteva eliminare, l'admin non si modificava | 🟢 Admin e organizzatore eliminano la configurazione **mai usata** (prezzi, fasce, tipi, capienze, codici, sale, tracce, sessioni, speaker, eventi), singola o di massa, con conferma e audit; se è usata: «Usato da N ordini: disattivalo invece di eliminarlo». Ordini, biglietti, rimborsi, contestazioni, membership, eventi Stripe e audit mai. Il ruolo admin si modifica, ma tiene ruoli e staff; il seeder non sovrascrive le scelte del pannello |
+| Fasce e prezzi poco chiari | 🟢 Testi d'aiuto nei form, tabella «Prezzo oggi» (pagina Ticket types e cruscotto) dallo stesso `PriceResolver` del checkout, [docs/tecnico/prezzi.md](tecnico/prezzi.md) con esempio e configurazione da zero |
+
+Su un'installazione già seminata: `php artisan migrate` dà ad admin e organizzatore i permessi `*.delete`. I tipi di
+biglietto senza data d'inizio ora **non** si vendono: controlla la tabella «Prezzo oggi» e scrivi le date.
 
 ## Architettura in breve
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PriceTiers;
 
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\PriceTiers\Pages\ManagePriceTiers;
 use App\Models\Event;
 use App\Models\PriceTier;
@@ -13,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -39,6 +41,10 @@ class PriceTierResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
+            Text::make('Una fascia è un periodo (early bird, regular...). In ogni momento vale al massimo una fascia attiva: '
+                .'il prezzo è quello scritto in Prices per tipo × fascia × ruolo, o il prezzo base se per la fascia non c\'è. '
+                .'La fascia si fissa sull\'ordine quando il cliente riserva i posti: se scade mentre paga, paga quella fascia.')
+                ->columnSpanFull(),
             Select::make('event_id')->relationship('event', 'slug')->required()->default(fn () => Event::defaultId()),
             TextInput::make('code')->required()->regex('/^[a-z_]{2,30}$/')->helperText('Lowercase letters and _, e.g. early_bird.'),
             TextInput::make('name.en')->label('Name (EN)')->required()->maxLength(100),
@@ -48,7 +54,7 @@ class PriceTierResource extends Resource
                 ->helperText('Event time, excluded.')
                 ->rules([fn (Get $get, ?PriceTier $record) => self::noOverlap($get, $record)]),
             TextInput::make('position')->integer()->default(0),
-            Toggle::make('active')->default(true),
+            Toggle::make('active')->default(true)->helperText('Spenta: non vale mai, anche dentro le date.'),
         ]);
     }
 
@@ -88,7 +94,8 @@ class PriceTierResource extends Resource
                 TextColumn::make('ends_at')->dateTime('d/m/Y H:i', fn (PriceTier $record) => $record->event->timezone),
                 IconColumn::make('active')->boolean(),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

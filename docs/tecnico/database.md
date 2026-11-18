@@ -10,7 +10,7 @@ Autore: Giulio Occhipinti.
 |---|---|
 | Server | 10.11.14-MariaDB-0ubuntu0.24.04.1 |
 | Database | `eas8` |
-| Ultima migrazione | `2026_11_12_090000_make_events_agnostic` |
+| Ultima migrazione | `2026_11_18_090000_grant_config_delete_permissions` |
 | Tabelle | 49 |
 | Trigger | 19 |
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\DiscountType;
-use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PriceRole;
 use App\Enums\TicketChannel;
@@ -233,17 +232,11 @@ class CheckoutService
         $types = $event->ticketTypes()
             ->with('pools', 'programSession')
             ->whereIn('id', $ids)
-            ->where('active', true)
+            ->onSale()
             ->where('channel', TicketChannel::Public)
-            ->where(fn ($q) => $q->whereNull('sales_start')->orWhere('sales_start', '<=', now()))
-            ->where(fn ($q) => $q->whereNull('sales_end')->orWhere('sales_end', '>', now()))
             ->get()->keyBy('id');
 
-        $salesOpen = $event->status === EventStatus::Published
-            && (! $event->sales_open_at || $event->sales_open_at->lte(now()))
-            && (! $event->sales_close_at || $event->sales_close_at->gt(now()));
-
-        if (! $salesOpen || $ids === [] || count(array_diff($ids, $types->keys()->all())) > 0) {
+        if ($ids === [] || count(array_diff($ids, $types->keys()->all())) > 0) {
             throw new ShopException('not_available');
         }
 

@@ -64,10 +64,13 @@ class Eas8Seeder extends Seeder
                 'starts_at' => '2027-04-01 00:00:00', 'ends_at' => '2027-04-10 18:00:00', 'position' => 3, 'active' => false,
             ]);
 
+            // Vendite dall'inizio dell'early bird alla chiusura dell'ultimo giorno (ora di Lisbona = UTC in inverno).
+            $sales = ['sales_start' => '2026-11-01 00:00:00', 'sales_end' => '2027-04-10 18:00:00'];
+
             // Pass intero: regular 695 € pubblico e 395 € membro (prezzi base); early bird −30% solo membri, 276,50 €.
             $pass = $event->ticketTypes()->create([
                 'kind' => TicketKind::FullPass, 'channel' => TicketChannel::Public, 'position' => 1,
-                'name' => ['en' => 'Full pass', 'it' => 'Pass completo'],
+                'name' => ['en' => 'Full pass', 'it' => 'Pass completo'], ...$sales,
             ]);
             $pass->pools()->attach($dayPools);
             $pass->prices()->createMany([
@@ -86,7 +89,7 @@ class Eas8Seeder extends Seeder
                 $workshop = $event->ticketTypes()->create([
                     'kind' => TicketKind::PaidSession, 'channel' => TicketChannel::Public, 'position' => 10 + $n,
                     'program_session_id' => $session->id, 'max_per_order' => 2,
-                    'name' => ['en' => "Workshop $n", 'it' => "Workshop $n"],
+                    'name' => ['en' => "Workshop $n", 'it' => "Workshop $n"], ...$sales,
                 ]);
                 $workshop->pools()->attach($event->capacityPools()->create([
                     'name' => "Workshop $code", 'capacity' => 20, 'max_per_order' => 2,
@@ -94,7 +97,7 @@ class Eas8Seeder extends Seeder
                 $workshop->prices()->create(['price_role' => PriceRole::Public, 'amount_cents' => 10000]);
             }
 
-            // Presenti ma spenti, senza prezzo: accompagnatore, espositore (con codice d'invito), omaggio (dal pannello).
+            // Presenti ma spenti, senza prezzo né date di vendita: accompagnatore, espositore (con codice d'invito), omaggio (dal pannello).
             foreach ([
                 [TicketKind::Companion, TicketChannel::Public, ['en' => 'Companion', 'it' => 'Accompagnatore'], 1],
                 [TicketKind::Exhibitor, TicketChannel::Invite, ['en' => 'Exhibitor', 'it' => 'Espositore'], null],

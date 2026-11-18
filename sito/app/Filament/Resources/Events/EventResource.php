@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Events;
 
 use App\Enums\EventStatus;
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\Events\Pages\ManageEvents;
 use App\Models\Event;
 use BackedEnum;
@@ -82,7 +83,8 @@ class EventResource extends Resource
                 TextColumn::make('timezone')->toggleable(),
                 TextColumn::make('currency')->formatStateUsing(fn (string $state) => strtoupper($state)),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

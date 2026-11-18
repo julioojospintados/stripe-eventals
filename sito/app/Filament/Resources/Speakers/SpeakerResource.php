@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Speakers;
 
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\Speakers\Pages\ManageSpeakers;
 use App\Models\Speaker;
 use App\Services\SpeakerPhoto;
@@ -67,7 +68,8 @@ class SpeakerResource extends Resource
                 TextColumn::make('country'),
                 TextColumn::make('program_sessions_count')->counts('programSessions')->label('Sessions'),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

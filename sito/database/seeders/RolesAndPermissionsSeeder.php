@@ -11,9 +11,9 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Ruoli e permessi da App\Enums\StaffRole. Si può rilanciare in produzione:
  *   - crea i permessi mancanti e cancella quelli che non esistono più nel codice;
- *   - admin ha sempre tutti i permessi predefiniti (nel pannello non si modifica);
- *   - commerciale e organizzatore: ricevono i permessi nuovi come da StaffRole, ma le modifiche fatte dall'admin nel
- *     pannello (Roles) restano.
+ *   - un ruolo nuovo riceve i permessi predefiniti di StaffRole;
+ *   - un ruolo esistente riceve solo i permessi nuovi come da StaffRole: le scelte fatte nel pannello (Roles) restano;
+ *   - admin tiene sempre StaffRole::ADMIN_LOCKED.
  */
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -31,12 +31,15 @@ class RolesAndPermissionsSeeder extends Seeder
 
         foreach (StaffRole::cases() as $staffRole) {
             $role = Role::where('name', $staffRole->value)->where('guard_name', 'web')->first();
-            if (! $role || $staffRole === StaffRole::Admin) {
+            if (! $role) {
                 Role::findOrCreate($staffRole->value, 'web')->syncPermissions($staffRole->permissions());
 
                 continue;
             }
             $role->givePermissionTo(array_values(array_intersect($staffRole->permissions(), $new)));
+            if ($staffRole === StaffRole::Admin) {
+                $role->givePermissionTo(StaffRole::ADMIN_LOCKED);
+            }
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

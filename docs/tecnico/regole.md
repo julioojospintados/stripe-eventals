@@ -1,6 +1,6 @@
 # Regole di business: dove sono garantite e quale test le prova
 
-Autore: Giulio Occhipinti. Aggiornato al 12/11/2026 sul codice di `sito/` (361 test Pest su MariaDB).
+Autore: Giulio Occhipinti. Aggiornato al 18/11/2026 sul codice di `sito/` (392 test Pest su MariaDB).
 
 Percorsi relativi a `sito/`; i test a `sito/tests/`. Vincoli e trigger hanno il nome che si trova in
 [database.md](database.md); le righe indicate sono quelle del 07/11/2026 e si spostano con le modifiche: il nome del
@@ -66,8 +66,9 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Regola | Dove | Test |
 |---|---|---|
 | Forma dei tipi (giornaliero con giorno, workshop con sessione, omaggio solo dal pannello, accompagnatore con limite) | DB `ticket_types_kind_shape`, `ticket_types_channel_shape` | `SalesSchemaTest.php` › tipi di biglietto (3 test) |
-| Si vendono solo tipi attivi, del canale pubblico, nella finestra di vendita | SRV `CheckoutService::sellableTypes()` r. 209-228 | `CheckoutTest.php` › «non vende tipi spenti o di un altro canale» |
-| Evento pubblicato e vendite aperte (`sales_open_at`, `sales_close_at`) | SRV `CheckoutService::sellableTypes()` r. 220 | `Feature/Qa/UncoveredRulesTest.php` › «non vende se l'evento non è pubblicato o le vendite sono chiuse» (bozza, chiuse, non ancora aperte) |
+| In vendita solo se attivo, con `sales_start` impostata e passata, `sales_end` vuota o futura, evento pubblicato; senza data d'inizio non è in vendita. Una sola regola per checkout, pagine pubbliche, prezzi mostrati e pannello | SRV `TicketType::onSale()` / `isOnSale()`, usata da `CheckoutService::sellableTypes()`, `Catalog::for()`, widget `PricesToday` | `Feature/Shop/OnSaleTest.php` (10 test); `Feature/Panel/SetupJourneyTest.php` |
+| Si vendono solo tipi del canale pubblico | SRV `CheckoutService::sellableTypes()`, `Catalog::for()` | `CheckoutTest.php` › «non vende tipi spenti o di un altro canale» |
+| Evento pubblicato e vendite aperte (`sales_open_at`, `sales_close_at`) | SRV `Event::salesOpen()` dentro `TicketType::onSale()` | `Feature/Qa/UncoveredRulesTest.php` › «non vende se l'evento non è pubblicato o le vendite sono chiuse» (bozza, chiuse, non ancora aperte) |
 | Workshop solo con pass intero, al massimo 2, mai sovrapposti | SRV `CheckoutService::checkLimits()` r. 253-277 | `CheckoutTest.php` › workshop (4 test) |
 | Solo carta (Apple Pay e Google Pay come carta) | SRV `CheckoutService::startCheckout()` r. 155, `MembershipService::startCheckout()` r. 31 | `CheckoutTest.php` › «crea la Checkout Session con price_data, solo carta, metadata e Idempotency-Key»; `Feature/Shop/MembershipTest.php` › «apre il Checkout in abbonamento…» |
 | Date coerenti (evento, vendite, sessioni del programma) | DB `events_dates_valid`, `events_sales_window`, `program_sessions_times_valid`, `ticket_types_sales_window` | `Feature/Qa/UncoveredRulesTest.php` › «i CHECK rifiutano date al contrario su eventi e tipi di biglietto»; `ProgramRulesTest.php` › «rifiuta una fine non dopo l'inizio…» |
@@ -125,7 +126,9 @@ il codice: per questo le transizioni sono ripetute nei servizi.
 | Staff: MFA TOTP obbligatoria | `Providers/Filament/AdminPanelProvider.php` r. 32-34 (`isRequired: true`) | `Feature/Qa/UncoveredRulesTest.php` › «manda alla configurazione della MFA lo staff che non l'ha ancora attivata» |
 | Pannello solo allo staff | POL `User::canAccessPanel` | `StaffAccessTest.php` › «non apre il pannello a chi non è dello staff»; `Feature/Panel/PolicyTest.php` › «chiude il pannello a chi compra» |
 | Ogni azione del pannello con il suo permesso, mai con il nome del ruolo | POL `Policies/*.php`; seeder `RolesAndPermissionsSeeder` | `PermissionsTest.php` › «ogni ruolo può solo le azioni di §5.3», «i ruoli hanno esattamente i permessi predefiniti…»; `PolicyTest.php` (6 test) |
-| Il ruolo admin non si modifica dal pannello | POL `Policies/RolePolicy.php` `update()` | `PermissionsTest.php` › «l'admin cambia i permessi di un ruolo con audit; il ruolo admin non si modifica» |
+| Il ruolo admin si modifica dal pannello ma tiene sempre `StaffRole::ADMIN_LOCKED` (ruoli e staff); il seeder non sovrascrive le scelte del pannello | SRV `RoleResource` (`after`), `RolesAndPermissionsSeeder` | `PermissionsTest.php` › «l'admin modifica anche il ruolo admin, ma non può togliersi ruoli e staff», «il seeder si rilancia…» |
+| Configurazione (prezzi, fasce, tipi, capienze, codici sconto, sale, tracce, sessioni, speaker, eventi) eliminabile solo se non usata da ordini, biglietti, riserve o utilizzi, con conferma, messaggio leggibile e audit `config.deleted`; solo con `<risorsa>.delete` (admin, organizzatore) | SRV `Services/ConfigDeletion.php`; POL `ResourcePolicy::delete()`; azioni `Filament/Actions/DeleteConfig.php`; DB FK `restrict` come ultima difesa | `Feature/Panel/ConfigDeletionTest.php` (6 test); `SetupJourneyTest.php` |
+| Ordini, biglietti, rimborsi, contestazioni, membership, eventi Stripe, registro audit e staff non si eliminano | POL senza `delete` (`UserPolicy::delete()` = false); TRG `tickets_no_delete`, `audit_log_no_delete` | `ConfigDeletionTest.php` › «ordini, biglietti e staff non si eliminano mai» |
 | Export scaricabili solo da chi li ha chiesti e ha il permesso | POL `Http/Controllers/ExportDownloadController.php` r. 16; rotta con nome file vincolato | `ExportTest.php` › «prepara in coda un export grande, scaricabile solo da chi l'ha chiesto»; `MoneyEdgeCasesTest.php` › «export: nessun accesso al file di un altro staff…» |
 | Consensi e registro audit solo in aggiunta | TRG `consents_no_update`, `consents_no_delete`, `audit_log_no_update`, `audit_log_no_delete` | `OtherTablesSchemaTest.php` › «tiene consensi e registro audit solo in aggiunta» |
 | Membership: niente secondo Checkout per chi è membro; eventi vecchi ignorati; niente attivazione per un altro utente | SRV `MembershipService` r. 21, 66, `activateFromCheckout()`; DB `memberships_stripe_subscription_id_unique` | `MembershipTest.php` (8 test) |

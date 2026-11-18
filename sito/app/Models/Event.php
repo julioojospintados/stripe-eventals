@@ -77,6 +77,14 @@ class Event extends Model
         $query->where('status', EventStatus::Published);
     }
 
+    /** Pubblicato e dentro la finestra di vendita dell'evento (sales_open_at/close_at vuoti = nessun limite). */
+    public function scopeSalesOpen(Builder $query): void
+    {
+        $query->where('status', EventStatus::Published)
+            ->where(fn ($q) => $q->whereNull('sales_open_at')->orWhere('sales_open_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('sales_close_at')->orWhere('sales_close_at', '>', now()));
+    }
+
     /** @return HasMany<EventDay, $this> */
     public function days(): HasMany
     {

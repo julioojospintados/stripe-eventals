@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\TicketPrices;
 
 use App\Enums\PriceRole;
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\TicketPrices\Pages\ManageTicketPrices;
 use App\Models\TicketPrice;
 use App\Models\TicketType;
@@ -11,6 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -39,12 +41,19 @@ class TicketPriceResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
+            Text::make('Un prezzo vale per un tipo di biglietto, una fascia (o nessuna: prezzo base, vale quando la fascia attiva '
+                .'non ha un suo prezzo) e un ruolo. Esempio: early bird solo per i membri = prezzo membro sulla fascia early_bird, '
+                .'il pubblico paga il suo prezzo base. Il prezzo membro vale per un solo biglietto a persona per evento e tipo, '
+                .'quello intestato al membro; gli altri biglietti dello stesso ordine pagano il prezzo pubblico.')
+                ->columnSpanFull(),
             Select::make('ticket_type_id')->relationship('ticketType', 'position')->label('Ticket type')->required()->live()
                 ->getOptionLabelFromRecordUsing(fn (TicketType $type) => $type->event->slug.' · '.$type->name['en']),
             // Solo le fasce dell'evento del tipo (lo vuole anche il trigger ticket_prices_same_event).
             Select::make('price_tier_id')->label('Tier')
-                ->relationship('priceTier', 'code', fn (Builder $query, Get $get) => $query->where('event_id', TicketType::whereKey($get('ticket_type_id'))->value('event_id')))->placeholder('Base price (every tier)'),
+                ->relationship('priceTier', 'code', fn (Builder $query, Get $get) => $query->where('event_id', TicketType::whereKey($get('ticket_type_id'))->value('event_id')))->placeholder('Base price (every tier)')
+                ->helperText('Vuota = prezzo base del tipo per quel ruolo.'),
             Select::make('price_role')->options(PriceRole::class)->required()
+                ->helperText('Membro senza prezzo suo: paga il prezzo pubblico. Senza prezzo pubblico il tipo non si compra.')
                 ->unique(ignoreRecord: true, modifyRuleUsing: fn (Unique $rule, Get $get) => $rule
                     ->where('ticket_type_id', $get('ticket_type_id'))
                     ->where('tier_key', $get('price_tier_id') ?: '*'))
@@ -67,7 +76,8 @@ class TicketPriceResource extends Resource
             ])
             ->filters([SelectFilter::make('ticket_type_id')->relationship('ticketType', 'position')->label('Ticket type')
                 ->getOptionLabelFromRecordUsing(fn (TicketType $type) => $type->event->slug.' · '.$type->name['en'])])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array

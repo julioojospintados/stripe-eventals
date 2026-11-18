@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tracks;
 
+use App\Filament\Actions\DeleteConfig;
 use App\Filament\Resources\Tracks\Pages\ManageTracks;
 use App\Models\Event;
 use App\Models\Track;
@@ -61,7 +62,8 @@ class TrackResource extends Resource
                 TextColumn::make('name.en')->label('Name')->searchable(),
                 TextColumn::make('name.it')->label('Name (IT)'),
             ])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make(), DeleteConfig::make()])
+            ->toolbarActions([DeleteConfig::bulk()]);
     }
 
     public static function getPages(): array
